@@ -85,16 +85,19 @@ function ListServersHTML()
             $playernames = strtr( $row['players'], "|", "\n" );
             $playernames = nl2br( $playernames );
             
-            // Lis‰t‰‰n palvelimen tiedot taulukkoon
-            $liststring .= "\n<tr>".
-                           "<td>{$row['desc']}</td>".
-                           "<td>{$row['ip']}</td>".
-                           "<td>{$row['port']}</td>".
-                           "<td>$players ($humanplayers) / $maxplayers</td>".
-                           "<td>$map</td>".
-                           "<td>$playernames</td>".
-                           "<td>{$row['version']}</td>".
-                           "</tr>";
+            if( $row['devbuild'] == false )
+            {
+                // Lis‰t‰‰n palvelimen tiedot taulukkoon
+                $liststring .= "\n<tr>".
+                               "<td>{$row['desc']}</td>".
+                               "<td>{$row['ip']}</td>".
+                               "<td>{$row['port']}</td>".
+                               "<td>$players ($humanplayers) / $maxplayers</td>".
+                               "<td>$map</td>".
+                               "<td>$playernames</td>".
+                               "<td>{$row['version']}</td>".
+                               "</tr>";
+            }
         }
         else
         {
