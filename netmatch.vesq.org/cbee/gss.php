@@ -180,7 +180,7 @@ function RegisterServer()
     $desc = $mysqli->real_escape_string( $_GET['desc'] );
     $port = (int) $_GET['port'];
     $ip = $_SERVER['REMOTE_ADDR'];
-    if( !empty( $_GET['devbuild'] ) && !$_GET['devbuild'] == true )
+    if( !empty( $_GET['devbuild'] ) && $_GET['devbuild'] == true )
     {
         $devbuild = true;
     } else {
