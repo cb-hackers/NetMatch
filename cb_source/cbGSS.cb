@@ -42,6 +42,9 @@ Function GSSRegister(_port, _description$)
     url = url + "&mode=reg"
     url = url + "&desc=" + URLEncode(_description)
     url = url + "&port=" + gGSSServerPort
+    If NM_DEVBUILD Then
+        url = url + "&devbuild=1"
+    EndIf
     // Lähetetään rekisteröintipyyntö
     ret = HTTPGet(url)
     If ret <> 200 Then Return False
@@ -113,6 +116,7 @@ Function GSSFindServers()
     Next i
     
     url$ = GSSRegUrl + "?mode=list&profile=" + URLEncode(gGSSProfile) + "&ver=" + URLEncode(gGSSVersion)
+    If NM_DEVBUILD Then url$ = url$ + "&devbuild=1"
     If HTTPGet(url) = 200 Then
         HTTPLoadContent()
         ret$ = ""

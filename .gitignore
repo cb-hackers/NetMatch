@@ -33,3 +33,15 @@ ipban.txt
 
 # Perhanan Windows
 Thumbs.db
+
+######
+## Mitä laitetaan ignoreen webbikansiosta
+######
+
+# Ei laiteta downloadsia tai mapseja mukaan repoon.
+netmatch.vesq.org/downloads
+netmatch.vesq.org/maps
+
+# Ei laiteta myöskään info.txt tiedostoja mukaan.
+netmatch.vesq.org/cbee/info.txt
+netmatch.vesq.org/cbee/oldinfos

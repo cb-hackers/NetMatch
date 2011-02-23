@@ -28,6 +28,10 @@ Const NM_VERSION$   = "2.2"
 Const NM_REVISION$  = "a-epatch"
 Const NM_PATCH      = 1
 
+// Tämä pitää AINA laitta 1, jos kyseessä ei ole virallinen julkaisu.
+// Tällöin palvelin näkyy vain muille NM_DEVBUILD = 1 omaaville clienteille.
+Const NM_DEVBUILD   = 1
+
 //--------------------------------------------------------------------------------
 // Includet
 //--------------------------------------------------------------------------------
@@ -56,7 +60,11 @@ Include "Log.cb"
 //gDebug = SERVER
 
 GSSInit("NetMatch", "v" + NM_VERSION + NM_REVISION) // cbGSS.cb
-SetWindow "NetMatch " + gGSSVersion
+If NM_DEVBUILD = False Then
+    SetWindow "NetMatch " + gGSSVersion
+Else
+    SetWindow "NetMatch " + gGSSVersion + "-dev"
+EndIf
 
 GetTimeSync(True)
 
