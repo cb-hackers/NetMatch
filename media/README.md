@@ -1,4 +1,4 @@
-<h3 style="color: red">Please do not use this artwork in your own game.
+<h3>Please do not use this artwork in your own game.
 At least not without asking the devs.</h3>
 
 
