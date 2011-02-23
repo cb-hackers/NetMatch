@@ -581,7 +581,7 @@ Function GameUpdate()
 //        SetWindow "NetMatch " + gGSSVersion + " Server - " + gPlayerCount + " players online"
 //    EndIf
     
-    
+    If NM_DEVBUILD Then DevelopmentTests() // DEVBUILD
     MoveBullets()
     If gGameMode = CLIENT Then AnimatePlayers()
 EndFunction
@@ -1208,3 +1208,23 @@ Function ClearKeys2()
     gMouseHit3  = False
     gMouseRoll  = 0
 EndFunction
+
+//================================================================================
+// DEVBUILDiin voi lisätä tällä funktiolla jänniä omia testailuja.
+//================================================================================
+Global gDevBuildCamX, gDevBuildCamY, gDevBuildCamTest
+gDevBuildCamTest = False
+Function DevelopmentTests()
+    If KeyHit( cbKeyO ) Then 
+        gDevBuildCamTest = Not gDevBuildCamTest
+        gDevBuildCamX = CameraX()
+        gDevBuildCamY = CameraY()
+    EndIf
+    
+    If gDevBuildCamTest Then
+        gDevBuildCamX = gDevBuildCamX + ( KeyDown( cbKeyL ) - KeyDown( cbKeyJ ) ) * 8
+        gDevBuildCamY = gDevBuildCamY + ( KeyDown( cbKeyI ) - KeyDown( cbKeyK ) ) * 8
+        PositionCamera gDevBuildCamX, gDevBuildCamY
+    EndIf
+    Return True
+EndFunction 
