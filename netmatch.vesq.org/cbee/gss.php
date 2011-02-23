@@ -59,10 +59,10 @@ function ListServers()
     if( !isset( $_GET['profile'], $_GET['ver'] ) ) return "listing_failed";
     if( $_GET['profile'] !== NM_PROFILE ) return "listing_failed";
     
-    $devbuild = false;
-    if( !empty( $_GET['devbuild'] ) && $_GET['devbuild'] != false )
+    $devbuild = 0;
+    if( !empty( $_GET['devbuild'] ) && $_GET['devbuild'] != 0 )
     {
-        $devbuild = true;
+        $devbuild = 1;
     }
     
     // Yhdistetään MySQL-tietokantaan. 1 tarkoittaa, että käytetään Object Oriented-tyyliä, eikä proseduraalista tyyliä.
@@ -110,7 +110,7 @@ function ListServers()
                 // Haetaan seuraava rivi.
                 continue;
             }
-            if( $row['version'] == $_GET['ver'] && ( $row['devbuild'] == false || $devbuild = true ) )
+            if( ( $row['version'] == $_GET['ver'] && $row['devbuild'] == 0 ) || $devbuild == 1 )
             {
                 // Lisätään palvelimen tiedot merkkijonoon, versio on oikea.
                 $liststring .= "name=" . StringConvert( $row['desc'] ) . "|";
@@ -180,11 +180,12 @@ function RegisterServer()
     $desc = $mysqli->real_escape_string( $_GET['desc'] );
     $port = (int) $_GET['port'];
     $ip = $_SERVER['REMOTE_ADDR'];
+    $devbuild = 0;
     if( !empty( $_GET['devbuild'] ) && $_GET['devbuild'] == true )
     {
-        $devbuild = true;
+        $devbuild = 1;
     } else {
-        $devbuild = false;
+        $devbuild = 0;
     }
     
     // Tarkistetaan, onko listalla olemassa jo palvelin samalla IP:llä ja portilla.

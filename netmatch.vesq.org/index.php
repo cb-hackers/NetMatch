@@ -85,7 +85,7 @@ function ListServersHTML()
             $playernames = strtr( $row['players'], "|", "\n" );
             $playernames = nl2br( $playernames );
             
-            if( $row['devbuild'] == false )
+            if( $row['devbuild'] == 0 )
             {
                 // Lis‰t‰‰n palvelimen tiedot taulukkoon
                 $liststring .= "\n<tr>".
