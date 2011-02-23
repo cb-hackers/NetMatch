@@ -110,7 +110,12 @@ Function CreateServer(_register = 0)
         DeleteObject item\obj
         Delete item
     Next item
-    SetWindow "NetMatch " + gGSSVersion
+    
+    If NM_DEVBUILD = False Then
+        SetWindow "NetMatch " + gGSSVersion
+    Else
+        SetWindow "NetMatch " + gGSSVersion + "-dev"
+    EndIf
 EndFunction
 
 Global gBannedIP$

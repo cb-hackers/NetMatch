@@ -129,6 +129,7 @@ Function GSSFindServers()
     Next i
     ret$ = ""
     url$ = GSSRegUrl + "?mode=list&profile=" + URLEncode(gGSSProfile) + "&ver=" + URLEncode(gGSSVersion)
+    If NM_DEVBUILD Then url$ = url$ + "&devbuild=1"
     If HTTPGet(url) = 200 Then
         HTTPLoadContent()
         If HTTP_ContentLength < 4 Then Return 0
