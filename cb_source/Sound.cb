@@ -1,0 +1,98 @@
+//********************************************************************************
+// Sound.cb
+//
+// Äänien soittaminen
+//********************************************************************************
+
+//================================================================================
+// Äänen soittaminen
+//================================================================================
+Function PlayGameSound(_sound, _x, _y)
+    // Ääntä ei ole olemassa
+    If _sound = 0 Then Return 0
+    snd = gSounds(_sound)
+    
+    // Äänenvoimakkuus riippuu etäisyydestä
+    volume# = (100 - Max(0, Distance(_x, _y, CameraX(), CameraY()) / 20)) / 100.0 * Float(gFXVolume)
+    Return PlaySound(snd, volume)
+EndFunction
+
+
+Function StopGameSound(_sound)
+    If _sound <> 0 Then StopSound(_sound)
+EndFunction
+
+//================================================================================
+// Soitetaan taustamusiikkia
+//================================================================================
+Global gCurrentVolume
+gCurrentVolume = 0
+Function PlayMusic(_play = 1)
+    If gMusicVolume = 0 Or _play = OFF Then
+        If gMusic <> 0 Then
+            If SoundPlaying(gMusic) Then
+                StopSound gMusic
+            EndIf
+        EndIf
+        Return True
+    EndIf
+    If gMusic = 0 Then
+        RandomMusic()
+        //gMusic = PlaySound("music\blood spatter.mp3", gMusicVolume)
+    Else
+        If Not SoundPlaying(gMusic) Then
+            RandomMusic()
+            //gMusic = PlaySound("music\blood spatter.mp3", gMusicVolume)
+        EndIf
+    EndIf
+    If gCurrentVolume <> gMusicVolume And gMusic <> 0 Then
+        SetSound gMusic, OFF, gMusicVolume
+        gCurrentVolume = gMusicVolume
+    EndIf
+EndFunction
+
+
+//================================================================================
+// Etsitään ja soitetaan satunnainen musiikkikappale
+//================================================================================
+Function RandomMusic()
+    ChDir "music"
+    files$ = ""
+    fileCount = 0
+    StartSearch
+    While True
+        file$ = FindFile()
+        If file = "" Then Exit
+        ext$ = Lower("." + GetWord2(file, 2, ".") + ",")
+        extList$ = Lower(".raw,.Mod,.s3m,.xm,.it,.mid,.rmi,.wav,.mp2,.mp3,.ogg,.wma,.asf,.mo3,")
+        If InStr(extList, ext) > 0 Then
+            If Len(files) > 0 Then
+                files = files + "|"
+            EndIf
+            files = files + file
+            fileCount + 1
+        EndIf
+    Wend
+    EndSearch
+    ChDir ".."
+    If fileCount = 0 Then Return False
+    file$ = GetWord2(files, Rand(1, fileCount), "|")
+    gMusic = PlaySound("music/" + file, gMusicVolume)
+EndFunction
+
+
+//================================================================================
+// Säädetään äänenvoimakkuutta
+//================================================================================
+Function AdjustVolume(_adjust, _type)
+    currentVolume = 0
+    If _type = 0 Then currentVolume = gFXVolume
+    If _type = 1 Then currentVolume = gMusicVolume
+    prevVolume = currentVolume
+    currentVolume = currentVolume + _adjust
+    currentVolume = Max(0, currentVolume)
+    currentVolume = Min(100, currentVolume)
+    If _type = 0 Then gFXVolume = currentVolume
+    If _type = 1 Then gMusicVolume = currentVolume
+    If currentVolume <> prevVolume Then SaveConfig()
+EndFunction

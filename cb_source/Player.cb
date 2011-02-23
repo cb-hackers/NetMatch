@@ -1,0 +1,268 @@
+//********************************************************************************
+// Player.cb
+//
+// Pelaajiin liittyvät toiminnot
+//********************************************************************************
+
+
+//--------------------------------------------------------------------------------
+// Vakioita
+//--------------------------------------------------------------------------------
+Const MAX_PLAYERS       = 20    // Pelaajien maksimimäärä
+Const MAX_INACTIVE_TIME = 10000 // Aika jonka jälkeen haamuiksi jääneet pelaajat poistetaan
+//Const BOT_COUNT         = 5     // Bottien lukumäärä
+Const DEATH_DELAY       = 3000  // Kun pelaaja kuolee niin koska herätetään henkiin
+
+Const FORWARD_SPEED#    = 250   // Nopeus eteen (pikseliä sekunnissa)
+Const BACKWARD_SPEED#   = 150   // Nopeus taakse (pikseliä sekunnissa)
+Const SIDESTEP_SPEED#   = 160   // Nopeus sivulle (pikseliä sekunnissa)
+Const TURN_SPEED#       = 180   // Kääntymisnopeus jos käännetään näppäimillä
+Const OBJECT_RANGE      = 50
+Const SPAWN_PROTECT     = 3000  // Aika kuinka kauan syntymän jälkeen pelaaja on haavoittumaton
+Const SPAWN_BLINKER     = 200   // Kuinka nopeasti syntynyttä pelaajaa vilkutetaan
+
+
+//--------------------------------------------------------------------------------
+// Vakioita joilla voidaan säätää bottien tekoälyä
+//--------------------------------------------------------------------------------
+Const MIN_NEXT_ACTION   = 500   // Koska aikaisintaan arvotaan botille uusi suunta
+Const MAX_NEXT_ACTION   = 1000  // Koska viimeistään arvotaan botille uusi suunta
+Const RND_ROTATION#     = 90    // Kun botille arvotaan uusi kääntyminen niin tämä on maksimi.
+Const MIN_SPEED#        = 80    // Botin nopeus kun se on havainnut esteen
+Const MAX_SPEED#        = 200   // Botin nopeus kun tie on vapaa
+Const WAKEUP_DIST       = 100   // Jos matkaa esteeseen on vähemmän kuin tämä niin aletaan etsiä uutta suuntaa
+Const EXPLORE_ANGLE     = 50    // Kun pitää päätellä uusi suunta niin se tehdään katselemalla
+                                // näin monta astetta molempiin suuntiin
+Const DODGE_ROTATION#   = 0.2   // Kun botti on lähellä estettä niin tällä määrätään kuinka
+                                // jyrkällä käännöksellä yritetään väistää.
+                                // Pienempi arvo on jyrkempi käännös.
+
+
+// Luodaan globaali picker-objekti jota käytetään bottien "silminä"
+Global gPicker
+gPicker = MakeObject()
+
+
+
+Global gPlayerCount         // Pelaajia pelissä
+Global gLastPlayerCount     // Pelaajia pelissä edellisellä kierroksella
+Global gBotCount            // Kuinka monta pelaajista on botteja
+Global gCurrentPlayerId     // Parhaillaan käsiteltävänä oleva pelaaja
+Global gPlayerNames$        // Pelissä mukana olevien pelaajien nimet
+Global gPrevPlayerNames$
+
+//--------------------------------------------------------------------------------
+// Kokoelma pelaajille
+//--------------------------------------------------------------------------------
+Type PLAYERS
+    Field playerId      As Integer      // Pelaajan tunnus välillä 1-MAX_PLAYERS
+    Field clientId      As String       // ClientId eli ip-osoite ja tunnus
+    Field active        As Integer      // Onko tämä pelaaja pelissä
+    Field loggedIn      As Integer      // Pelaaja on kirjautunut
+    Field name          As String       // Pelaajan nimimerkki
+    Field statName      As String       // Pelaajan nimimerkki
+    Field botName       As String       // Botin nimi
+    Field lastActivity  As Integer      // Koska viimeksi pelaajalta on saatu dataa
+    Field x             As Integer      // Sijainti
+    Field y             As Integer      // Sijainti
+    Field angle         As Integer      // Kulma
+    Field passCount     As Integer      // Kunka monta kierrosta pelaaja on ollut päivittämättä
+    Field obj           As Integer      // Pelihahmo
+    Field leftLegObj    As Integer      // Vasen jalka
+    Field rightLegObj   As Integer      // Oikea jalka
+    Field fireObj       As Integer      // Suuliekkianimaatio
+    Field fireObj2      As Integer      // Suuliekkianimaatio (toinen pistooli)
+    Field showFire      As Integer      // Näytetäänkö suuliekki
+    Field prevPosX      As Float        // Pelaajan edellinen sijainti
+    Field prevPosY      As Float        // Pelaajan edellinen sijainti
+    Field legPos        As Float        // Jalkojen asento kävelyanimaatiossa
+    Field lastValidX    As Integer      // Viimeisin paikka jossa pelaaja on varmasti ollut kentällä
+    Field lastValidY    As Integer      // Viimeisin paikka jossa pelaaja on varmasti ollut kentällä
+    Field weapon        As Integer      // Käytössä oleva ase
+    Field lastShoot     As Integer      // Koska on viimeksi ammuttu
+    Field lastSound     As Integer      // Koska on viimeksi soitettu ampumisääni (käytetään moottorisahassa)
+    Field health        As Integer      // Terveys
+    Field prevHealth    As Integer      // Terveys edellisellä kierroksella
+    Field kills         As Integer      // Tappojen lukumäärä
+    Field deaths        As Integer      // Kuolemien lukumäärä
+    Field killRatio     As Float        // Tapposuhde
+    Field death         As Integer      // Onko pelaaja kuollut
+    Field timeToDeath   As Integer      // Kuolinaika
+    Field zombie        As Integer      // Onko tämä pelaaja botti
+    Field nextAngle     As Float        // Kulma johon botin pitäisi liikkua
+    Field lastAngle     As Float        // Kuinka paljon botin ja kohdekulman ero oli edellisellä kierroksella
+    Field rotation      As Float        // Tällä käännetään objektia (TurnObject)
+    Field sideStep      As Float        // Botin sivuaskeleet
+    Field nextAction    As integer      // Ajankohta jolloin botille arvotaan uusi suunta
+    Field tooClose      As Integer      // Botti on liian lähellä seinää tai toista pelaajaa
+    Field fightRotate   As Float        // Kääntymisnopeus kun ollaan havaittu vastustaja
+    Field shootingAngle As Float        // Ammutaan kun uhri on tämän kulman sisällä botin edessä
+    Field shootedBy     As Integer      // Kuka on viimeksi ampunut pelaajaa
+    Field fov           As Float        // Field of View
+    Field idleSound     As Integer      // Esim. moottorisahan tyhjäkäynti
+    Field idleTimer     As Integer      // Koska soitettu viimeksi
+    Field hasAmmos      As Integer      // Onko pelaajalla ammuksia nykyisessä aseessa
+    Field team          As Integer      // Joukkue
+    Field mapName       As String       // Pelaajalla ladattuna oleva kartta
+    Field outOfMap      As Integer      // Kuinka monta päivityskierrosta pelaaja on ollut poissa kartalta
+    Field spawnTime     As Integer      // Syntymäaika
+    Field visible       As Integer      // Ukon vilkuttaminen syntymän jälkeen
+EndType
+
+//--------------------------------------------------------------------------------
+// Taulukko pelaajille.
+// Tästä taulukosta löytyy suoraan kokoelman (type) osoite
+//--------------------------------------------------------------------------------
+Dim gPlayers(MAX_PLAYERS)
+
+Const PLR_HEALTH    = 1
+Const PLR_KILLS     = 2
+Const PLR_DEATHS    = 3
+Dim gPlayersProt(MAX_PLAYERS, 3)
+
+// Alustetaan taulukko ja kokoelma
+For i = 1 To MAX_PLAYERS
+    player.PLAYERS      = New(PLAYERS)
+    player\playerId     = i
+    player\active       = False
+    player\team         = 1
+    botName$            = "Bot_" + i
+    If CountWords(gBotNames, ",") >= i Then botName = GetWord2(gBotNames, i, ",")
+    player\botName      = Trim(botName)
+    gPlayers(i)         = ConvertToInteger(player)
+    UpdatePlayerProt(i)
+Next i
+
+
+//--------------------------------------------------------------------------------
+// Tutkat pelaajille joita ei näy ruudulla
+//--------------------------------------------------------------------------------
+Dim aRadar(MAX_PLAYERS)
+If gDirectServer = False Then
+    // Luodaan tutkaobjektit kaikille pelaajille ja piilotetaan ne
+    For i = 1 To MAX_PLAYERS
+        aRadar(i) = CloneObject(gObjects(OBJ_RADAR))
+        ShowObject aRadar(i), OFF
+    Next i
+EndIf
+Global gRadarId
+gRadarId = 0
+
+
+//--------------------------------------------------------------------------------
+// Taulukko johon sortataan pelaajat tapposuhteen mukaan
+//--------------------------------------------------------------------------------
+Dim gRanking#(MAX_PLAYERS, 2)
+
+
+Function CheckBots()
+    If gGameMode <> SERVER Then Return False
+//COM1    CalcPlayers()
+    If gPlayerCount > gMapBotDelete And gBotCount > 0 Then
+        For player.PLAYERS = Each PLAYERS
+            If player\zombie = True Then
+                player\active   = False
+                player\loggedIn = False
+                player\zombie   = False
+                For plr.PLAYERS = Each PLAYERS
+                    If plr\active = True And plr\zombie = False Then
+                        nmsg.NET_MESSAGES   = New(NET_MESSAGES)
+                        nmsg\toPlayer       = plr\playerId
+                        nmsg\msgType        = NET_LOGOUT
+                        nmsg\playerId       = player\playerId
+                    EndIf
+                Next plr
+//COM1                gPlayerCount - 1
+//COM1                gBotCount - 1
+                Return True
+            EndIf
+        Next player
+    EndIf
+    If gPlayerCount < gMapBotDelete And gBotCount < gMapMaxBots Then
+        For player.PLAYERS = Each PLAYERS
+            If player\active = False Then
+                player\clientId     = "bot:" + player\playerId
+                player\name         = player\botName
+                player\zombie       = True
+                player\active       = True
+                player\loggedIn     = True
+                player\death        = False
+                player\health       = 100
+                player\kills        = 0
+                player\deaths       = 0
+                player\weapon       = Rand(WPN_PISTOL, WPN_BAZOOKA)
+                SpawnObject(player\obj)
+                player\x            = ObjectX(player\obj)
+                player\y            = ObjectY(player\obj)
+                player\angle        = ObjectAngle(player\obj)
+                player\spawnTime    = Timer()
+                //player\fightRotate  = Rnd(1.5, 3.5)
+                //player\shootingAngle= Rnd(5, 10)
+                
+                For plr.PLAYERS = Each PLAYERS
+                    // Lähetetään viesti kaikille muille paitsi boteille ja itselle
+                    If plr\active = True And plr\zombie = False And plr\playerId <> player\playerId Then
+                        nmsg.NET_MESSAGES   = New(NET_MESSAGES)
+                        nmsg\toPlayer       = plr\playerId
+                        nmsg\msgType        = NET_LOGIN
+                        nmsg\msgText        = player\name
+                        nmsg\playerId       = player\playerId
+                        nmsg\playerId2      = player\zombie
+                    EndIf
+                Next plr
+//COM1                gBotCount + 1
+//COM1                gPlayerCount + 1
+                Return True
+            EndIf
+        Next player
+    EndIf
+EndFunction
+
+Function CalcPlayers()
+    gPlayerCount = 0
+    gBotCount = 0
+    //gPrevPlayerNames = gPlayerNames
+    gPlayerNames = ""
+    For player.PLAYERS = Each PLAYERS
+        If player\active = True And player\loggedIn = True Then
+            gPlayerCount + 1
+            If Len(gPlayerNames) > 0 Then gPlayerNames = gPlayerNames + "|"
+            gPlayerNames = gPlayerNames + Replace(Replace(player\name, "|", ";"), ",", "&#44;")
+        EndIf
+        If player\active = True And player\zombie = True Then 
+            gBotCount + 1
+        EndIf
+    Next player
+EndFunction
+
+
+Function CheckPlayerName(_name$)
+    SetFont gFonts(FNT_MSG)
+//    nameClip = False
+    While TextWidth(_name) > 77
+//        nameClip = True
+        _name = Mid(_name, 1, Len(_name) - 1)
+    Wend
+//    If nameClip Then _name = _name + "..."
+    Return _name
+EndFunction
+
+
+Function UpdatePlayerProt(_playerId)
+    player.PLAYERS = ConvertToType(gPlayers(_playerId))
+    gPlayersProt(_playerId, PLR_HEALTH) = player\health * 3
+    gPlayersProt(_playerId, PLR_KILLS)  = player\kills  * 4
+    gPlayersProt(_playerId, PLR_DEATHS) = player\deaths  * 5
+EndFunction
+
+Function CheckPlayerProt(_playerId)
+    player.PLAYERS = ConvertToType(gPlayers(_playerId))
+    hack = False
+    If player\health * 3 <> gPlayersProt(_playerId, PLR_HEALTH) Then hack = True
+    If player\kills * 4 <> gPlayersProt(_playerId, PLR_KILLS) Then hack = True
+    If player\deaths * 5 <> gPlayersProt(_playerId, PLR_DEATHS) Then hack = True
+    If hack = True Then
+//        GSSUnregister()
+//        MakeError GetText("hack")
+    EndIf
+EndFunction

@@ -1,0 +1,96 @@
+## English glossary ##
+# #
+#     Sharp starts a comment line    #
+# Horizontal line | marks a new line #
+
+mainmenu = Main menu
+mi_join_game = Join game
+mih_join_game = 
+mi_host_game = Host game
+mih_host_game = 
+mi_settings = Settings
+mih_settings = Change program settings.|
+mi_help = Help
+mih_help = Show help.|
+mi_quit = Quit
+mih_quit = Quit program.|
+mi_profile = Nickname
+mih_profile = Input your nickname.|
+mi_findserver = Find servers
+mih_findserver = Find active servers and join game.|
+mi_address = Address
+mih_address = Server ip-address.|
+mi_port = Port
+mih_port = Server port.|
+mi_start_game = Start game
+mih_start_game = Connect to server and join game.|
+mi_servername = Description
+mih_servername = Description of the server.|
+mi_mapsetup = Map settings
+mih_mapsetup = 
+mi_map = Map
+mih_map = Select map.
+mi_maxplayers = Max players
+mi_botcount = Bot count
+mi_botweapons = Bot weapons
+mih_botweapons = Enter comma separated list of bot weapons. |1 = Pistols|2 = Sub Machine Gun|3 = Bazooka|4 = Shotgun|5 = Chainsaw|6 = Grenade launcher|
+mi_gamemode = Game mode
+mih_gamemode = Select the mode of your game.|
+mi_register = Register server
+mih_register = Register and start server.|
+mi_start_server = Start server
+mih_start_server = Start server without registering.|
+mi_session_length = Match time
+mih_session_length = Length of each round (minutes).|
+mi_back = Back
+mih_back = Return to previous menu.|
+mi_language = Language
+mih_language = Press Return to change active language.|
+mi_client_settings = Game settings
+mih_client_settings = Change game settings.|
+mi_server_settings = Server settings
+mih_server_settings = Change server settings.|
+mi_show_stats = Show statistics
+mih_show_stats = Show game statistics.|Change this value during gameplay by pressing G-button.|
+mi_fx_vol = SFX volume
+mih_fx_vol = SFX volume.|Change this value during gameplay by holding V-button and pressing arrow keys (up/down).|
+mi_music_vol = Music volume
+mih_music_vol = Background music volume.|Change this value during gameplay by holding M-button and pressing arrow keys (up/down).|
+mi_control = Character control
+mih_control = Select character control mode.|
+loading = Loading... Please wait.
+lang_name = English
+error = Error!
+press_to_continue = Press any key to continue
+no_name = Profile required!
+no_port = Port number required!
+no_servername = Server name required!
+registering = Performing server registration. Please wait...
+reg_failed = Server registration failed!
+unexpected_error = Unexpected error!
+version_conflict = Version conflict between server and client!|Server %1|Client %2|
+server_is_full = Too many players on server!
+logout_game = Too many players on server!
+player_login = %1 logged in
+player_logout = %1 logged out
+0 = No
+1 = Yes
+players = Players
+findserver_help = Enter=Join game,F5=Refresh list,Esc=Back
+server_find = Find servers. Please wait...
+player_removed = You have been removed from the server!
+loading_game = Loading game. Please wait...
+player_name = Name
+kills = Kills
+deaths = Deaths
+map_not_found = Map %1 not found!
+no_map = No map selected!
+map_not_match = Maps don't match between server and client!
+time_left = Time left: %1 min %2 sec
+control1 = W = Forward|S = Backward|A and D = Side step|
+control2 = W = Up|S = Down|A = Left|D = Right|
+incorrect_map = Incorrect map version
+author = Author:
+update_check = Finding updates...
+new_version = New version found!|Load new version from http://netmatch.vesq.org/download.php|Press Enter to open download page or press any other key to continue.|
+you_are_banned = Access denied!

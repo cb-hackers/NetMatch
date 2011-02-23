@@ -1,0 +1,1202 @@
+//********************************************************************************
+// Game.cb
+//
+// Peliin yleisesti liittyv‰t toiminnot
+//********************************************************************************
+
+//--------------------------------------------------------------------------------
+// Pelin tila
+//--------------------------------------------------------------------------------
+Const MENU      = 0
+Const CLIENT    = 1
+Const SERVER    = 2
+
+Global gGameMode
+gGameMode = MENU
+
+
+//--------------------------------------------------------------------------------
+// Pelimoodit
+//--------------------------------------------------------------------------------
+Const DM        = 1
+Const TDM       = 2
+Const MAX_MODES = 2
+
+If gPlayMode < 1 Or gPlayMode > MAX_MODES Then gPlayMode = DM
+
+Dim aGameModeNames$(MAX_MODES)
+aGameModeNames(DM)  = "DM,Deathmatch"
+aGameModeNames(TDM) = "TDM,Team Deathmatch"
+
+Global gSessionStarted, gTimeLeft, gSessionTime, gSessionComplete, gLoopMapLoaded
+gSessionStarted = 0
+gTimeLeft = 0
+gSessionTime = 0
+gSessionComplete = False
+gLoopMapLoaded = False
+
+Global gNameTitle$, gKillsTitle$, gDeathsTitle$, gTimeTitle$
+
+Global gDirection#, gDistance#
+
+//================================================================================
+// Pelitilanteen p‰ivitys
+//================================================================================
+Function GameUpdate()
+    UpdateFrameTimer() // P‰ivitet‰‰n vakionopeusajastin
+
+    If gGameMode = CLIENT Then
+        // Tyhjennet‰‰n ranking-tilasto
+        For i = 1 To MAX_PLAYERS
+            gRanking(i, 1) = 0
+            gRanking(i, 2) = -1337
+        Next i
+    EndIf
+    
+    mapChanged = False
+    
+    If gGameMode = SERVER Then
+        // Jos peliss‰ on vain botteja niin kello ei k‰y
+        If gPlayerCount <= gBotCount And gPeriodLength > 0 Then
+            For player.PLAYERS = Each PLAYERS
+                player\kills  = 0
+                player\deaths = 0
+                UpdatePlayerProt(player\playerId)
+            Next player
+            gSessionStarted = Timer()
+            gLoopMapLoaded = False
+        EndIf
+        // Tarkistetaan onko er‰ p‰‰ttynyt
+        gSessionComplete = False
+        If gPeriodLength > 0 Then
+            timeLeft = gSessionStarted + gPeriodLength * 60000 - Timer()
+            //If gSessionStarted + gPeriodLength * 60000 < Timer() Then
+            If timeLeft <= 0 Then
+                // Poistetaan kaikki ammukset
+                For bullet.BULLETS = Each BULLETS
+                    DeleteObject bullet\obj
+                    Delete bullet
+                Next bullet
+
+                If gLoopMapLoaded = False And timeLeft < -5000 And gServerMapLoopNum > 0 Then
+                    gLoopMapLoaded = True
+                    gServerMapLoop + 1
+                    If gServerMapLoop > gServerMapLoopNum Then gServerMapLoop = 1
+                    ClearCollisions
+                    LoadGameMap(gMapNames(gGameMap, 1), gServerMapLoop)
+                    If gDisableBots Then
+                        gMapMaxBots = 0
+                        gMapBotDelete = 0
+                    EndIf
+                    ShowObject gMap, ON
+                    mapChanged = True
+                    ClearCollisions
+                    For player.PLAYERS = Each PLAYERS
+                        DeleteObject player\obj
+                        player\obj = MakeObject()
+
+                        ShowObject player\obj, ON
+                        ObjectRange player\obj, OBJECT_RANGE
+                        SetupCollision player\obj, gMap, 2, 4, 2
+                        ObjectRange player\obj, OBJECT_RANGE
+                    Next player
+                    For item.ITEMS = Each ITEMS
+                        SetItem(0, item\itemId)
+                    Next item
+                EndIf
+                gSessionComplete = True
+                For player.PLAYERS = Each PLAYERS
+                    player\health = -10
+                    player\timeToDeath = Timer()
+                    UpdatePlayerProt(player\playerId)
+                Next player
+            EndIf
+            // Er‰ on p‰‰ttynyt 10 sekuntia sitten
+            If timeLeft < -10000 Then
+                gSessionStarted = Timer()
+                gSessionComplete = False
+                gLoopMapLoaded = False
+                For player.PLAYERS = Each PLAYERS
+                    player\timeToDeath = Timer() - DEATH_DELAY * 2
+                    player\kills = 0
+                    player\deaths = 0
+                    UpdatePlayerProt(player\playerId)
+                    If gServerMapLoopNum > 0 And player\active = True And player\mapName <> GetCurrentMapName() And player\zombie = False Then
+                        player\loggedIn = False
+                        player\active = False
+                        
+                        For plr.PLAYERS = Each PLAYERS
+                            If plr\zombie = False And plr\active = True Then
+                                nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                                nmsg\toPlayer = plr\playerId
+                                nmsg\msgType  = NET_LOGOUT
+                                nmsg\playerId = player\playerId
+                            EndIf
+                        Next plr
+                    EndIf
+                Next player
+            EndIf
+        EndIf
+    EndIf
+    
+    lPlayerCount = 0
+    lBotCount = 0
+    lPlayerNames$ = ""
+    For player.PLAYERS = Each PLAYERS
+    
+        ratio# = Float(player\kills) * 100.0
+        If player\deaths > 0 Then
+            ratio = Int(Float(player\kills) / Float(player\deaths) * 100.0)
+        EndIf
+        player\killRatio = ratio / 100.0
+    
+        If player\active = False Then
+            If gGameMode = CLIENT Then
+                StopGameSound(player\idleSound)
+            EndIf
+        EndIf
+        If player\active = True Then
+            lPlayerCount + 1
+            If player\zombie = True Then lBotCount + 1
+            If Len(lPlayerNames) > 0 Then lPlayerNames = lPlayerNames + "|" 
+            lPlayerNames = lPlayerNames + Replace(Replace(player\name, "|", ";"), ",", "&#44;")
+        
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // PƒIVITYS CLIENTISSƒ >>>
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            If gGameMode = CLIENT Then
+
+                // Soitellaan tyhj‰k‰ynti‰‰ni‰
+                playIdle = False
+                If player\weapon = WPN_CHAINSAW And player\health > 0 Then
+                    If player\playerId = gCurrentPlayerId Then 
+                        If aWeapon(WPN_CHAINSAW, WPNF_AMMO) > 0 Then
+                            playIdle = True
+                        EndIf
+                    Else
+                        playIdle = True
+                    EndIf
+                    If player\hasAmmos = False Then playIdle = False
+                    If player\passCount > 1 Then playIdle = False
+                EndIf
+                
+                If playIdle = True Then
+                    If player\idleTimer + 2000 < Timer() Then
+                        player\idleTimer = Timer()
+                        player\idleSound = PlayGameSound(SND_CHAINSAW, ObjectX(player\obj), ObjectY(player\obj))
+                    EndIf
+                Else
+                    StopGameSound(player\idleSound)
+                EndIf
+
+                // J‰rjestet‰‰n ranking
+                For i = 1 To MAX_PLAYERS
+                    If player\killRatio > gRanking(i, 2) Then
+                        If i < MAX_PLAYERS Then
+                            For j = MAX_PLAYERS To i + 1 Step -1
+                                gRanking(j, 1) = gRanking(j - 1, 1)
+                                gRanking(j, 2) = gRanking(j - 1, 2)
+                            Next j
+                        EndIf
+                        gRanking(i, 1) = player\playerId
+                        gRanking(i, 2) = player\killRatio
+                        Exit
+                    EndIf
+                Next i
+                
+                // Jos t‰m‰ ei ole oma pelaaja
+                If player\playerId <> gCurrentPlayerId Then
+                    // Siirret‰‰n pehme‰sti kohti palvelimelta saatuja koordinaatteja.
+                    nx# = CurveValue(player\x, ObjectX(player\obj), 4)
+                    ny# = CurveValue(player\y, ObjectY(player\obj), 4)
+                    PositionObject player\obj, nx, ny
+                    RotateObject player\obj, player\angle
+                Else
+                    // Oma pelaaja
+                    UpdateRadar(player\obj)
+                    
+                    // Varmistetaan ett‰ pelaaja pysyy kartalla
+                    If InMap(ObjectX(player\obj), ObjectY(player\obj)) = True Then
+                        // Jos pelaaja on kartalla niin talletetaan valid-position
+                        player\lastValidX = ObjectX(player\obj)
+                        player\lastValidY = ObjectY(player\obj)
+                    Else
+                        // Pelaaja ei jostain syyst‰ ole kartalla.
+                        // Palautetaan viimeiseen paikkaa jossa oli.
+                        PositionObject player\obj, player\lastValidX, player\lastValidY
+                    EndIf
+                EndIf
+//COM1                If gPlayerCount <> gLastPlayerCount Then
+//COM1                    SetWindow "NetMatch " + gGSSVersion + " Client - " + gPlayerCount + " players online"
+//COM1                EndIf
+
+                // Maalataan pelaajat tarvittessa uusilla kuvilla jotka vastaavat k‰ytett‰v‰‰ asetta
+                // Mik‰ ase pelaajalla on nyt
+                currentWeapon = ObjectInteger(player\obj)
+                // Onko se eri kuin valittu ase
+                If currentWeapon <> player\weapon Then
+                    ObjectInteger player\obj, player\weapon
+                    weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER))
+                    If player\team = 2 Then weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER2))
+                    PaintObject player\obj, weaponObj
+                    ObjectRange player\obj, OBJECT_RANGE
+                    fireObj = gObjects(aWeapon(player\weapon, WPNF_FIRE))
+                    PaintObject player\fireObj, fireObj
+                    ShowObject player\fireObj, OFF
+                    PaintObject player\fireObj2, fireObj
+                    ShowObject player\fireObj2, OFF
+                EndIf
+                ShowObject player\fireObj, OFF
+                ShowObject player\fireObj2, OFF
+                If player\showFire = True then
+                    If InScreen(ObjectX(player\obj), ObjectY(player\obj), 50) = True Then WeaponFire(player\playerId)
+                EndIf
+            EndIf
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // PƒIVITYS CLIENTISSƒ <<<
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+        
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // PƒIVITYS SERVERISSƒ >>>
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            If gGameMode = SERVER Then
+                CheckPlayerProt(player\playerId)
+
+                
+                If player\zombie = True Then player\hasAmmos = True
+                
+                // Onko pelaaja kuollut
+                If player\health <= 0 Then 
+                    // Jos kuolemasta on kulunut tarpeeksi aikaa niin her‰tet‰‰n
+                    If player\timeToDeath + DEATH_DELAY < Timer() Then
+                        SpawnObject(player\obj)
+                        player\x = ObjectX(player\obj)
+                        player\y = ObjectY(player\obj)
+                        player\angle = ObjectAngle(player\obj)
+                        player\health = 100
+                        player\lastValidX = player\x
+                        player\lastValidY = player\y
+                        player\spawnTime  = Timer()
+                        // Jos t‰m‰ on botti niin arvotaan ase
+                        If player\zombie = True Then
+                            player\weapon = GetBotWeapon()
+                            //player\fightRotate  = Rnd(1.5, 3.5)
+                            //player\shootingAngle= Rnd(5, 10)
+                        EndIf
+                    EndIf
+                EndIf
+
+                // Varmistetaan ett‰ pelaaja pysyy kartalla
+                If InMap(ObjectX(player\obj), ObjectY(player\obj)) = True And CountCollisions(player\obj) = 0 Then
+                    // Jos pelaaja on kartalla niin talletetaan valid-position
+                    player\lastValidX = ObjectX(player\obj)
+                    player\lastValidY = ObjectY(player\obj)
+                    player\outOfMap = 0
+                Else
+                    // Pelaaja ei jostain syyst‰ ole kartalla.
+                    // Palautetaan viimeiseen paikkaa jossa oli.
+                    PositionObject player\obj, player\lastValidX, player\lastValidY
+                    player\outOfMap = player\outOfMap + 1
+                    // Jos ei ole ollut kartalla pitk‰‰n aikaan niin spawnataan uudelleen
+                    If player\outOfMap > 10 Then
+                        //SpawnObject(player\obj)
+                        player\outOfMap = 0
+                    EndIf
+                EndIf
+                
+                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // BOTTIEN TEKOƒLY >>>
+                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // Onko t‰m‰ pelaaja botti.
+                // Botit p‰ivitet‰‰n vain jos peliss‰ on myˆs oikeita pelaajia
+                If gSessionComplete = False And player\zombie = True And player\health > 0 And gPlayerCount > gBotCount Then
+                    // Mik‰li botti ei ole liian l‰hell‰ sein‰‰ ja on aika arpoa sille uusi suunta
+                    // niin tehd‰‰n se nyt.
+                    If player\tooClose = False And player\nextAction < Timer() Then
+                        // Arvotaan seuraavan k‰‰nnˆksen ajankohta eli koska t‰h‰n iffiin
+                        // tullaan seuraavaksi
+                        player\nextAction = Rand(MIN_NEXT_ACTION, MAX_NEXT_ACTION) + Timer()
+                        // Arvotaan botille uusi k‰‰ntyminen
+                        player\rotation = Rnd(-RND_ROTATION, RND_ROTATION)
+                        
+                        If player\sideStep <> 0 Then
+                            player\sideStep = Rnd(-1, 1)
+                        EndIf
+                    EndIf
+
+                    // K‰‰nnet‰‰n bottia
+                    TurnObject player\obj, DgrPerSec(player\rotation)
+
+                    // Seuraavaksi alkaa varsinainen teko‰ly jossa tutkitaan ymp‰ristˆ‰.
+                    // T‰m‰ tehd‰‰ kuitenkin vain mik‰li botti ei ole liian l‰hell‰ jotakin estett‰.
+                    If player\tooClose = False Then
+        
+                        // Nyt lasketaan et‰isyys edess‰ olevaan esteeseen.
+                        // Et‰isyys lasketaan objektin keskelt‰ sek‰ reunoista eli objektin koko leveydelt‰.
+       
+                        minDist# = 0
+                        dist# = 0
+        
+                        // Ensin "silm‰" keskelle objektia
+                        CloneObjectPosition gPicker, player\obj
+                        CloneObjectOrientation gPicker, player\obj
+    
+                        // Poimitaan l‰hin este
+                        ObjectPick gPicker
+                        minDist = Distance(ObjectX(gPicker), ObjectY(gPicker), PickedX(), PickedY())
+
+                        // Siiret‰‰n "silm‰" toiseen reunaan ja poimitaan l‰hin este
+                        MoveObject gPicker, 0, -15
+                        ObjectPick gPicker
+                        minDist = Min(minDist, Distance(ObjectX(gPicker), ObjectY(gPicker), PickedX(), PickedY()))
+    
+                        // Ja viel‰ toiseen reunaan ja poimitaan l‰hin este
+                        MoveObject gPicker, 0, 30
+                        ObjectPick gPicker
+                        minDist = Min(minDist, Distance(ObjectX(gPicker), ObjectY(gPicker), PickedX(), PickedY()))
+            
+                        // Jos este on niin l‰hell‰ ett‰ siihen pit‰‰ reagoida niin tutkitaan se nyt.
+                        If minDist < WAKEUP_DIST Then
+                            // Ensin "silm‰" samaan suuntaan kuin zombie
+                            CloneObjectOrientation gPicker, player\obj
+                            // K‰‰nnet‰‰n katsetta toiselle sivulle ja lasketaan et‰isyys l‰himp‰‰n esteeseen
+                            TurnObject gPicker, -EXPLORE_ANGLE
+                            ObjectPick gPicker
+                            d1# = Distance(ObjectX(gPicker), ObjectY(gPicker), PickedX(), PickedY())
+        
+                            // Ja sitten viel‰ toiseen suuntaan.
+                            TurnObject gPicker, EXPLORE_ANGLE * 2
+                            ObjectPick gPicker
+                            d2# = Distance(ObjectX(gPicker), ObjectY(gPicker), PickedX(), PickedY())
+        
+                            // Tutkitaan kumpaan suuntaan on pidempi matka seuraavaan esteeseen
+                            // ja suunnataan sinne.
+                            // K‰‰ntymisen jyrkkyyteen vaikuttaa viel‰ et‰isyys esteeseen eli
+                            // mit‰ l‰hemp‰n‰ ollaan niin sit‰ jyrkemmin k‰‰nnyt‰‰n
+                            d# = 0
+                            If d1 > d2 Then
+                                d = -(WAKEUP_DIST - minDist)
+                            Else
+                                d = (WAKEUP_DIST - minDist)
+                            EndIf
+                            // Asetetaan k‰‰ntymisnopeus
+                            player\rotation = d / DODGE_ROTATION
+                            // Asetetaan tavoitekulma
+                            player\nextAngle = WrapAngle(ObjectAngle(player\obj) + d)
+                            // Asetetaan viel‰ tooClose-muuttuja p‰‰lle eli teko‰ly‰ ei p‰ivitet‰ 
+                            // ennen kuin objekti on k‰‰ntynyt tavoitekulmaan.
+                            // Samalla myˆs objektin nopeutta v‰hennet‰‰n.
+                            player\tooClose = True
+                            
+                            player\lastAngle = ObjectAngle(player\obj) - player\nextAngle
+                            If player\lastAngle > 180 Then player\lastAngle = player\lastAngle - 360
+                            If player\lastAngle < -180 Then player\lastAngle = player\lastAngle + 360
+                        EndIf
+                    Else
+                        // Botti on liian l‰hell‰ jotain estett‰.
+                        // tooClose-muuttuja nollataan vain jos teko‰lyn asettama tavoitekulma on saavutettu.
+                        //na# = Abs(ObjectAngle(player\obj) - player\nextAngle)
+                        //If na > 180 Then na = 360 - na
+                        //If na < 10 Then
+                        a# = ObjectAngle(player\obj) - player\nextAngle
+                        If a > 180 Then a = a - 360
+                        If a < -180 Then a = a + 360
+                        If (a < 0 And player\lastAngle >= 0) Or (a > 0 And player\lastAngle <= 0) Then
+                            // Objektin kulma on nyt riitt‰v‰n l‰hell‰ tavoitekulmaa joten
+                            // k‰‰nt‰minen voidaan lopettaa.
+                            player\rotation = 0
+                            player\tooClose = False
+                        EndIf
+                        player\lastAngle = a
+                    EndIf
+                    
+                    // Taistelu‰ly
+                    moveDirection = 1
+                    pickedPlayer = 0
+                    pickedDist = 999
+                    pickedDirection = 0
+                    // K‰yd‰‰n l‰pi kaikki muut pelaajat
+                    For plr.PLAYERS = Each PLAYERS
+                        enemy = True
+                        If gPlayMode <> DM And player\team = plr\team Then enemy = False
+                        If enemy = True And plr\playerId <> player\playerId And plr\health > 0 And plr\loggedIn = True And Distance2(player\obj, plr\obj) < 500 Then
+                            If PickPlayer(player\obj, plr\obj) = True Then
+                                // Jos pelaaja on n‰kyviss‰ ja l‰himp‰n‰ niin talletetaan tiedot muuttujiin
+                                If gDistance < pickedDist And Abs(gDirection) < 70 Then
+                                    pickedDist = gDistance
+                                    pickedPlayer = player\playerId
+                                    pickedDirection = gDirection
+                                EndIf
+                            EndIf
+                        EndIf
+                    Next plr
+                    // Onko joku uhri n‰kˆs‰ll‰
+                    If pickedPlayer > 0 Then
+                        If player\sideStep = 0 Then
+                            player\sideStep = Rnd(-1, 1)
+                        EndIf
+                        // Nollataan liikkumisteko‰ly
+                        player\tooClose = False
+                        // Asetetaan k‰‰ntyminen kohti uhria
+                        player\rotation = pickedDirection * player\fightRotate
+                        // Aseesta riippuen et‰isyys kohteeseen ei saa olla liian pieni
+                        If pickedDist < aWeapon(player\weapon, WPNF_SAFERANGE) Then moveDirection = -1
+                        // Ammutaan vain jos kulma on riitt‰v‰n pieni
+                        sAngle# = player\shootingAngle
+                        If player\weapon = WPN_CHAINSAW Then sAngle = sAngle * 2
+                        protected = (player\spawnTime + SPAWN_PROTECT > Timer())
+                        If protected = False And Abs(pickedDirection) < sAngle And pickedDist > aWeapon(player\weapon, WPNF_SAFERANGE) / 2 And pickedDist <= aWeapon(player\weapon, WPNF_SHOOTRANGE) Then
+                            If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() Then
+                                CreateServerBullet(player\playerId)
+                                player\lastShoot = Timer()
+                            EndIf
+                        EndIf
+                    Else
+                        player\sideStep = 0
+                        // Yht‰‰n sopivaa uhria ei ole n‰kˆkent‰ss‰.
+                        // Tutkitaan onko joku ampunut bottia n‰kˆkent‰n ulkopuolelta
+                        If player\shootedBy > 0 Then
+                            // Haetaan ampujan tiedot
+                            plr.PLAYERS = ConvertToType(gPlayers(player\shootedBy))
+                            // Lasketaan suunta
+                            PickPlayer(player\obj, plr\obj, True)
+                            // Asetetaan k‰‰ntyminen
+                            player\rotation = gDirection * 3.0
+                            player\tooClose = True
+                            
+                            player\nextAngle = gDirection
+                            player\lastAngle = ObjectAngle(player\obj) - player\nextAngle
+                            If player\lastAngle > 180 Then player\lastAngle = player\lastAngle - 360
+                            If player\lastAngle < -180 Then player\lastAngle = player\lastAngle + 360
+                        EndIf
+                    EndIf
+        
+                    // Nyt siirret‰‰n objektia.
+                    speed# = MAX_SPEED
+                    // Jos ollaan liian l‰hell‰ jotain estett‰ niin pienemm‰ll‰ vauhdilla
+                    If player\tooClose = True Then speed = MIN_SPEED
+                    MoveObject player\obj, PxPerSec(speed) * moveDirection * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT ), PxPerSec(SIDESTEP_SPEED * 0.8) * player\sideStep * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                
+                EndIf
+                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // BOTTIEN TEKOƒLY <<<
+                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                
+                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // PELAAJAN POISTUMINEN >>>
+                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                If (player\active = True Or player\loggedIn = True) And player\zombie = False Then
+                    If player\lastActivity + MAX_INACTIVE_TIME < Timer() Then
+                        player\active = False
+                        player\loggedIn = False
+                        WriteLog(player\name + " logged out")
+                        // Lis‰t‰‰n viestijonoon ilmoitus poistuneesta pelaajasta.
+                        For plr.PLAYERS = Each PLAYERS
+                            // L‰hetet‰‰n viesti kaikille muille paitsi boteille
+                            If plr\zombie = False And plr\active = True Then
+                                nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                                nmsg\toPlayer = plr\playerId
+                                nmsg\msgType  = NET_LOGOUT
+                                nmsg\playerId = player\playerId
+                            EndIf
+                        Next plr
+//COM1                        gPlayerCount - 1
+                    EndIf
+                EndIf
+                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // PELAAJAN POISTUMINEN <<<
+                //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                
+//                forceUpdate = False
+//                If gPlayerCount <> gLastPlayerCount Then forceUpdate = True
+//                If gPlayerNames <> gPrevPlayerNames Then forceUpdate = True
+//                GSSUpdate(gPlayerCount + "," + gMapNames(gGameMap, 1) + "," + gMapMaxPlayers + "," + gPlayerNames, forceUpdate)
+//                gPrevPlayerNames = gPlayerNames
+//                If gPlayerCount <> gLastPlayerCount Then
+//                    SetWindow "NetMatch " + gGSSVersion + " Server - " + gPlayerCount + " players online"
+//                EndIf
+            UpdatePlayerProt(player\playerId)
+            EndIf
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // PƒIVITYS SERVERISSƒ <<<
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        
+        EndIf
+        player\shootedBy = 0
+    Next player
+    
+    gBotCount = lBotCount
+    lCounters$ = (lPlayerCount - lBotCount) + "/" + lPlayerCount
+    forceUpdate = False
+    If lPlayerCount <> gPlayerCount Or lPlayerNames <> gPlayerNames Then
+        forceUpdate = True
+//        If gGameMode = SERVER Then
+//            SetWindow "NetMatch " + gGSSVersion + " Server - " + gPlayerCount + " players online"
+//        EndIf
+        If gGameMode = CLIENT Then
+            gPlayerCount = lPlayerCount
+            gPlayerNames = lPlayerNames
+            //lCounters = Str(lPlayerCount)
+//            GSSUpdate(gPlayerCount + "," + gMapNames(gGameMap, 1) + "," + gMapMaxPlayers + "," + gPlayerNames, forceUpdate)
+            SetWindow "NetMatch " + gGSSVersion + " Client - " + lCounters + " players online"
+        EndIf
+    EndIf
+    If mapChanged Then forceUpdate = True
+    If gGameMode = SERVER Then
+        mapName$ = gMapNames(gGameMap, 1)
+        If CountWords(mapName, ":") > 1 Then
+            mapName = GetWord2(mapName, gServerMapLoop + 1, ":")
+        EndIf
+        If GSSUpdate(lPlayerCount + "," + lBotCount + "," + mapName + "," + gMapMaxPlayers + "," + lPlayerNames, forceUpdate) = True Then
+            gPlayerCount = lPlayerCount
+            gPlayerNames = lPlayerNames
+            regText$ = "(not registered)"
+            If gGSSRegistered Then regText = "(registered)"
+            If forceUpdate Then
+                SetWindow "NetMatch " + gGSSVersion + " Server - " + lCounters + " players online " + regText
+            EndIf
+            CheckBots()
+        EndIf
+    EndIf
+//    gPlayerCount = lPlayerCount
+//    gBotCount = lBotCount
+
+//    forceUpdate = False
+//    If gPlayerCount <> gLastPlayerCount Then forceUpdate = True
+//    If gPlayerNames <> gPrevPlayerNames Then forceUpdate = True
+//    GSSUpdate(gPlayerCount + "," + gMapNames(gGameMap, 1) + "," + gMapMaxPlayers + "," + gPlayerNames, forceUpdate)
+//    gPrevPlayerNames = gPlayerNames
+//    gLastPlayerCount = gPlayerCount
+//    If gPlayerCount <> gLastPlayerCount Then
+//        SetWindow "NetMatch " + gGSSVersion + " Server - " + gPlayerCount + " players online"
+//    EndIf
+    
+    
+    MoveBullets()
+    If gGameMode = CLIENT Then AnimatePlayers()
+EndFunction
+
+
+
+//================================================================================
+// Tarkistetaan sis‰‰n-/uloskirjautuminen
+//================================================================================
+Function Login(_in, _playerId = 0)
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // CLIENT >>>
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    If gGameMode = CLIENT Then
+
+        If _in = True Then
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // CLIENT LOGIN >>>
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            _Net_InitMemBlock()
+            _Net_PutByte(NET_LOGIN)     // Login-viesti
+            _Net_PutString(gGSSVersion) // Ohjelmaversio
+            _Net_PutString(gProfile)    // Nimi
+            ClientSend()                // L‰hetys
+            nRet = ClientRead()         // Luetaan vastaus
+            If nRet <> 0 Then
+                // Paluuviestin lukeminen ep‰onnistui
+                errmsg$ = "(" + nRet + ") " + GetNetErrorString(nRet)
+                Error(errmsg)
+                Return False
+            EndIf
+            // Muistipalan alussa on aina luetun datan pituus joka luetaan t‰ss‰ pois
+            _Net_GetInt()
+            
+            netmsg = _Net_GetByte() // Luetaan viestiyyppi
+            If netmsg = NET_BANNED Then
+                // IP on bannattu
+                Error(GetText("you_are_banned"))
+                Return False
+            EndIf
+            If netmsg <> NET_LOGIN Then 
+                // Takaisin tuli joku v‰‰r‰ viesti
+                Error(GetText("unexpected_error"))
+                Return False
+            EndIf
+            netmsg = _Net_GetByte() // Luetaan kirjautumispyynnˆn vastaus
+            If netmsg = NET_LOGINFAILED Then
+                // Kirjautuminen ep‰onnistui
+                // Luetaan syy
+                reason = _Net_GetByte()
+                If reason = NET_WRONGVERSION Then
+                    // V‰‰r‰ ohjelmaversio
+                    // Luetaan palvelimen ohjelmaversio
+                    sver$ = _Net_GetString()
+                    errmsg$ = GetText("version_conflict")
+                    errmsg = Replace(errmsg, "%1", sver)
+                    errmsg = Replace(errmsg, "%2", gGSSVersion)
+                    Error(errmsg)
+                    Return False
+                EndIf
+                If reason = NET_TOOMANYPLAYERS Then
+                    // Liikaa pelaajia
+                    errmsg$ = GetText("server_is_full")
+                    Error(errmsg)
+                    Return False
+                EndIf
+                // Tuntematon syykoodi
+                Error(GetText("unexpected_error"))
+                Return False
+            EndIf
+            If netmsg = NET_LOGINOK Then
+                // Kirjautuminen onnistui
+                gCurrentPlayerId = _Net_GetByte()
+                gServerMap = _Net_GetString()
+                gMapCRC = _Net_GetInt()
+                Return True
+            EndIf
+    
+            // Kirjautumispyyntˆˆn tuli tuntematon vastaus
+            Error(GetText("unexpected_error"))
+            Return False
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // CLIENT LOGIN <<<
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        Else
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // CLIENT LOGOUT >>>
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // N‰ytet‰‰n poistumisilmoitus
+            MsgBox(GetText("logout_game"))
+            // Odotellaan max 2 sekuntia ett‰ linja on "vapaa"
+            t = Timer()
+            While ClientState() = 1
+                If t + 2000 < Timer() Then Exit
+            Wend
+            If ClientState() = 2 Then ClientRead()
+            // L‰hetet‰‰n poistumisviesti
+            _Net_InitMemBlock()
+            _Net_PutByte(NET_LOGOUT)
+            _Net_PutByte(gCurrentPlayerId)
+            ClientSend()
+            // Odotellaan viel‰ puoli sekuntia
+            Wait 500 - (Timer() - t)
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // CLIENT LOGOUT <<<
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        EndIf
+        
+    EndIf
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // CLIENT <<<
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+    
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // SERVER >>>
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    If gGameMode = SERVER Then
+        If _in = True Then
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // SERVER LOGIN >>>
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // Luetaan ohjelmaversio
+            version$ = _Net_GetString()
+            // T‰sm‰‰kˆ clientin ja serverin versiot
+            If version <> gGSSVersion Then
+                // Versiot ei t‰sm‰‰, l‰hetet‰‰n virheilmoitus
+                _Net_InitMemBlock()
+                _Net_PutByte(NET_LOGIN)
+                _Net_PutByte(NET_LOGINFAILED)
+                _Net_PutByte(NET_WRONGVERSION)
+                _Net_PutString(gGSSVersion)
+                ServerSend()
+                Return False
+            EndIf
+            // Versio on ok. Luetaan pelaajan nimi
+            profile$ = _Net_GetString()
+
+            // Etsit‰‰n vapaa "pelipaikka"
+            For player.PLAYERS = Each PLAYERS
+                If gPlayerCount < gMapMaxPlayers And player\active = False Then
+                    // Tyhj‰ paikka lˆytyi
+                    player\clientId = NET_ClientId
+                    player\active   = True
+                    player\loggedIn = False
+                    player\name     = profile
+                    SpawnObject(player\obj)
+                    player\x        = ObjectX(player\obj)
+                    player\y        = ObjectY(player\obj)
+                    player\angle    = ObjectAngle(player\obj)
+                    player\zombie   = False
+                    player\health   = 100
+                    player\kills    = 0
+                    player\deaths   = 0
+                    player\weapon   = WPN_PISTOL
+                    player\lastActivity = Timer()
+                    player\spawnTime    = Timer()
+                    If gPlayMode > DM Then
+                        player\team = Rand(1,2)
+                    EndIf
+                    UpdatePlayerProt(player\playerId)
+                    
+                    // L‰hetet‰‰n vastaus clientille
+                    _Net_InitMemBlock()
+                    _Net_PutByte(NET_LOGIN)
+                    _Net_PutByte(NET_LOGINOK)
+                    _Net_PutByte(player\playerId)
+                    _Net_PutString(GetWord2(gMapNames(gGameMap, 1), gServerMapLoop + 1, ":"))
+                    _Net_PutInt(gMapCRC)
+                    ServerSend()
+                    WriteLog(player\name + " logged in (" + GetWord2(NET_ClientId, 1, ":") + ")")
+                    // Lis‰t‰‰n viestijonoon ilmoitus uudesta pelaajasta.
+                    For plr.PLAYERS = Each PLAYERS
+                        // L‰hetet‰‰n viesti kaikille muille paitsi boteille ja itselle
+                        If plr\active = True And plr\zombie = False And plr\playerId <> player\playerId Then
+                            nmsg.NET_MESSAGES   = New(NET_MESSAGES)
+                            nmsg\toPlayer       = plr\playerId
+                            nmsg\msgType        = NET_LOGIN
+                            nmsg\msgText        = profile
+                            nmsg\playerId       = player\playerId
+                            nmsg\playerId2      = player\zombie
+                        EndIf
+                    Next plr
+                    //gPlayerCount + 1
+                    Return True
+                EndIf
+            Next player
+            
+            // Vapaita paikkoja ei ollut.
+            _Net_InitMemBlock()
+            _Net_PutByte(NET_LOGIN)
+            _Net_PutByte(NET_LOGINFAILED)
+            _Net_PutByte(NET_TOOMANYPLAYERS)
+            ServerSend()
+            Return False
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // SERVER LOGIN <<<
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        Else
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // SERVER LOGOUT >>>
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            player.PLAYERS  = ConvertToType(gPlayers(_playerId))
+            player\active   = False
+//COM1            If player\loggedIn = True Then gPlayerCount - 1
+            player\loggedIn = False
+            WriteLog(player\name + " logged out")
+            // L‰hetet‰‰n viesti kaikille muille paitsi boteille
+            For plr.PLAYERS = Each PLAYERS
+                If plr\active = True And plr\zombie = False Then
+                    nmsg.NET_MESSAGES   = New(NET_MESSAGES)
+                    nmsg\toPlayer       = plr\playerId
+                    nmsg\msgType        = NET_LOGOUT
+                    nmsg\playerId       = _playerId
+                EndIf
+            Next plr
+//            CheckBots()
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // SERVER LOGOUT <<<
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        EndIf
+    EndIf
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // SERVER <<<
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    Return True
+EndFunction
+
+
+//================================================================================
+// N‰ytet‰n pelin tilastot ja pelaajien tiedot
+//================================================================================
+Function DrawGameStatus()
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // CLIENT >>>
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    If gGameMode = CLIENT Then
+        Color 255, 255, 0
+        
+        secLeft = 0
+        If gSessionTime > 0 Then
+            SetFont gFonts(FNT_MSGBOLD)
+            secLeft = gTimeLeft Mod 60
+            minLeft = (gTimeLeft - secLeft) / 60
+            If minLeft > 0 Or secLeft > 0 Then
+                timeTxt$ = Replace(Replace(gTimeTitle, "%1", Str(minLeft)), "%2", Str(secLeft))
+                CenterText 400, 10, timeTxt
+                If minLeft = 0 And secLeft < 10 Then
+                    Color 255, 0, 0
+                    CenterText 400-1, 10-1, timeTxt
+                EndIf
+            EndIf
+            If secLeft < 0 Then
+                SetFont gFonts(FNT_STATBOLD)
+                Color 255, 255, 0
+                timeTxt$ = Str(10 + secLeft)
+                CenterText 400, 10, timeTxt
+            EndIf
+        EndIf
+
+        ty = 10
+        tx = 560
+        If gSessionComplete = True Then
+            ty = 50
+            tx = 200
+        EndIf
+
+        If gStatus = True Or gSessionComplete = True Then
+            // Tappotilastojen otsikot
+            SetFont gFonts(FNT_MSGBOLD)
+            If gSessionComplete = True Then SetFont gFonts(FNT_STATBOLD)
+            th = TextHeight("X")
+            Color 255, 255, 0
+            Text tx, ty, gNameTitle
+            Color 0, 255, 0
+            Text tx + 80 + (gSessionComplete * 100), ty, gKillsTitle
+            Color 255, 0, 0
+            Text tx + 130 + (gSessionComplete * 140), ty, gDeathsTitle
+            //Text tx + 200, ty, "%"
+            ty = ty + th * 1.5
+            For i = 1 To MAX_PLAYERS
+                If gRanking(i, 1) > 0 Then
+                    player.PLAYERS = ConvertToType(gPlayers(Int(gRanking(i, 1))))
+                    If gPlayMode <> TDM Then
+                        Color 255, 255, 0
+                    Else
+                        If player\team = 1 Then
+                            Color 0, 255, 0
+                        Else
+                            Color 255, 0, 0
+                        EndIf
+                    EndIf
+                    
+                    SetFont gFonts(FNT_MSG)
+                    If player\playerId = gCurrentPlayerId Then
+                        SetFont gFonts(FNT_MSGBOLD)
+                    EndIf
+                    If gSessionComplete = True Then 
+                        SetFont gFonts(FNT_STAT)
+                        If player\playerId = gCurrentPlayerId Then
+                            SetFont gFonts(FNT_STATBOLD)
+                        EndIf
+                    EndIf
+                    Text tx, ty, player\statName
+                    Color 0, 255, 0
+                    Text tx + 80 + (gSessionComplete * 100), ty, player\kills
+                    Color 255, 0, 0
+                    Text tx + 130 + (gSessionComplete * 140), ty, player\deaths
+                    Color 255, 255, 0
+                    Text tx + 200 + (gSessionComplete * 180), ty, player\killRatio
+                    ty + th
+                EndIf
+            Next i
+        EndIf
+        
+        For player.PLAYERS = Each PLAYERS
+        
+            If player\active = True Then
+//                If gStatus = True Then
+//                    // TAPPOTILASTOT
+//                    Color 255, 255, 0
+//                    SetFont gFonts(FNT_MSG)
+//                    If player\playerId = gCurrentPlayerId Then
+//                        //Color 0, 255, 0
+//                        SetFont gFonts(FNT_MSGBOLD)
+//                    EndIf
+//                    Text tx, ty, player\name
+//                    Color 0, 255, 0
+//                    Text tx + 80, ty, player\kills
+//                    Color 255, 0, 0
+//                    Text tx + 130, ty, player\deaths
+//                    //ratio# = Float(player\kills) * 100.0
+//                    //If player\deaths > 0 Then
+//                    //    ratio = Int(Float(player\kills) / Float(player\deaths) * 100.0)
+//                    //EndIf
+//                    Color 255, 255, 0
+//                    Text tx + 200, ty, player\killRatio
+//                    ty + 20
+//                EndIf
+                
+                // HEALTHBAR JA NIMET PELAAJILLE
+                hided = (player\visible - Timer() > SPAWN_BLINKER / 2)
+                If player\passCount = 0 And player\health > 0 And hided = False Then
+                    SetFont gFonts(FNT_SMALL)
+                    DrawToWorld ON, ON, ON
+                    x = ObjectX(player\obj)
+                    y = ObjectY(player\obj)
+                    twh = TextWidth(player\name) / 2
+                    If gPlayMode <> TDM Then
+                        Color 255, 255, 0
+                    Else
+                        If player\team = 1 Then
+                            Color 0, 255, 0
+                        Else
+                            Color 255, 0, 0
+                        EndIf
+                    EndIf
+                    Text x - twh, y + 29, player\name
+                    DrawImage gImages(IMG_HEALTHBAR), x - 21, -y + 20 + 10
+                    w = (100 - player\health) / 2.5
+                    x = x + 20 - w
+                    Color 16, 16, 16
+                    Box x, y - 21 - 10, w, 3, ON
+                    DrawToWorld OFF, OFF, OFF
+                EndIf
+            EndIf
+            
+        Next player
+
+        // FPS-mittarit
+        If gShowFPS = True Then
+            SetFont gFonts(FNT_MENUHELP)
+            Color 255, 255, 0
+            Text 730, 580, "FPS: " + FPS() + "/" + gNetFPS
+        EndIf
+        
+       
+        // N‰ytet‰‰n valittuna oleva ase
+        If gCurrentPlayerId > 0 Then
+            player.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerId))
+            If player\weapon > 0 Then
+                DrawImage gImages(aWeapon(player\weapon, WPNF_IMAGE)), 10, 10
+                // Ammustietoja ei n‰ytet‰ jos aseessa on loppumattomat ammukset
+                If aWeapon(player\weapon, WPNF_AMMO_MAX) > 0 Then
+                    SetFont gFonts(FNT_SETUP)
+                    Color 255, 255, 0
+                    Text 10, 50, aWeapon(player\weapon, WPNF_AMMO) + "/" + aWeapon(player\weapon, WPNF_AMMO_MAX)
+                EndIf
+            EndIf
+        EndIf
+        
+    EndIf
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // CLIENT <<<
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // SERVER >>>
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    If gGameMode = SERVER Then
+    EndIf
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // SERVER <<<
+    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+EndFunction
+
+
+//================================================================================
+// Pelaajien k‰velyanimaatio
+//================================================================================
+Function AnimatePlayers()
+    If gGameMode <> CLIENT Then Return True
+    For player.PLAYERS = Each PLAYERS
+        If player\active = True Then
+            obj         = player\obj
+            leftLegObj  = player\leftLegObj
+            rightLegObj = player\rightLegObj
+        
+            CloneObjectPosition leftLegObj, obj
+            CloneObjectOrientation leftLegObj, obj
+            CloneObjectPosition rightLegObj, obj
+            CloneObjectOrientation rightLegObj, obj
+            ox# = ObjectX(obj)
+            oy# = ObjectY(obj)
+            px# = player\prevPosX
+            py# = player\prevPosY
+            player\prevPosX = ox
+            player\prevPosY = oy
+            lp# = player\legPos
+            lp = WrapAngle(lp + Distance(ox, oy, px, py) * 3.0)
+            If player\playerId = gCurrentPlayerId Then
+                If (player\legPos <= 90 And lp > 90) Or (player\legPos <= 270 And lp > 270) Then
+                    PlayGameSound(SND_FOOTSTEP, CameraX(), CameraY() + 1500)
+                EndIf
+            EndIf
+            player\legPos = lp
+        
+            MoveObject leftLegObj, -Sin(lp) * 10 - 2, -7
+            MoveObject rightLegObj, Sin(lp) * 10 - 2, 7
+        EndIf
+    Next player
+EndFunction
+
+
+//================================================================================
+// Suuliekki
+//================================================================================
+Function WeaponFire(_playerId)
+    player.PLAYERS  = ConvertToType(gPlayers(_playerId))
+    player\showFire = False
+    If player\active = False Then Return False
+    If player\health <= 0 Then Return False
+    
+//    If aWeapon(player\weapon, WPNF_FIRE) = OBJ_NULL Then Return False
+    
+    CloneObjectPosition player\fireObj, player\obj
+    CloneObjectOrientation player\fireObj, player\obj
+    MoveObject player\fireObj, aWeapon(player\weapon, WPNF_FIREPOS), aWeapon(player\weapon, WPNF_BULLET_YAW)
+    If player\weapon = WPN_LAUNCHER Then
+        x = ObjectX(player\obj)
+        expl.EXPL_ANIMS = New(EXPL_ANIMS)
+        expl\x      = ObjectX(player\fireObj)
+        expl\y      = ObjectY(player\fireObj)
+        expl\frame  = 0
+        expl\tStamp = Timer()
+        expl\frames = 16
+        expl\img    = IMG_SMOKEANIM
+        expl\w      = 20
+        expl\h      = 20
+    EndIf
+        
+    If aWeapon(player\weapon, WPNF_FIRE) = OBJ_NULL Then Return False
+    ShowObject player\fireObj, ON
+    
+    If player\weapon = WPN_PISTOL Then 
+        CloneObjectPosition player\fireObj2, player\obj
+        CloneObjectOrientation player\fireObj2, player\obj
+        MoveObject player\fireObj2, aWeapon(player\weapon, WPNF_FIREPOS), -aWeapon(player\weapon, WPNF_BULLET_YAW)
+        ShowObject player\fireObj2, ON
+    EndIf
+EndFunction
+
+//================================================================================
+// Lis‰t‰‰n tutka ruudulle
+//================================================================================
+Function AddRadar(_obj, _angle#, _team)
+    If _obj = 0 Then Return False
+    gRadarId + 1
+    rObj = OBJ_RADAR
+    If _team = 2 Then rObj = OBJ_RADAR2
+    PaintObject aRadar(gRadarId), gObjects(rObj)
+    CloneObjectPosition aRadar(gRadarId), _obj
+    RotateObject aRadar(gRadarId), _angle
+    ShowObject aRadar(gRadarId), ON
+EndFunction
+
+
+//================================================================================
+// P‰ivitet‰‰n tutkien paikat
+//================================================================================
+Function UpdateRadar(_obj)
+    If _obj = 0 Then Return False
+    px = ObjectX(_obj)
+    py = ObjectY(_obj)
+    sLeft = px - 390
+    sRight = px + 390
+    sTop = py + 290
+    sBottom = py - 290
+    For i = 1 To gRadarId
+        lxe = px - Sin(ObjectAngle(aRadar(i)) - 90) * 500
+        lye = py + Cos(ObjectAngle(aRadar(i)) - 90) * 500
+        If LinesIntersect(px, py, lxe, lye, sLeft, sTop, sRight, sTop) Then PositionObject aRadar(i), IntersX, IntersY
+        If LinesIntersect(px, py, lxe, lye, sRight, sTop, sRight, sBottom) Then PositionObject aRadar(i), IntersX, IntersY
+        If LinesIntersect(px, py, lxe, lye, sRight, sBottom, sLeft, sBottom) Then PositionObject aRadar(i), IntersX, IntersY
+        If LinesIntersect(px, py, lxe, lye, sLeft, sBottom, sLeft, sTop) Then PositionObject aRadar(i), IntersX, IntersY
+    Next i
+EndFunction
+
+
+//================================================================================
+// Leikkaako linjat? Tarvitaan tutkien sijoitteluun ruudun reunoille.
+//================================================================================
+Global IntersX#, IntersY#
+Function LinesIntersect(Ax#, Ay#, Bx#, By#, Cx#, Cy#, Dx#, Dy#)
+    Rn# = (Ay#-Cy#)*(Dx#-Cx#) - (Ax#-Cx#)*(Dy#-Cy#)
+    Rd# = (Bx#-Ax#)*(Dy#-Cy#) - (By#-Ay#)*(Dx#-Cx#)
+    If Rd# = 0
+        Return False
+    Else
+        Sn# = (Ay#-Cy#)*(Bx#-Ax#) - (Ax#-Cx#)*(By#-Ay#)
+        Intersection_AB# = Rn# / Rd#
+        Intersection_CD# = Sn# / Rd#
+        If Intersection_AB# > 1 Or Intersection_CD# > 1 Or Intersection_AB# < 0 Or Intersection_CD# < 0 Then Return False
+        IntersX = Ax# + Intersection_AB#*(Bx#-Ax#)
+        IntersY = Ay# + Intersection_AB#*(By#-Ay#)
+        Return True
+    EndIf
+End Function 
+
+
+//================================================================================
+// Pelaaja poimii toisen pelaajan
+//================================================================================
+Function PickPlayer(_obj1, _obj2, _onlyDirection = 0)
+    // Lasketan kulma jossa toinen pelaaja on ensimm‰isest‰ n‰hden
+    a# = GetAngle2(_obj1, _obj2) - ObjectAngle(_obj1)
+    If a > 180 Then a = a - 360
+    If a < -180 Then a = a + 360
+    gDirection = a
+    If _onlyDirection = True Then
+        Return False
+    EndIf
+    // Pelaajien et‰isyys
+    d1# = Distance2(_obj1, _obj2)
+    // Suoritetaan poiminta pelaajasta toiseen. Vain kartta on merkitty poimittavaksi.
+    CloneObjectPosition gPicker, _obj1
+    PointObject gPicker, _obj2
+    ObjectPick gPicker
+    If PickedObject() <> 0 Then
+        // Lasketaan et‰isyys pelaajasta poimittuun pisteeseen
+        x# = PickedX()
+        y# = PickedY()
+        d2# = Distance(x, y, ObjectX(_obj1), ObjectY(_obj1))
+        // Jos et‰isyys on suurempi kuin pelaajien v‰linen et‰isys
+        // niin silloin sein‰‰ ei ole v‰liss‰.
+        If d1 < d2 Then
+            gDistance = d1
+            Return True
+        EndIf
+    EndIf
+    Return False
+EndFunction
+
+
+//================================================================================
+// Tutkitaan onko piste ruudulla n‰kyviss‰
+//================================================================================
+Function InScreen(_x, _y, _margin = 0)
+    sw = ScreenWidth() / 2 + _margin
+    dx = Abs(CameraX() - _x)
+    If dx > sw Then Return False
+    
+    sh = ScreenHeight() / 2 + _margin
+    dy = Abs(CameraY() - _y)
+    If dy > sh Then Return False
+    
+    Return True
+EndFunction
+
+
+Global gKeyEsc, gKeyReturn, gKeyb, gKeyC, gKeyF, gKeyG, gKeyTab
+Global gMouseHit1, gMouseHit2, gMouseHit3, gMouseRoll
+
+Function UpdateGame2(_updateGame = 1)
+    If _updateGame Then UpdateGame
+    If KeyHit(cbKeyEsc) Then gKeyEsc = True
+    If KeyHit(cbKeyReturn) Then gKeyReturn = True
+    If KeyHit(cbKeyB) Then gKeyB = True
+    If KeyHit(cbKeyC) Then gKeyC = True
+    If KeyHit(cbKeyF) Then gKeyF = True
+    If KeyHit(cbKeyG) Then gKeyG = True
+    If KeyHit(cbKeyTab) Then gKeyTab = True
+    If MouseHit(1) Then gMouseHit1 = True
+    If MouseHit(2) Then gMouseHit2 = True
+    If MouseHit(3) Then gMouseHit3 = True
+    mz = MouseMoveZ() 
+    If mz <> 0 Then gMouseRoll = mz
+EndFunction
+
+Function ClearKeys2()
+    gKeyEsc     = False
+    gKeyReturn  = False
+    gKeyB       = False
+    gKeyC       = False
+    gKeyF       = False
+    gKeyG       = False
+    gKeyTab     = False
+    gMouseHit1  = False
+    gMouseHit2  = False
+    gMouseHit3  = False
+    gMouseRoll  = 0
+EndFunction

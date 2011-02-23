@@ -1,0 +1,120 @@
+Const RESOURCE_DLL_FILE$  = "cbResource.dll"
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Muistipalojen käsittely.
+// Kirjaston sisäiseen käyttöön.
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+Global gResourceMemBlock, gResourceMemBlockOffset
+
+Function _Res_InitMemBlock(_size = 0)
+    If gResourceMemBlock Then DeleteMEMBlock gResourceMemBlock
+    gResourceMemBlock = MakeMEMBlock(_size + 4)
+    PokeInt gResourceMemBlock, 0, 0
+    gResourceMemBlockOffset = 4
+EndFunction
+
+Function _Res_DeleteMemBlock()
+    DeleteMEMBlock gResourceMemBlock
+    gResourceMemBlockOffset = 0
+    gResourceMemBlock = 0
+EndFunction
+
+Function _Res_CallDll(_method$)
+    lMemSize = MEMBlockSize(gResourceMemBlock)
+    PokeInt gResourceMemBlock, 0, lMemSize
+    CallDLL RESOURCE_DLL_FILE, _method, gResourceMemBlock
+    gResourceMemBlockOffset = 0
+EndFunction
+
+Function _Res_MemBlockResize(_length)
+    lMemSize = MEMBlockSize(gResourceMemBlock)
+    If gResourceMemBlockOffset + _length > lMemSize Then
+        ResizeMEMBlock gResourceMemBlock, gResourceMemBlockOffset + _length
+    EndIf
+EndFunction
+
+//Function _Res_PutInt(_value)
+//    _Res_MemBlockResize(4)
+//    PokeInt gResourceMemBlock, gResourceMemBlockOffset, _value
+//    gResourceMemBlockOffset + 4
+//EndFunction
+
+//Function _Res_GetInt()
+//    lRetVal = PeekInt(gResourceMemBlock, gResourceMemBlockOffset)
+//    gResourceMemBlockOffset + 4
+//    Return lRetVal
+//EndFunction
+
+//Function _Res_PutByte(_value)
+//    _Res_MemBlockResize(1)
+//    PokeByte gResourceMemBlock, gResourceMemBlockOffset, _value
+//    gResourceMemBlockOffset + 1
+//EndFunction
+
+//Function _Res_GetByte()
+//    lRetVal = PeekByte(gResourceMemBlock, gResourceMemBlockOffset)
+//    gResourceMemBlockOffset + 1
+//    Return lRetVal
+//EndFunction
+
+Function _Res_PutString(_value$)
+    lStrLen = Len(_value)
+    _Res_MemBlockResize(lStrLen + 4)
+    PokeInt gResourceMemBlock, gResourceMemBlockOffset, lStrLen
+    gResourceMemBlockOffset + 4
+    For i = 1 To lStrLen
+        PokeByte gResourceMemBlock, gResourceMemBlockOffset, Asc(Mid(_value, i, 1))
+        gResourceMemBlockOffset + 1
+    Next i
+EndFunction
+
+//Function _Res_GetString$()
+//    lStrLen = _Res_GetInt()
+//    lRetVal$ = ""
+//    For i = 1 To lStrLen
+//        c = _Res_GetByte()
+//        If c > 0 Then lRetVal = lRetVal + Chr(c)
+//    Next i
+//    Return lRetVal
+//EndFunction
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Muistipalojen käsittely.
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Function ExtractData(_archive$, _file$, _outFile$ = "")
+    lDataSize = 0
+    If Len(_outFile) = 0 Then
+        _Res_InitMemBlock()
+        _Res_PutString(_archive)
+        _Res_PutString(_file)
+        _Res_PutString(_outFile)
+        _Res_CallDll("_getDataSize")
+        //lDataSize = _Res_GetInt()
+        lDataSize = PeekInt(gResourceMemBlock, 0)
+        _Res_DeleteMemBlock()
+        If lDataSize = 0 Then Return 0
+    EndIf
+
+    memSize = Len(_archive) + Len(_file) + Len(_outFile) + 12
+    _Res_InitMemBlock(Max(memSize, lDataSize + 4))
+    _Res_PutString(_archive)
+    _Res_PutString(_file)
+    _Res_PutString(_outFile)
+    _Res_CallDll("_extract")
+    lRetVal = PeekInt(gResourceMemBlock, 0)
+    If lRetVal <> lDataSize Then
+        _Res_DeleteMemBlock()
+        Return 0
+    EndIf
+    If Len(_outFile) > 0 Then 
+        _Res_DeleteMemBlock()
+        Return 1
+    EndIf
+    lRetMem = MakeMEMBlock(lDataSize)
+    MemCopy gResourceMemBlock, 4, lRetMem, 0, lDataSize
+    _Res_DeleteMemBlock()
+    Return lRetMem
+EndFunction
+
+

@@ -1,0 +1,269 @@
+Const NET_DLL_FILE$  = "cbNetwork.dll"
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Muistipalojen käsittely.
+// Kirjaston sisäiseen käyttöön.
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+Global gNetMemBlock, gNetMemBlockOffset
+
+Function _Net_InitMemBlock(_size = 0)
+    If gNetMemBlock Then DeleteMEMBlock gNetMemBlock
+    gNetMemBlock = MakeMEMBlock(_size + 4)
+    PokeInt gNetMemBlock, 0, 0
+    gNetMemBlockOffset = 4
+EndFunction
+
+Function _Net_DeleteMemBlock()
+    DeleteMEMBlock gNetMemBlock
+    gNetMemBlockOffset = 0
+    gNetMemBlock = 0
+EndFunction
+
+Function _Net_CallDll(_method$)
+    lMemSize = MEMBlockSize(gNetMemBlock)
+    PokeInt gNetMemBlock, 0, lMemSize
+    CallDLL NET_DLL_FILE, _method, gNetMemBlock
+    gNetMemBlockOffset = 0
+EndFunction
+
+Function _Net_MemBlockResize(_length)
+    lMemSize = MEMBlockSize(gNetMemBlock)
+    If gNetMemBlockOffset + _length > lMemSize Then
+        ResizeMEMBlock gNetMemBlock, gNetMemBlockOffset + _length
+    EndIf
+EndFunction
+
+Function _Net_PutInt(_value)
+    _Net_MemBlockResize(4)
+    PokeInt gNetMemBlock, gNetMemBlockOffset, _value
+    gNetMemBlockOffset + 4
+EndFunction
+
+Function _Net_GetInt()
+    lRetVal = PeekInt(gNetMemBlock, gNetMemBlockOffset)
+    gNetMemBlockOffset + 4
+    Return lRetVal
+EndFunction
+
+Function _Net_PutShort(_value)
+    _Net_MemBlockResize(2)
+    PokeShort gNetMemBlock, gNetMemBlockOffset, _value
+    gNetMemBlockOffset + 2
+EndFunction
+
+Function _Net_GetShort()
+    lRetVal = PeekShort(gNetMemBlock, gNetMemBlockOffset)
+    If lRetVal > 32768 Then lRetVal = lRetVal - 65536
+    gNetMemBlockOffset + 2
+    Return lRetVal
+EndFunction
+
+Function _Net_GetUShort()
+    lRetVal = PeekShort(gNetMemBlock, gNetMemBlockOffset)
+    gNetMemBlockOffset + 2
+    Return lRetVal
+EndFunction
+
+Function _Net_PutFloat(_value#)
+    _Net_MemBlockResize(4)
+    PokeFloat gNetMemBlock, gNetMemBlockOffset, _value
+    gNetMemBlockOffset + 4
+EndFunction
+
+Function _Net_GetFloat#()
+    lRetVal# = PeekFloat(gNetMemBlock, gNetMemBlockOffset)
+    gNetMemBlockOffset + 4
+    Return lRetVal
+EndFunction
+
+Function _Net_PutByte(_value)
+    _Net_MemBlockResize(1)
+    PokeByte gNetMemBlock, gNetMemBlockOffset, _value
+    gNetMemBlockOffset + 1
+EndFunction
+
+Function _Net_GetByte()
+    lRetVal = PeekByte(gNetMemBlock, gNetMemBlockOffset)
+    gNetMemBlockOffset + 1
+    Return lRetVal
+EndFunction
+
+Function _Net_PutString(_value$)
+    lStrLen = Len(_value)
+    _Net_MemBlockResize(lStrLen + 4)
+    PokeInt gNetMemBlock, gNetMemBlockOffset, lStrLen
+    gNetMemBlockOffset + 4
+    For i = 1 To lStrLen
+        PokeByte gNetMemBlock, gNetMemBlockOffset, Asc(Mid(_value, i, 1))
+        gNetMemBlockOffset + 1
+    Next i
+EndFunction
+
+Function _Net_GetString$()
+    lStrLen = _Net_GetInt()
+    lRetVal$ = ""
+    For i = 1 To lStrLen
+        c = _Net_GetByte()
+        If c > 0 Then lRetVal = lRetVal + Chr(c)
+    Next i
+    Return lRetVal
+EndFunction
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Muistipalojen käsittely.
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//==============================================================================
+// API_DLL_Version
+//==============================================================================
+Global gNetDllVersion#
+gNetDllVersion = Net_DLL_Version()
+If gNetDllVersion = 0 Then
+    MakeError "File cbNetwork.dll not be found!"
+EndIf
+If gNetDllVersion <> 1.0 Then
+    MakeError "Incorrect library version (cbNetwork.dll)!"
+EndIf
+
+Function Net_DLL_Version#()
+    _Net_InitMemBlock(4)
+    _Net_PutFloat(0)
+    _Net_CallDll("_Version")
+    lRetVal# = _Net_GetFloat()
+    _Net_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// API_DLL_Version
+//------------------------------------------------------------------------------
+
+Global HTTP_ContentType$, HTTP_ContentLength
+Global Net_ClientId$
+
+Function InitServer(_port, _timeout = 5000)
+    _Net_InitMemBlock()
+    _Net_putInt(_port)
+    _Net_putInt(_timeout)
+    _Net_CallDll("_InitServer")
+    lRetVal = _Net_GetInt()
+    _Net_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+
+Function CloseServer()
+    _Net_InitMemBlock(4)
+    _Net_CallDll("_CloseServer")
+    lRetVal = _Net_GetInt()
+    _Net_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+
+Function InitClient(_host$, _port, _timeout = 5000)
+    _Net_InitMemBlock()
+    _Net_putString(_host)
+    _Net_putInt(_port)
+    _Net_PutInt(_timeout)
+    _Net_CallDll("_InitClient")
+    lRetVal = _Net_GetInt()
+    _Net_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+
+Function ClientSend()
+    _Net_CallDll("_ClientSend")
+    Return _Net_GetInt()
+EndFunction
+
+Function ClientSendBack()
+    _Net_CallDll("_ClientSendBack")
+    Return _Net_GetInt()
+EndFunction
+
+Function ClientState()
+    _Net_InitMemBlock(4)
+    _Net_CallDll("_ClientState")
+    Return _Net_GetInt()
+EndFunction
+
+Function ClientRead()
+    _Net_InitMemBlock(4096)
+    _Net_CallDll("_ClientRead")
+    Return _Net_GetInt()
+EndFunction
+
+Function GetNetErrorString$(_msg)
+    _Net_InitMemBlock(260)
+    _Net_putInt(_msg)
+    _Net_CallDll("_GetErrorString")
+    sRetVal$ = _Net_GetString()
+    _Net_DeleteMemBlock()
+    Return sRetVal
+EndFunction
+
+Function ServerSend()
+    _Net_CallDll("_ServerSend")
+    Return _Net_GetInt()
+EndFunction
+
+Function ServerRead()
+    _Net_InitMemBlock(4096)
+    _Net_CallDll("_ServerRead")
+    nRetVal = _Net_GetInt()
+    Net_ClientId = _Net_GetString() + ":" + _Net_GetInt()
+    return nRetVal
+EndFunction
+
+Function HTTPGet(_url$, _background = 0)
+    _Net_InitMemBlock()
+    _Net_PutString(_url)
+    _Net_PutByte(_background)
+    _Net_CallDll("_HTTPGet")
+    nRetVal = _Net_GetInt()
+    HTTP_ContentLength = _Net_GetInt()
+    HTTP_ContentType = _Net_GetString()
+    
+    _Net_DeleteMemBlock()
+    Return nRetVal
+EndFunction
+
+Function HTTPDownloadState()
+    _Net_InitMemBlock()
+    _Net_CallDll("_HTTPDownloadState")
+    nRetVal = _Net_GetInt()
+    _Net_DeleteMemBlock()
+    Return nRetVal
+EndFunction
+
+Function HTTPSaveContent(_file$)
+    _Net_InitMemBlock()
+    _Net_putString(_file)
+    _Net_CallDll("_HTTPSaveContent")
+    _Net_DeleteMemBlock()
+EndFunction
+
+Function HTTPLoadContent()
+    _Net_InitMemBlock(HTTP_ContentLength)
+    _Net_CallDll("_HTTPLoadContent")
+EndFunction
+
+Function HTTPLoadContentImage()
+    _Net_InitMemBlock(256)
+    _Net_putInt(0)
+    _Net_CallDll("_HTTPLoadContentImage")
+    nWidth = _Net_GetInt()
+    nHeight = _Net_GetInt()
+    _Net_DeleteMemBlock()
+    _Net_InitMemBlock((nWidth * nHeight) * 4)
+    _Net_putInt(1)
+    _Net_CallDll("_HTTPLoadContentImage")
+    iRetImage = MakeImage(nWidth, nHeight)
+    Lock Image(iRetImage)
+    For nY = 0 To nHeight - 1
+        For nX = 0 To nWidth - 1
+            PutPixel2 nX, nY, _Net_GetInt(), Image(iRetImage)
+        Next nX
+    Next nY
+    Unlock Image(iRetImage)
+    _Net_DeleteMemBlock()
+    Return iRetImage
+EndFunction
+

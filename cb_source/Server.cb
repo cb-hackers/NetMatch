@@ -1,0 +1,547 @@
+//********************************************************************************
+// Server.cb
+//
+// Palvelimen toiminnot
+//********************************************************************************
+
+
+//================================================================================
+// Luodaan palvelin.
+//================================================================================
+Function CreateServer(_register = 0)
+    // Palvelinta ei voi k‰ynnist‰‰ kokoruututilassa
+    If gFullScreen = True
+        Error(GetText("fs_server"))
+        Return False
+    EndIf
+    // Portti pit‰‰ olla m‰‰ritelty
+    If Int(gServerPort) <= 0 Then
+        Error(GetText("no_port"))
+        Return False
+    EndIf
+    // Jos rekisterˆid‰‰n niin nimi pit‰‰ olla annettu
+    //If _register = True Then
+        If Trim(gServerName) = "" Then
+            Error(GetText("no_servername"))
+            Return False
+        EndIf
+    //EndIf
+    If gGameMap = 0 Then
+        Error(GetText("no_map"))
+        Return False
+    EndIf
+    // K‰ynnistet‰‰n palvelin
+    nRet = InitServer(Int(gServerPort), 500)
+    If nRet <> 0 Then
+        msg$ = "(" + nRet + ") " + GetNetErrorString(nRet)
+        Error(msg)
+        Return False
+    EndIf
+    // Suoritetaan rekisterˆinti
+    If _register = True Then
+        t = Timer()
+        MsgBox(GetText("registering"), "", MSG_INFO_NOWAIT)
+        regOk = GSSRegister(Int(gServerPort), gServerName)
+        Wait 500 - (Timer() - t)
+        If regOk = False Then
+            CloseServer()
+            Error(GetText("reg_failed"))
+            Return False
+        EndIf
+    EndIf
+    gGameMode = SERVER
+    gServerMapLoop = 0
+    gServerMapLoopNum = Int(CountWords(gMapNames(gGameMap, 1), ":")) - 1
+    If gServerMapLoopNum > 0 Then gServerMapLoop = 1
+    LoadGameMap(gMapNames(gGameMap, 1), gServerMapLoop)
+    ShowObject gMap, ON
+
+    // Alustetaan pelaajat
+    For player.PLAYERS = Each PLAYERS
+        player\clientId = ""
+        player\active   = False
+        player\loggedIn = False
+        player\name = ""
+        player\obj = MakeObject()
+        ShowObject player\obj, ON
+        ObjectRange player\obj, OBJECT_RANGE
+        SetupCollision player\obj, gMap, 2, 4, 2
+        ObjectRange player\obj, OBJECT_RANGE
+        skill# = 21 - player\playerId
+        player\fightRotate   = 1.5 + (skill / 1.5)
+        player\shootingAngle = 4.0 + (player\playerId * 1.5)
+        player\fov           = 100 + (skill * 3.5)
+        player\hasAmmos = False
+        UpdatePlayerProt(player\playerId)
+    Next player
+
+    WriteLog("SERVER STARTED")
+    ServerLoop()
+    SetMap gMap, OFF, OFF
+    gGameMode = MENU
+    GSSUnregister()
+    CloseServer()
+    WriteLog("SERVER STOPPED")
+    
+    // Nollataan pelaajat
+    For player.PLAYERS = Each PLAYERS
+        player\clientId = ""
+        player\active   = False
+        player\loggedIn = False
+        player\name = ""
+        DeleteObject player\obj
+    Next player
+
+    // Poistetaan kaikki ammukset
+    For bullet.BULLETS = Each BULLETS
+        DeleteObject bullet\obj
+        Delete bullet
+    Next bullet
+
+    // Poistetaan kaikki l‰hett‰m‰ttˆm‰t viestit
+    For nmsg.NET_MESSAGES = Each NET_MESSAGES
+        Delete nmsg
+    Next nmsg
+    
+    // Poistetaan poimittavat tavarat
+    For item.ITEMS = Each ITEMS
+        DeleteObject item\obj
+        Delete item
+    Next item
+    SetWindow "NetMatch " + gGSSVersion
+EndFunction
+
+Global gBannedIP$
+gBannedIP = ""
+
+//================================================================================
+// Palvelimen p‰‰silmukka
+//================================================================================
+Function ServerLoop()
+
+    If gPlayMode > DM Then
+        gMapMaxPlayers  = gMapTeamPlayers * 2
+        gMapMaxBots     = gMapTeamPlayers * 2 - 2
+        gMapBotDelete   = gMapTeamPlayers * 2 - 2
+    EndIf
+    If gDisableBots Then
+        gMapMaxPlayers = MAX_PLAYERS
+        gMapMaxBots = 0
+        gMapBotDelete = 0
+    EndIf
+    
+    gPlayerCount        = 0
+    gCurrentPlayerId    = 0
+    gLastPlayerCount    = 0
+    
+    ReadBanList()
+
+    ClsColor 0, 0, 255
+    ClearKeys
+    ShowObject gMap, ON
+    DrawGame
+    Cls
+    DrawScreen
+    // LUODAAN BOTIT
+    team = 0
+    For i = 1 To gMapMaxBots
+        player.PLAYERS      = ConvertToType(gPlayers(i))
+        player\clientId     = "bot:" + i
+        player\name         = player\botName
+        player\zombie       = True
+        player\active       = True
+        player\loggedIn     = True
+        player\death        = False
+        player\health       = 100
+        player\kills        = 0
+        player\deaths       = 0
+        player\weapon       = GetBotWeapon()
+        SpawnObject(player\obj)
+        player\x            = ObjectX(player\obj)
+        player\y            = ObjectY(player\obj)
+        player\angle        = ObjectAngle(player\obj)
+        player\team         = team + 1
+        If gPlayMode > DM Then
+            team = Not team
+        EndIf
+        UpdatePlayerProt(i)
+    Next i
+//    gBotCount = gMapMaxBots
+//COM1    gPlayerCount = gMapMaxBots
+//COM1    CalcPlayers()
+    
+    // LUODAAN POIMITAVAT TAVARAT
+    iid = 1
+    For i = 1 To gMapHealth
+        SetItem(OBJ_ITEM_HEALTH, iid)
+        iid + 1
+    Next i
+    For i = 1 To gMapAmmo
+        SetItem(OBJ_ITEM_AMMO, iid)
+        iid + 1
+    Next i
+    For i = 1 To gMapRocket
+        SetItem(OBJ_ITEM_ROCKET, iid)
+        iid + 1
+    Next i
+    For i = 1 To gMapFuel
+        SetItem(OBJ_ITEM_FUEL, iid)
+        iid + 1
+    Next i
+    For i = 1 To gMapShotgun
+        SetItem(OBJ_ITEM_SHOTGUN, iid)
+        iid + 1
+    Next i
+    For i = 1 To gMapLauncher
+        SetItem(OBJ_ITEM_LAUNCHER, iid)
+        iid + 1
+    Next i
+    
+    Repeat
+        GameUpdate()            // Pelitilanteen p‰ivitys
+//COM1        gLastPlayerCount = gPlayerCount
+        ReadDataFromClient()    // Luetaan clientin l‰hett‰m‰‰ dataa
+        UpdateGame
+        If KeyHit(cbKeyF5) Then ReadBanList()
+        If KeyHit(cbKeyF8) Then
+            For player.PLAYERS = Each PLAYERS
+                player\team = Rand(1,2)
+            Next player
+        EndIf
+        If Abs(GetTimeSync()) > 3 Then
+//            MakeError GetText("speedhack")
+        EndIf
+        //CheckPlayerProt()
+    Until KeyHit(cbKeyEsc)
+    
+    ShowObject gMap, OFF
+    ClearKeys
+EndFunction
+
+
+Function ReadBanList()
+    gBannedIP = ","
+    If FileExists("ipban.txt") Then
+        f = OpenToRead("ipban.txt")
+        While Not EOF(f)
+            txt$ = Trim(GetWord2(ReadLine(f), 1, "#"))
+            gBannedIP = gBannedIP + txt + ","
+        Wend
+        CloseFile f
+    EndIf
+EndFunction
+
+//================================================================================
+// Luetaan clientin l‰hett‰m‰‰ dataa
+//================================================================================
+Function ReadDataFromClient()
+    // Luetaan dataa
+    nRet = ServerRead()
+
+    // Tuli joku virhe
+    If nRet <> 0 Then Return False
+    
+    clientIP$ = GetWord2(NET_ClientId, 1, ":")
+    If InStr(gBannedIP, "," + clientIp + ",") > 0 Then
+        _Net_InitMemBlock()
+        _Net_PutByte(NET_BANNED)
+        _Net_PutByte(NET_END)
+        ServerSend()
+        WriteLog("Block request blocked (" + clientIP + ")")
+        Return False
+    EndIf
+    
+    // Muistipalan alussa on aina luetun datan pituus joka luetaan t‰ss‰ pois
+    _Net_GetInt()
+
+    // Mit‰ dataa on tulossa
+    netmsg = _Net_GetByte()
+
+    // Joku liittyy peliin
+    If netmsg = NET_LOGIN Then
+        Login(True)
+        Return True
+    EndIf
+
+    // Pelaajan id
+    gCurrentPlayerId = _Net_GetByte()
+    If gCurrentPlayerId < 1 Or gCurrentPlayerId > MAX_PLAYERS Then
+        // Pelaajatunnus on v‰‰r‰
+        WriteLog("Possible hack attempt from " + GetWord2(NET_ClientId, 1, ":") + " Invalid playerId (" + gCurrentPlayerId + ")")
+        Return False
+    EndIf
+    
+    // Tarkistetaan ett‰ pelaaja on kirjautunut oikein.
+    player.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerid))
+    If player\clientId <> NET_ClientId Or player\active = False Then
+        _Net_InitMemBlock()
+        _Net_PutByte(NET_NOLOGIN)
+        ServerSend()
+//        WriteLog("Possible hack attempt from " + GetWord2(NET_ClientId, 1, ":") + " Not logged in (" + gCurrentPlayerId + ")")
+        Return False
+    EndIf
+
+    // Pelaaja poistuu pelist‰
+    If netmsg = NET_LOGOUT Then
+        Login(False, gCurrentPlayerId)
+        Return True
+    EndIf
+    
+    // P‰ivitet‰‰n pelaajan olemassaolo
+    player\lastActivity = Timer()
+    sendNames = False
+    txtMessage$ = ""
+    
+    // Luetaan saapuneita viestej‰
+    While True
+        If netmsg = NET_PLAYER Then
+        
+            // PELAAJAN DATAA
+            x       = _Net_GetShort()   // x-positio
+            y       = _Net_GetShort()   // y-positio
+            angle   = _Net_GetShort()   // kulma
+            weapon  = _Net_GetByte()    // Valittuna oleva ase
+            hasAmmo = _Net_GetByte()    // Onko valitussa aseessa ammuksia
+            shoot   = _Net_GetByte()    // Ampuuko
+            picked  = _Net_GetByte()    // Onko poimittu jotain
+            // Arvot p‰ivitet‰n vain jos pelaaja on hengiss‰
+            If player\death = False Then
+                player\x        = x
+                player\y        = y
+                player\angle    = angle
+                player\weapon   = weapon
+                player\hasAmmos = hasAmmo
+            
+                PositionObject player\obj, player\x, player\y
+                RotateObject player\obj, player\angle
+                If shoot = 1 Then CreateServerBullet(gCurrentPlayerId)
+                // Poimittiinko jotain
+                If picked > 0 Then
+                    iid = SetItem(0, picked)
+                    If iid <> 0 Then
+                        item.ITEMS = ConvertToType(iid)
+                        // Poimittiinko healthpack
+                        If item\itemType = OBJ_ITEM_HEALTH Then
+                            player\health = Min(100, player\health + 50)
+                            UpdatePlayerProt(player\playerId)
+                        EndIf
+                    EndIf
+                EndIf
+            EndIf
+            If player\health > 0 Then player\death = False
+            If player\loggedIn = False Then
+//COM1                gPlayerCount + 1
+                player\loggedIn = True
+//COM1                CheckBots()
+            EndIf
+            
+        ElseIf netmsg = NET_PLAYERNAME Then
+        
+            // Nimilista pyydety
+            sendNames = True
+        
+        ElseIf netmsg = NET_TEXTMESSAGE Then
+        
+            // Pelaaja l‰hetti tekstiviestin
+            txtMessage$ = Trim(_Net_GetString())
+        
+        ElseIf netmsg = NET_MAPCHANGE Then
+        
+            // Pelaaja l‰hetti tekstiviestin
+            player\mapName = Trim(_Net_GetString())
+        
+        Else
+            // Viestit loppui tai tuli tuntematon viesti
+            Exit
+        EndIf
+        // Seuraava viesti
+        netmsg = _Net_GetByte()
+    Wend
+    
+    // Jos er‰ on p‰‰ttynyt niin l‰hetet‰‰n kaikkien pelaajien kaikki tiedot
+    If gSessionComplete = True Then sendnames = True
+    
+    // L‰hetet‰‰n clientille dataa
+    _Net_InitMemBlock()
+    
+    // L‰hetet‰‰n kaikkien pelaajien tiedot
+    For plr.PLAYERS = Each PLAYERS
+        // Onko pyydetty nimet
+        If sendNames = True Then
+            If plr\active = True Then
+                _Net_PutByte(NET_PLAYERNAME)    // Nimet
+                _Net_PutByte(plr\playerId)      // Pelaajan tunnus
+                _Net_PutString(plr\name)        // Nimi
+                _Net_PutByte(plr\zombie)        // Onko botti
+            EndIf
+        EndIf
+        
+        // Onko l‰hetetty tekstiviesti
+        If Len(txtMessage) > 0 Then
+            // L‰hetet‰‰n kaikille muille paitsi boteille
+            toTeam = player\team
+            If plr\active = True And plr\zombie = False Then
+                If plr\team = toTeam Or gPlayMode = DM Or Mid(txtMessage, 1, 1) = "*" Then
+                    nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                    nmsg\toPlayer   = plr\playerId      // Kenelle l‰hetet‰‰n
+                    nmsg\msgType    = NET_TEXTMESSAGE   // Mik‰ viesti
+                    nmsg\playerId   = gCurrentPlayerId  // Kuka l‰hetti
+                    nmsg\msgText    = txtMessage        // Viesti
+                EndIf
+            EndIf
+        EndIf
+        
+        // L‰hetet‰‰n niiden pelaajien tiedot jotka ovat hengiss‰ ja n‰kyviss‰
+        If plr\active = True Then
+            visible = True
+            x1 = ObjectX(player\obj)
+            y1 = ObjectY(player\obj)
+            x2 = ObjectX(plr\obj)
+            y2 = ObjectY(plr\obj)
+            If Abs(x1 - x2) > 450 Then visible = False
+            If Abs(y1 - y2) > 350 Then visible = False
+            // Onko n‰kyviss‰ tai voidaanko muuten l‰hett‰‰
+            If sendNames = True Or visible = True Or plr\health <= 0 Then
+                // N‰kyy
+                _Net_PutByte(NET_PLAYER)            // Pelaajan tietoja
+                _Net_PutByte(plr\playerId)          // Pelaajan tunnus
+                _Net_PutShort(ObjectX(plr\obj))     // Sijainti
+                _Net_PutShort(ObjectY(plr\obj))     // Sijainti
+                _Net_PutShort(ObjectAngle(plr\obj)) // Kulma
+                _Net_PutByte(plr\weapon)            // Ase
+                _Net_PutByte(plr\hasAmmos)          // Onko ammuksia
+                _Net_PutByte(plr\health)            // Terveys
+                _Net_PutShort(plr\kills)            // Tapot
+                _Net_PutShort(plr\deaths)           // Kuolemat
+                _Net_PutByte(plr\team)              // Joukkue
+                protected = (plr\spawnTime + SPAWN_PROTECT > Timer())
+                _Net_PutByte(protected)             // Haavoittumaton
+            Else
+                // Ei n‰y. L‰hetet‰‰n tutkatieto.
+                _Net_PutByte(NET_RADAR)
+                ang# = GetAngle2(player\obj, plr\obj)
+                ra = Int(ang / 360.0 * 255.0)
+                _Net_PutByte(ra)
+                _Net_PutByte(plr\team)
+            EndIf
+        EndIf
+    Next plr
+    
+    If gServerMapLoopNum > 0 Then
+        mapName$ = GetWord2(gMapNames(gGameMap, 1), gServerMapLoop + 1, ":")
+        timeLeft = gSessionStarted + gPeriodLength * 60000 - Timer()
+        If gSessionComplete = True And timeLeft < -5 And player\mapName <> mapName Then
+            _Net_PutByte(NET_MAPCHANGE)
+            _Net_PutString(mapName)
+            _Net_PutInt(gMapCRC)
+        EndIf
+    EndIf
+    
+    // L‰hetet‰‰n kaikki pelaajalle osoitetut viesit
+    For nmsg.NET_MESSAGES = Each NET_MESSAGES
+        If nmsg\toPlayer = gCurrentPlayerId Then
+            If nmsg\msgType = NET_LOGIN Then
+                // Joku on liittynyt peliin
+                _Net_PutByte(nmsg\msgType)
+                _Net_PutByte(nmsg\playerId)
+                _Net_PutString(nmsg\msgText)
+                _Net_PutByte(nmsg\playerId2)
+            EndIf
+            If nmsg\msgType = NET_LOGOUT Then
+                // Joku on poistunut pelist‰
+                _Net_PutByte(nmsg\msgType)
+                _Net_PutByte(nmsg\playerId)
+            EndIf
+            If nmsg\msgType = NET_NEWBULLET Then
+                // Uusi ammus on ammuttu
+                If nmsg\weapon = WPN_CHAINSAW Then
+                    _Net_PutByte(nmsg\msgType)
+                    _Net_PutInt(nmsg\bulletId)      // Ammuksen tunnus
+                    _Net_PutByte(nmsg\playerId)     // Kuka ampui
+                    _Net_PutByte(nmsg\weapon)       // Mill‰ aseella
+                    _Net_PutByte(nmsg\sndPlay)      // Soitetaanko ‰‰ni
+                    // Ammuksen sijainti
+                    _Net_PutShort(nmsg\x)
+                    _Net_PutShort(nmsg\y)
+                    _Net_PutShort(0)
+                Else
+                    // Etsit‰‰n ammus
+                    bid = FindBullet(nmsg\bulletId)
+                    If bid <> 0 Then
+                        bullet.BULLETS = ConvertToType(bid)
+                        _Net_PutByte(nmsg\msgType)
+                        _Net_PutInt(nmsg\bulletId)      // Ammuksen tunnus
+                        _Net_PutByte(nmsg\playerId)     // Kuka ampui
+                        _Net_PutByte(nmsg\weapon)       // Mill‰ aseella
+                        _Net_PutByte(nmsg\sndPlay)      // Soitetaanko ‰‰ni
+                        // Ammuksen sijainti
+                        _Net_PutShort(ObjectX(bullet\obj))
+                        _Net_PutShort(ObjectY(bullet\obj))
+                        _Net_PutShort(ObjectAngle(bullet\obj))
+                    EndIf
+                EndIf
+            EndIf
+            If nmsg\msgType = NET_TEXTMESSAGE Then
+                // Tekstiviesti
+                _Net_PutByte(nmsg\msgType)
+                _Net_PutByte(nmsg\playerId)
+                _Net_PutString(nmsg\msgText)
+            EndIf
+            If nmsg\msgType = NET_BULLETHIT Then
+                // Osumaviesti
+                _Net_PutByte(nmsg\msgType)      // Vistin tunnus
+                _Net_PutInt(nmsg\bulletId)      // Ammuksen tunnus
+                _Net_PutByte(nmsg\playerId)     // Keneen osui
+                _Net_PutShort(nmsg\x)           // Miss‰ osui
+                _Net_PutShort(nmsg\y)           // Miss‰ osui
+                _Net_PutByte(nmsg\weapon)       // Mist‰ aseesta ammus on
+            EndIf
+            If nmsg\msgType = NET_ITEM Then
+                // Tavaraviesti
+                _Net_PutByte(nmsg\msgType)      // Vistin tunnus
+                _Net_PutByte(nmsg\itemId)       // Tavaran tunnus
+                _Net_PutByte(nmsg\itemType)     // Tavaran tyyppi
+                _Net_PutShort(nmsg\x)           // Miss‰ osui
+                _Net_PutShort(nmsg\y)           // Miss‰ osui
+            EndIf
+            If nmsg\msgType = NET_KILLMESSAGE Then
+                // Tappoviesti
+                _Net_PutByte(nmsg\msgType)      // Vistin tunnus
+                _Net_PutByte(nmsg\playerId)     // Tappaja
+                _Net_PutByte(nmsg\playerId2)    // Tapettu
+                _Net_PutByte(nmsg\weapon)       // Ase
+                plr.PLAYERS = ConvertToType(gPlayers(nmsg\playerId))
+                _Net_PutShort(plr\kills)        // Tappajan tapot
+                _Net_PutShort(plr\deaths)       // Tappajan kuolemat
+                plr.PLAYERS = ConvertToType(gPlayers(nmsg\playerId2))
+                _Net_PutShort(plr\kills)        // Uhrin tapot
+                _Net_PutShort(plr\deaths)       // Uhrin kuolemat
+            EndIf
+            Delete nmsg
+        EndIf
+    Next nmsg
+    
+    // Jos on pyydetty nimilista niin palautetaan myˆs kaikkien tavaroiden tiedot
+    If sendNames = True Then
+        For item.ITEMS = Each ITEMS
+            _Net_PutByte(NET_ITEM)              // Vistin tunnus
+            _Net_PutByte(item\itemId)           // Tavaran tunnus
+            _Net_PutByte(item\itemType)         // Tavaran tyyppi
+            _Net_PutShort(ObjectX(item\obj))    // Miss‰
+            _Net_PutShort(ObjectY(item\obj))    // Miss‰
+        Next item
+    EndIf
+    
+    // Pelisession aikatiedot
+    _Net_PutByte(NET_SESSIONTIME)                   // Viestin tunnus
+    periodLength = gPeriodLength * 60
+    _Net_PutInt(periodLength)                       // Er‰n pituus
+    gameTime = (Timer() - gSessionStarted) / 1000
+    //gameTime = Min(gameTime, periodLength)
+    _Net_PutInt(gameTime)                           // Kuinka kauan on pelattu
+    _Net_PutByte(gSessionComplete)
+    
+    _Net_PutByte(NET_END)
+    ServerSend()
+EndFunction
+

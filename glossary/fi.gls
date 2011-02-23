@@ -1,0 +1,96 @@
+## Suomenkielinen sanasto ##
+# #
+#     Risuaita aloittaa kommentin     #
+# Pystyviiva | merkitsee rivinvaihtoa #
+
+mainmenu = Päävalinta
+mi_join_game = Liity peliin
+mih_join_game = 
+mi_host_game = Luo palvelin
+mih_host_game = 
+mi_settings = Asetukset
+mih_settings = Muuta ohjelman asetuksia.|
+mi_help = Ohje
+mih_help = Näytä ohje.|
+mi_quit = Lopeta
+mih_quit = Sammuta ohjelma.|
+mi_profile = Nimi
+mih_profile = Syötä nimimerkki.|
+mi_findserver = Etsi palvelimia
+mih_findserver = Etsi käynnissä olevat palvelimet ja liity peliin.|
+mi_address = Osoite
+mih_address = Palvelimen IP-osoite
+mi_port = Portti
+mih_port = Palvelimen porttinumero
+mi_start_game = Käynnistä peli
+mih_start_game = Muodosta yhteys palvelimeen ja liity peliin.|
+mi_servername = Kuvaus
+mih_servername = Palvelimen vapaavalintainen nimi.|
+mi_mapsetup = Kartta-asetukset
+mih_mapsetup = 
+mi_map = Kartta
+mih_map = Valitse kartta
+mi_maxplayers = Suurin pelaajamäärä
+mi_botcount = Bottien määrä
+mi_botweapons = Bottien aseet
+mih_botweapons = Määrittele bottien käyttämät aseet kirjoittamalla aseiden numerot pilkulla eroteltuna.|1 = Pistoolit|2 = Konepistooli|3 = Sinko|4 = Haulikko|5 = Moottorisaha|6 = Kranaatinlaukaisin|
+mi_gamemode = Pelimoodi
+mih_gamemode = Valitse pelimoodi.|
+mi_register = Rekisteröi palvelin
+mih_register = Rekisteröi ja käynnistä palvelin.|
+mi_start_server = Käynnistä palvelin
+mih_start_server = Käynnistä palvelin ilman rekisteröintiä.|
+mi_session_length = Erän peliaika
+mih_session_length = Yhden erän pituus minuutteina
+mi_back = Takaisin
+mih_back = Palaa edelliseen valikkoon.|
+mi_language = Kieli
+mih_language = Valitse käytettävä kieli painamalla Enter.|
+mi_client_settings = Peliasetukset
+mih_client_settings = Muuta pelin asetuksia.|
+mi_server_settings = Palvelinasetukset
+mih_server_settings = Muuta palvelimen asetuksia.|
+mi_show_stats = Näytä tilastot
+mih_show_stats = Aseta tappo- ja kuolematilastojen esittäminen pelin aikana. |Pikanäppäin: G|
+mi_fx_vol = Äänenvoimakkuus
+mih_fx_vol = Tehosteäänien voimakkuus.|Pikanäppäin: V + Ylösnuoli - Alasnuoli|
+mi_music_vol = Musiikin voimakkuus
+mih_music_vol = Taustamusiikin voimakkuus.|Pikanäppäin: M + Ylösnuoli - Alasnuoli|
+mi_control = Pelaajan ohjaus
+mih_control = Valitse pelaajan ohjaustapa.|
+loading = Ladataan... Odota hetki.
+lang_name = Suomi
+error = Virhe!
+press_to_continue = Paina jotain näppäintä jatkaaksesi
+no_name = Nimimerkki on määriteltävä!
+no_port = Porttinumero on määriteltävä!
+no_servername = Palvelimen nimi on määriteltävä!
+registering = Rekisteröidään palvelinta. Odota hetki...
+reg_failed = Palvelimen rekisteröinti ei onnistunut!
+unexpected_error = Odottamaton virhe!
+version_conflict = Versioristiriita palvelimen ja asiakasohjelman välillä!|Palvelin %1|Asiakasohjelma %2|
+server_is_full = Palvelin on täynnä!
+logout_game = Poistutaan pelistä...
+player_login = %1 liittyi peliin
+player_logout = %1 poistui pelistä
+0 = Ei
+1 = Kyllä
+players = Pelaajia
+findserver_help = Enter=Liity peliin,F5=Päivitä lista,Esc=Paluu
+server_find = Etsitään palvelimia. Odota hetki...
+player_removed = Palvelin on poistanut sinut pelistä!
+loading_game = Ladataan peliä. Odota hetki...
+player_name = Nimi
+kills = Tapot
+deaths = Kuolemat
+map_not_found = Karttaa %1 ei löydy!
+no_map = Karttaa ei ole valittu!
+map_not_match = Palvelimen ja asiakasohjelman karttatiedostot eivät ole samanlaiset!
+time_left = Aikaa jäljellä: %1 min %2 sek
+control1 = W = Eteen|S = Taakse|A ja D = Sivuaskeleet|
+control2 = W = Ylös|S = Alas|A = Vasemmalle|D = Oikealle
+incorrect_map = Yhteensopimaton karttaversio
+author = Tekijä:
+update_check = Etsitään päivityksiä...
+new_version = Löydettiin uusi ohjelmaversio!|Lataa ohjelma osoitteesta http://netmatch.vesq.org/download.php|Avaa lataussivu painamalla Enter tai jatka painamalla jotain muuta näppäintä.|
+you_are_banned = Pääsy palvelimelle on evätty!

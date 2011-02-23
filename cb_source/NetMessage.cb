@@ -1,0 +1,50 @@
+//********************************************************************************
+// NetMessage.cb
+//
+// Viestinv‰litykseen liittyv‰t toiminnot
+//********************************************************************************
+
+//--------------------------------------------------------------------------------
+// Viestityypit
+//--------------------------------------------------------------------------------
+Const NET_LOGIN             = 1     // Kirjautuminen peliin
+Const NET_LOGOUT            = 2     // Poistuminen
+Const NET_LOGINFAILED       = 3     // Kirjautuminen ep‰onnistui
+Const NET_LOGINOK           = 4     // Kirjautuminen onnistui
+Const NET_WRONGVERSION      = 5     // V‰‰r‰ ohjelmaversio
+Const NET_TOOMANYPLAYERS    = 6     // Peliss‰ on liikaa pelaajia
+Const NET_NOLOGIN           = 7     // Pelaaja ei ole kirjautunut oikein
+Const NET_PLAYER            = 8     // Pelaajadataa
+Const NET_NEWBULLET         = 9     // Uusi ammus
+Const NET_PLAYERNAME        = 10    // Pelaajan nimi
+Const NET_TEXTMESSAGE       = 11    // Tekstiviesti
+Const NET_BULLETHIT         = 12    // Ammus osui johonkin pelaajaan
+Const NET_RADAR             = 13    // Tutka
+Const NET_ITEM              = 14    // Poimittava tavara
+Const NET_KILLMESSAGE       = 15    // Tappoviesti
+Const NET_SESSIONTIME       = 16    // Pelisession aikatiedot
+Const NET_BANNED            = 17    // Client on bannattu
+Const NET_MAPCHANGE         = 18    // Kartan vaihto
+Const NET_END               = 255   // Viestin loppu
+
+
+//--------------------------------------------------------------------------------
+// Clienteille l‰hetett‰v‰t viesit
+// Kokoelma on "yleismallinen" eli siin‰ on paljon kentti‰ erilaisiin tarkoituksiin.
+// Kaikkia ei siis tarvita jokaisessa viestiss‰.
+//--------------------------------------------------------------------------------
+Type NET_MESSAGES
+    Field toPlayer      As Integer  // Kenelle pelaajalle t‰m‰ l‰hetet‰‰n
+    Field msgType       As Integer  // Viestityyppi
+    Field msgText       As String   // Viestin teksti
+    Field playerId      As Integer  // Kuka viestin l‰hetti
+    Field bulletId      As Integer  // Ammuksen tunnus
+    Field itemId        As Integer  // Tavaran tunnus
+    Field itemType      As Integer  // Tavaran tyyppi
+    Field weapon        As Integer  // Ase
+    Field x             As Integer  // Sijaintitietoa
+    Field y             As Integer  // Sijaintitietoa
+    Field playerId2     As Integer  // Pelaajatunnus (kuka tapettiin)
+    Field sndPlay       As Integer  // Soitetaanko ‰‰ni
+EndType
+

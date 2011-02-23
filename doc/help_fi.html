@@ -1,0 +1,212 @@
+<html>
+<head>
+<title>NetMatch - The End</title>
+<style type="text/css">
+body
+{
+	font-family: Arial;
+	font-size: 12px
+}
+h2
+{
+	background-color: #c0c0c0;
+}
+h4
+{
+	margin-bottom: 5px;
+	text-decoration: underline;
+}
+ul ul
+{
+	font-size: 80%;
+}
+</style>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+</head>
+<body background="background.png">
+<a name="top">
+<center>
+<table width="800">
+<tr><td>
+
+<a href="http://koti.mbnet.fi/netmatch"><img src="helplogo.png" border="0"></a>
+<hr>
+<ul>
+	<li><a href="#netmatch">NetMatch - The End</a></li>
+	<li><a href="#settings">Asetukset</a></li>
+		<ul>
+			<li><a href="#language">Kielen valinta</a></li>
+			<li><a href="#stats">Pelitilasto</a></li>
+			<li><a href="#fxvolume">Äänitehosteiden voimakkuus</a></li>
+			<li><a href="#musicvolume">Musiikin voimakkuus</a></li>
+		</ul>
+	<li><a href="#server">Palvelin</a></li>
+		<ul>
+			<li><a href="#servername">Palvelimen nimeäminen</a></li>
+			<li><a href="#serverport">Portti</a></li>
+			<li><a href="#roundtime">Erän peliaika</a></li>
+			<li><a href="#map">Kartan valinta</a></li>
+			<li><a href="#register">Palvelimen rekisteröinti ja käynnistys</a></li>
+			<li><a href="#serverstart">Palvelimen käynnistys ilman rekisteröintiä</a></li>
+			<li><a href="#playingserver">Palvelimella pelaaminen</a></li>
+		</ul>
+	<li><a href="#playing">Pelaaminen</a></li>
+		<ul>
+			<li><a href="#nickname">Nimimerkki</a></li>
+			<li><a href="#findserver">Palvelinten etsiminen</a></li>
+			<li><a href="#address">Osoite</a></li>
+			<li><a href="#clientport">Portti</a></li>
+			<li><a href="#startgame">Pelin käynnistys</a></li>
+			<li><a href="#playing2">Pelaaminen</a></li>
+		</ul>
+	<li><a href="#plugins">Musiikki ja kartat</a></li>
+		<ul>
+			<li><a href="#music">Musiikki</a></li>
+			<li><a href="#maps">Kartat</a></li>
+		</ul>
+	<li><a href="#credits">Tekijät</a></li>
+</ul>
+
+<h2><a name="netmatch">NetMatch - The End</h2>
+<b>NetMatch - The End</b> on monen pelaajan DeathMatch-verkkopeli.<br>
+Käytettävissä on ominaisuuksiltaan erilaisia aseita: tuplapistoolit, konepistooli, sinko, haulikko, kranaatinlaukaisin ja moottorisaha.<br>
+Kentältä voi kerätä lisäammuksia ja lääkintäpakkauksia tehostaakseen toimintaansa taistelukentällä.<br>
+Aseista vain tuplapistooleilla on loputtomat ammukset.<br>
+<br>
+Pelaajien sijoittaminen paremmuusjärjestykseen lasketaan tappo/kuolema-suhteen perusteella. 
+Lukuisat tapot ja vähäiset kuolemat nostavat pelaajan sijaintia tilastossa.<br>
+<br>
+Ihmispelaajien lisäksi kentällä on myös tietokoneohjattuja tekoälyhahmoja.<br>
+
+<br><br><a href="#top">Sivun alkuun</a>
+
+<h2><a name="settings">Asetukset</h2>
+
+<h4><a name="language">Kielen valinta</h4>
+<b>NetMatch - The End</b> tukee kahta pelinsisäistä kieltä: Englantia ja Suomea. Käytettävän kielen voi vaihtaa valikosta ASETUKSET - KIELI.
+
+<h4><a name="stats">Pelitilastot</h4>
+Tilastot esittävät pelin aikana pelaajan tapot, kuolemat ja tappo/kuolema-suhteen. <br>
+Toiminnon voi kytkeä päälle tai pois valikosta ASETUKSET - PELIASETUKSET - NÄYTÄ TILASTOT tai pelin aikana painamalla G-näppäintä.
+
+<h4><a name="fxvolume">Äänitehosteiden voimakkuus</h4>
+Pelin äänitehosteiden voimakkuutta voi säätää valikosta ASETUKSET - PELIASETUKSET - ÄÄNENVOIMAKKUUS 
+tai pelin aikana pitämällä V-näppäintä pohjassa ja painamalla nuolinäppäimiä ylös (lisää äänenvoimakkuutta) tai alas (laskee äänenvoimakkuutta).
+
+<h4><a name="musicvolume">Taustamusiikin voimakkuus</h4>
+Pelin taustamusiikin voimakkuutta voi säätää valikosta ASETUKSET - PELIASETUKSET - ÄÄNENVOIMAKKUUS 
+tai pelin aikana pitämällä M-näppäintä pohjassa ja painamalla nuolinäppäimiä ylös (lisää äänenvoimakkuutta) tai alas (laskee äänenvoimakkuutta).
+
+<br><br><a href="#top">Sivun alkuun</a>
+
+<h2><a name="server">Palvelin</h2>
+
+<h4><a name="servername">Palvelimen nimeäminen</h4>
+Palvelin tarvitsee nimen, jolla pelaajat voivat tunnistaa sen ja liittyä peliin. 
+Nimen voi vapaasti valita.
+
+<h4><a name="serverport">Portti</h4>
+Palvelin tarvitsee toimiakseen portin internetiin. <br><br>
+Portti on numeerinen arvo väliltä 1-65535. 
+Suositeltavaa on kuitenkin käyttää korkeampaa porttia kuin 1024, koska sitä pienemmät portit saattavat olla varattuina muihin tarkoituksiin. <br><br>
+Yhteen porttiin voi käynnistää vain yhden palvelimen.
+
+<h4><a name="roundtime">Erän peliaika</h4>
+Palvelimelle tulee asettaa yhden erän peliaika. Aika asetetaan minuutteina.<br>
+Mikäli ei haluta eränvaihtoa, tulee kohtaan laittaa nolla (0). 
+Tällöin peli jatkuu rajoittamattoman ajan.<br>
+Erän päätyttyä listataan pelaajat paremmuusjärjestykseen.
+
+<h4><a name="map">Kartan valinta</h4>
+Palvelimelle on valittava kartta, jolla NetMatch-pelaajat pelaavat. <br>
+Valinnasta nakyy kartan nimen lisäksi esikatselukuva kartan pohjapiirroksesta.
+
+<h4><a name="register">Palvelimen rekisteröinti ja käynnistys</h4>
+Rekisteröinti ja käynnistys asettavat palvelimen kaikkien NetMatch-pelaajien nähtäville palvelinlistaukseen.
+
+<h4><a name="serverstart">Palvelimen käynnistys ilman rekisteröintiä</h4>
+Käynnistys ilman rekisteröintiä tekee palvelimesta piilotetun, 
+jolloin siihen voi liittyä vain tietämällä palvelimen IP-osoitteen ja käytettävän portin.
+
+<h4><a name="playingserver">Palvelimella pelaaminen</h4>
+Huomioitavaa on, ettei palvelinohjelmalla voi pelata, koska tämä käyttää kaiken tehon palvelintoimintoihin.<br>
+Palvelimen ollessa päällä ruutuun piirtyy pelkkä sininen tausta.<br>
+Jos halutaan pelata samalla koneella, jossa palvelinta pidetään yllä, on käynnistettävä toinen ohjelma pelin kuvakkeesta.<br>
+Kahden ohjelman toimiminen samanaikaisesti kuitenkin saattaa aiheuttaa epävakautta palvelinohjelman toiminnassa, mikä näkyy eritoten verkkoviiveenä.
+
+<br><br><a href="#top">Sivun alkuun</a>
+
+<h2><a name="playing">Pelaaminen</h2>
+
+<h4><a name="nickname">Nimimerkki</h4>
+Pelaaja tarvitsee vapaavalintaisen nimimerkin voidakseen liittyä peliin.
+
+<h4><a name="findserver">Palvelinten etsiminen</h4>
+Palvelinlistauksesta haetaan NetMatch-palvelimia, joihin voi liittyä mukaan pelaamaan.
+
+<h4><a name="address">Osoite</h4>
+Palvelimelle voi liittyä myös suoraan, olettaen että palvelin on käynnissä ja esimerkiksi rekisteröimätön. 
+Tällöin on tiedettävä palvelimen IP-osoite (katso myös Portti)
+
+<h4><a name="clientport">Portti</h4>
+Palvelimelle voi liittyä myös suoraan, olettaen että palvelin on käynnissä ja esimerkiksi rekisteröimätön. 
+Tällöin on tiedettävä palvelimen käyttämä portti (katso myös Osoite)
+
+<h4><a name="startgame">Pelin käynnistys</h4>
+Kun IP-osoite ja portti ovat tiedossa, liitytään suoraan palvelimelle.
+
+<h4><a name="playing2">Pelaaminen</h4>
+<b>NetMatch - The End</b> tukee kahdenlaista pelihahmon ohjaustyyliä: hiiri- tai näppäinohjausta.<br>
+<br>
+Pelihahmon ohjauksen voi valita kahdesta vaihtoehdosta.<br>
+Asetus vaikuttaa siihen, miten hahmo liikkuu käytettäessä näppäimiä WASD.<br>
+Ohjaustyyliä voi vaihtaa kohdasta ASETUKSET - PELIASETUKSET - PELAAJAN OHJAUS.<br>
+<br>
+Hiiriohjauksessa kursorin tilalla on tähtäin suunnassa johon pelihahmo katsoo. 
+Hiiren vasen painike laukaisee käytettävän aseen ja oikea painike vaihtaa asetta. 
+Aseen vaihdossa on pieni viive.<br>
+<br>
+Näppäinohjauksessa pelihahmoa liikutetaan ja käännetään NUOLINÄPPÄIMILLÄ. 
+VÄLILYÖNTI laukaisee käytettävän aseen ja TAB -näppäin vaihtaa asetta, pienellä viiveellä.<br>
+<br>
+Huomioitavaa on, että asetta ei voi vaihtaa välittömästi ampumisen jälkeen, vaan vasta kyseisen aseen lataukseen vaadittavan ajan kuluttua. 
+Latausaika vaihtelee käytettävän aseen mukaan, konepistoolissa nopea ja singossa hidas.<br>
+<br>
+Pelin aikana on mahdollista lähettää viestejä muille pelaajille.
+Viestikonsolin saa esiin painamalla C-näppäintä.
+Konsoliin kirjoitettu viesti lähetetään painamalla Enter-näppäintä ja kirjoituksen voi keskeyttää Esc-näppäimellä.<br>
+<br>
+Voit halutessasi asettaa näytölle pelin suorituskykyä osoittavat mittarit painamalla F-näppäintä. Ensimmäinen luvuista osoittaa pelin ruudunpäivitysnopeutta ja toinen verkkoliikenteen päivitysnopeutta.
+
+<br><br><a href="#top">Sivun alkuun</a>
+
+<h2><a name="plugins">Musiikki ja kartat</h2>
+
+<h4><a name="music">Musiikki</h4>
+Käyttäjä voi soittaa omia musiikkikappaleitaan pelin aikana laittamalla haluamansa musiikkitiedostot pelin "music"-kansioon. <br>
+Musiikkikappaleita voi olla useita ja ohjelma arpoo seuraavan kappaleen edellisen loputtua. <br>
+Tuettuja tiedostomuotoja ovat raw, mod, s3m, xm, it, mid, rmi, wav, mp2, mp3, ogg, wma, asf ja mo3.
+
+<h4><a name="maps">Kartat</h4>
+<b>NetMatch - The End</b>:in käyttämät kartat ovat pelin "map"-kansiossa. 
+Karttoja voi ladata lisää NetMatchin kotisivuilta karttakansioon, 
+jolloin kartat saa suoraan käyttöön palvelinta luotaessa tai liityttäessä palvelimelle joka käyttää samaa karttaa.
+
+<br><br><a href="#top">Sivun alkuun</a>
+
+<h2><a name="credits">Tekijät</h2>
+<table>
+<tr><td><b>Marko Hiltunen</b>:</td><td>suunnittelu, ohjelmointi</td></tr>
+<tr><td><b>Kari Tervo</b>:</td><td>suunnittelu, grafiikka</td></tr>
+<tr><td><b>Vesa Laakso</b>:</td><td>suunnittelu, ohjelmointi</td></tr>
+<tr><td><b>Jasse Lahdenperä</b>:</td><td>suunnittelu, ohjelmointi</td></tr>
+<tr><td><b>Vesa Viljakainen</b>:</td><td>musiikki</td></tr>
+</table>
+
+<br><br><a href="#top">Sivun alkuun</a>
+
+</td></tr>
+</table>
+</center>
+</body>
+</html>

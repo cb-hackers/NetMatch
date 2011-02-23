@@ -1,0 +1,653 @@
+//********************************************************************************
+// Menu.cb
+//
+// Valikko
+//********************************************************************************
+
+
+//--------------------------------------------------------------------------------
+// Kokoelma valinnoille
+//--------------------------------------------------------------------------------
+Type MENUITEMS
+    Field menuId    As Byte     // Mihin valikkoon tämä kuuluu
+    Field itemId    As Byte     // Valinnan tunnus
+    Field subMenuId As Byte     // Alavalikon tunnus
+    Field labelId   As String   // Valinnan tekstitunnus
+    Field label     As String   // Valinnan teksti
+    Field help      As String   // Valinnan ohjeteksti
+EndType
+
+
+//--------------------------------------------------------------------------------
+// Valintojen vakiot
+//--------------------------------------------------------------------------------
+// Valikoiden tunnukset
+Const MNU_MAIN          = 1
+Const MNU_CLIENT        = 2
+Const MNU_SERVER        = 3
+Const MNU_SETTINGS      = 4
+Const MNU_CLIENTCFG     = 5
+Const MNU_SERVERCFG     = 6
+Const MNU_SERVERLIST    = 7
+Const MNU_MAPSETUP      = 8
+Const MNU_MAP           = 9
+Const MNU_COUNT         = 9
+
+// Valikoiden otsikot
+Dim aMenuTitles$(MNU_COUNT)
+aMenuTitles(MNU_MAIN)       = "mainmenu"
+aMenuTitles(MNU_CLIENT)     = "mi_join_game"
+aMenuTitles(MNU_SERVER)     = "mi_host_game"
+aMenuTitles(MNU_SETTINGS)   = "mi_settings"
+aMenuTitles(MNU_CLIENTCFG)  = "mi_client_settings"
+aMenuTitles(MNU_SERVERCFG)  = "mi_server_settings"
+aMenuTitles(MNU_SERVERLIST) = "mi_findserver"
+aMenuTitles(MNU_MAPSETUP)   = "mi_mapsetup"
+
+// MenuItem-tunnukset
+Const MI_CLIENT         = 1
+Const MI_SERVER         = 2
+Const MI_SETTINGS       = 3
+Const MI_PROFILE        = 4
+Const MI_FINDSERVER     = 5
+Const MI_ADDRESS        = 6
+Const MI_PORT           = 7
+Const MI_START          = 8
+Const MI_BACK           = 9
+Const MI_LANGUAGE       = 10
+Const MI_CLIENTCGF      = 11
+Const MI_SERVERCFG      = 12
+Const MI_DESCRIPTION    = 13
+Const MI_REGISTER       = 14
+Const MI_STATISTICS     = 15
+Const MI_FX_VOL         = 16
+Const MI_MUSIC_VOL      = 17
+Const MI_HELP           = 18
+Const MI_MAPSETUP       = 19
+Const MI_PERIODLEN      = 20
+Const MI_CONTROLMODE    = 21
+Const MI_MAP            = 22
+Const MI_PLAYERCOUNT    = 23    // Ei käytössä
+Const MI_BOTCOUNT       = 24    // Ei käytössä
+Const MI_BOTWEAPONS     = 25    // Ei käytössä
+Const MI_GAMEMODE       = 26
+
+
+//--------------------------------------------------------------------------------
+// Luodaan valinnat
+//--------------------------------------------------------------------------------
+// Päävalikko
+AddMenuItem(MNU_MAIN,       MI_CLIENT,      "join_game",        MNU_CLIENT)
+AddMenuItem(MNU_MAIN,       MI_SERVER,      "host_game",        MNU_SERVER)
+AddMenuItem(MNU_MAIN,       MI_SETTINGS,    "settings",         MNU_SETTINGS)
+AddMenuItem(MNU_MAIN,       MI_HELP,        "help")
+AddMenuItem(MNU_MAIN,       MI_BACK,        "quit")
+
+// Client-valikko
+AddMenuItem(MNU_CLIENT,     MI_PROFILE,     "profile")
+AddMenuItem(MNU_CLIENT,     MI_FINDSERVER,  "findserver",       MNU_SERVERLIST)
+AddMenuItem(MNU_CLIENT,     MI_ADDRESS,     "address")
+AddMenuItem(MNU_CLIENT,     MI_PORT,        "port")
+AddMenuItem(MNU_CLIENT,     MI_START,       "start_game")
+AddMenuItem(MNU_CLIENT,     MI_BACK,        "back")
+
+// Server-valikko
+AddMenuItem(MNU_SERVER,     MI_SERVERCFG,   "server_settings",  MNU_SERVERCFG)
+//AddMenuItem(MNU_SERVER,     MI_MAPSETUP,    "mapsetup",         MNU_MAPSETUP)
+AddMenuItem(MNU_SERVER,     MI_MAP,         "map")
+AddMenuItem(MNU_SERVER,     MI_REGISTER,    "register")
+AddMenuItem(MNU_SERVER,     MI_START,       "start_server")
+AddMenuItem(MNU_SERVER,     MI_BACK,        "back")
+
+// Palvelinasetukset
+AddMenuItem(MNU_SERVERCFG,  MI_DESCRIPTION, "servername")
+AddMenuItem(MNU_SERVERCFG,  MI_PORT,        "port")
+AddMenuItem(MNU_SERVERCFG,  MI_PERIODLEN,   "session_length")
+AddMenuItem(MNU_SERVERCFG,  MI_GAMEMODE,    "gamemode")
+AddMenuItem(MNU_SERVERCFG,  MI_BACK,        "back")
+
+// Kartta-asetukset
+//AddMenuItem(MNU_MAPSETUP,   MI_MAP,         "map")
+//AddMenuItem(MNU_MAPSETUP,   MI_PLAYERCOUNT, "maxplayers")
+//AddMenuItem(MNU_MAPSETUP,   MI_BOTCOUNT,    "botcount")
+//AddMenuItem(MNU_MAPSETUP,   MI_BOTWEAPONS,  "botweapons")
+//AddMenuItem(MNU_MAPSETUP,   MI_BACK,        "back")
+
+// Asetukset
+AddMenuItem(MNU_SETTINGS,   MI_LANGUAGE,    "language")
+AddMenuItem(MNU_SETTINGS,   MI_CLIENTCFG,   "client_settings",  MNU_CLIENTCFG)
+//AddMenuItem(MNU_SETTINGS,   MI_SERVERCFG,   "server_settings")
+AddMenuItem(MNU_SETTINGS,   MI_BACK,        "back")
+
+// Peliasetukset
+AddMenuItem(MNU_CLIENTCFG,  MI_STATISTICS,  "show_stats")
+AddMenuItem(MNU_CLIENTCFG,  MI_FX_VOL,      "fx_vol")
+AddMenuItem(MNU_CLIENTCFG,  MI_MUSIC_VOL,   "music_vol")
+AddMenuItem(MNU_CLIENTCFG,  MI_CONTROLMODE, "control")
+AddMenuItem(MNU_CLIENTCFG,  MI_BACK,        "back")
+
+//================================================================================
+// Näytetään valikko
+//================================================================================
+Function DrawMenu(_menu)
+    ClearKeys
+    
+    // Valintatekstien aloituspaikka
+    miY = 145
+    miX = 45
+    
+    titleY = 107
+    
+    // Ohjetekstien aloituspaikka
+    mihX = 10
+    mihY = 470
+    
+    // Mistä kohtaa alkaa valinnan vieressä oleva asetusteksti (esim. nimi, osoite jne)
+    cfgX = 380
+    cfgW = 400
+    SetFont gFonts(FNT_SETUP)
+    cfgH = TextHeight("X")
+    
+    SetFont gFonts(FNT_MENUITEM)
+    miH = TextHeight("X")
+    miRH = 50  // Valikkotekstien riviväli
+
+    // Lasketaan valintojen määrä
+    itemCount = 0
+    For mi.MENUITEMS = Each MENUITEMS
+        If mi\menuId = _menu Then itemCount + 1
+    Next mi
+    
+    selection = 1
+    fader# = 0
+    
+    PlayGameSound(SND_RELOAD, CameraX(), CameraY())
+    GetLabels()
+    
+    helpTxt$ = ""
+    If _menu = MNU_SERVERLIST Then
+        itemCount = FindServers()
+        helpTxt = GetText("findserver_help")
+    EndIf
+    firstVisible = 1
+    maxVisible = 9
+    txtHelp$ = ""
+    clickTime = 0
+    
+    loopMapNum = 1
+    loopMapTime = 0
+    loopMapDelay = 1000
+    
+    UpdateGame
+    Repeat
+        If gFullScreen Then ShowMouse gImages(IMG_MOUSE)
+        oldSel = selection
+        txtHelp = ""
+        mSel = 0
+        mx = 0
+        my = 0
+        mc = False
+        If MouseMoveX() <> 0 Or MouseMoveY() <> 0 Or MouseHit(1) = True Then
+            mx = MouseX()
+            my = MouseY()
+        EndIf
+        UpdateFrameTimer()
+        fader = fader + DgrPerSec(360)
+        
+        gTextModified = False
+        
+        // Taustakuva ja logo
+        DrawImage gImages(IMG_BACKGROUND), 0, 0
+        DrawImage gImages(IMG_LOGO), 10, 10
+        DrawImage gImages(IMG_MENUBACK), 10, 100
+        
+        // Valikon otsikko
+        SetFont gFonts(FNT_MENUITEM)
+        txtTitleTmp$ = "NetMatch - " + GetText(aMenuTitles(_menu))
+        txtTitle$ = ""
+        For i = 1 To Len(txtTitleTmp)
+            txtTitle = txtTitle + Mid(txtTitleTmp, i, 1) + " "
+        Next i
+        Color 0, 0, 0
+        Text miX - 1, titleY - 1, txtTitle
+        Color 255, 255, 255
+        Text miX + 1, titleY + 1, txtTitle
+        Color 128, 128, 128
+        Text miX, titleY, txtTitle
+
+        y = miY
+        miIndex = 1
+        miSelected = 0
+        miSubMenu = 0
+        
+        // Onko tämä valikko serverilistaus
+        SetFont gFonts(FNT_MENUITEM)
+        If _menu = MNU_SERVERLIST Then
+            Color 255, 255, 0
+            Text miX, y, GetText("mi_servername")
+            Text 500, y, GetText("mi_map")
+            piX = ScreenWidth() - miX - TextWidth(GetText("players"))
+            Text piX, y, GetText("players")
+            Color 128, 128, 128
+            Line miX - 5, y + miH, ScreenWidth() - miX + 5, y + miH
+            y = y + miH + 5
+            If itemCount > 0 Then
+                If selection < firstVisible Then
+                    firstVisible = selection
+                EndIf
+                If selection > firstVisible + (maxVisible - 1) Then
+                    firstVisible = selection - (maxVisible - 1)
+                EndIf
+                For i = firstVisible To Min(firstVisible + maxVisible - 1, itemCount)
+                    If mx >= miX + 5 And mx < miX + 5 + ScreenWidth() - miX * 2 + 10 Then
+                        If my >= y And my < y + miH Then
+                            If MouseHit(1) Then 
+                                selection = i
+                                If oldSel = selection And Timer() - clickTime < 250 Then
+                                    mSel = 1
+                                EndIf
+                                clickTime = Timer()
+                            EndIf
+                        EndIf
+                    EndIf
+                    If i = selection Then
+                        Color 96, 96, 96
+                        Box miX - 5, y, ScreenWidth() - miX * 2 + 10, miH, ON
+                        Color 128, 128, 128
+                        Box miX - 5, y, ScreenWidth() - miX * 2 + 10, miH, OFF
+                    EndIf
+                    Color 255, 255, 0
+                    If i = selection Then
+                        Color 0, Sin(fader) * 32 + 220, 0
+                    EndIf
+                    Text miX, y, GSSServerInfo(i, GSS_SERVER_NAME)
+                    sInfo$ = GSSServerInfo(i, GSS_SERVER_INFO)
+                    mapInfo$ = Replace(GetWord2(sInfo, 3, ","), "_", " ")
+                    Text 500, y, mapInfo
+                    iPlayers = Int(GetWord2(sInfo, 1, ","))
+                    iBots = Int(GetWord2(sInfo, 2, ","))
+                    iOnline = iPlayers - iBots
+                    iMax = Int(GetWord2(sInfo, 4, ","))
+                    playerInfo$ = iPlayers + "(" + iOnline + ")/" + iMax
+                    piX = ScreenWidth() - miX - TextWidth(playerInfo)
+                    Text piX, y, playerInfo
+                    y = y + miH
+                Next i
+                miIndex = itemCount + 1
+            EndIf
+            SetFont gFonts(FNT_SETUP)
+            Color 255, 255, 0
+            If BulletButton(23, 480, GetWord2(helpTxt, 1, ",")) Then mSel = 1
+            If BulletButton(430, 480, GetWord2(helpTxt, 2, ",")) Then mSel = 2
+            If BulletButton(430, 540, GetWord2(helpTxt, 3, ",")) Then mSel = 3
+        EndIf
+        
+        // Luetaan kaikki valinnat
+        For mi.MENUITEMS = Each MENUITEMS
+            // Jos valikko on oikea
+            If mi\menuId = _menu Then
+                // Tarkistetaan hiiren sijainti
+                If mx >= 23 And mx < 23 + 341 And my >= y + 9 And my < y + 51 Then
+                    selection = miIndex
+                    mc = MouseHit(1)
+                EndIf
+                // Luetaan teksti sanastosta
+                //txtItem$ = GetText("mi_" + mi\labelId)
+                txtItem$ = mi\label
+
+
+                // Kirjoitetaanko valinnan viereen jotain asetustekstiä
+                SetFont gFonts(FNT_SETUP)
+                Color 255, 255, 255
+                sy = (miRH - cfgH) / 2 + y + 4
+                // Näytetään valittu kieli
+                If mi\itemId = MI_LANGUAGE Then
+                    Text cfgX, sy, GetText("lang_name")
+                EndIf
+                // Näytetään pelaajan nimi eli profiili
+                If mi\itemId = MI_PROFILE Then
+                    Text cfgX, sy, gProfile
+                    If selection = miIndex Then
+                        Color 255, 255, 0
+                        gProfile = InputText(cfgX, sy, cfgW, cfgH, gProfile)
+                    EndIf
+                EndIf
+                // Osoite
+                If mi\itemId = MI_ADDRESS Then
+                    Text cfgX, sy, gAddress
+                    If selection = miIndex Then
+                        Color 255, 255, 0
+                        gAddress = InputText(cfgX, sy, cfgW, cfgH, gAddress)
+                    EndIf
+                EndIf
+                // Portti (client-valikko)
+                If _menu = MNU_CLIENT And mi\itemId = MI_PORT Then
+                    Text cfgX, sy, gPort
+                    If selection = miIndex Then
+                        Color 255, 255, 0
+                        gPort = InputText(cfgX, sy, cfgW, cfgH, gPort, True)
+                    EndIf
+                EndIf
+                // Portti (server-valikko)
+                If _menu = MNU_SERVERCFG And mi\itemId = MI_PORT Then
+                    Text cfgX, sy, gServerPort
+                    If selection = miIndex Then
+                        Color 255, 255, 0
+                        gServerPort = InputText(cfgX, sy, cfgW, cfgH, gServerPort, True)
+                    EndIf
+                EndIf
+                // Session pituus
+                If mi\itemId = MI_PERIODLEN Then
+                    Text cfgX, sy, gPeriodLength
+                    If selection = miIndex Then
+                        Color 255, 255, 0
+                        gPeriodLength = Int(InputText(cfgX, sy, cfgW, cfgH, gPeriodLength, True))
+                        gPeriodLength = Max(0, Min(gPeriodLength, 60))
+                    EndIf
+                EndIf
+                // Pelimoodi
+                If mi\itemId = MI_GAMEMODE Then
+                    Text cfgX, sy, GetWord2(aGameModeNames(gPlayMode), 2, ",")
+                EndIf
+                // Palvelinasetukset
+                If mi\itemId = MI_SERVERCFG Then
+                    Text cfgX, sy, gServerName + ", " + GetWord2(aGameModeNames(gPlayMode), 1, ",") + ", " + gServerPort + ", " + gPeriodLength
+                EndIf
+                // Palvelimen nimi
+                If mi\itemId = MI_DESCRIPTION Then
+                    Text cfgX, sy, gServerName
+                    If selection = miIndex Then
+                        Color 255, 255, 0
+                        gServerName = InputText(cfgX, sy, cfgW, cfgH, gServerName)
+                    EndIf
+                EndIf
+                // Valittu kartta
+                If mi\itemId = MI_MAP Then
+                    Text cfgX, sy, GetWord2(Replace(gMapNames(gGameMap, 1), "_", " "), 1, ":")
+                    If selection = miIndex Then
+                        loopMaps = Int(CountWords(gMapNames(gGameMap, 1), ":")) - 1
+                        If loopMaps >= 1 Then
+                            mapName$ = GetWord2(gMapNames(gGameMap, 1), loopMapNum + 1, ":")
+                            gMapImages(gGameMap, 1) = GetMapThumbnail(mapName)
+                            gMapNames(gGameMap, 2) = GetMapAuthor(mapName)
+                            If loopMapTime + loopMapDelay < Timer() Then
+                                loopMapTime = Timer()
+                                loopMapNum + 1
+                                If loopMapNum > loopMaps Then loopMapNum = 1
+                            EndIf
+                        EndIf
+                        If gGameMap <> 0 And gMapImages(gGameMap, 1) <> 0 Then
+                            Text cfgX, sy + cfgH, Chr(169) + " " + gMapNames(gGameMap, 2)
+                            DrawImage gMapImages(gGameMap, 1), cfgX, sy + cfgH + cfgH
+                        EndIf
+                    EndIf
+                EndIf
+                // Kartta-asetukset
+                // EI KÄYTÖSSÄ
+                If mi\itemId = MI_MAPSETUP Then
+                    Text cfgX, sy, Replace(gMapNames(gGameMap, 1), "_", " ")
+                    If selection = miIndex Then
+                        If gGameMap <> 0 And gMapImages(gGameMap, 1) <> 0 Then
+                            Text cfgX, sy + cfgH, Chr(169) + " " + gMapNames(gGameMap, 2)
+                            DrawImage gMapImages(gGameMap, 1), cfgX, sy + cfgH + cfgH
+                        EndIf
+                    EndIf
+                EndIf
+                // Tappotilastot
+                If mi\itemId = MI_STATISTICS Then
+                    Text cfgX, sy, GetText("" + gStatus)
+                EndIf
+                // Äänitehosteiden voimakkuus
+                If mi\itemId = MI_FX_VOL Then
+                    Text cfgX, sy, gFXVolume
+                    If selection = miIndex Then
+                        adjust = 0
+                        If KeyDown(cbKeyLeft) Then adjust = -1
+                        If KeyDown(cbKeyRight) Then adjust = 1
+                        AdjustVolume(adjust, 0)
+                    EndIf
+                EndIf
+                // Musiikin voimakkuus
+                If mi\itemId = MI_MUSIC_VOL Then
+                    Text cfgX, sy, gMusicVolume
+                    If selection = miIndex Then
+                        adjust = 0
+                        If KeyDown(cbKeyLeft) Then adjust = -1
+                        If KeyDown(cbKeyRight) Then adjust = 1
+                        AdjustVolume(adjust, 1)
+                    EndIf
+                EndIf
+                // Ohjaustyyli
+                If mi\itemId = MI_CONTROLMODE Then
+                    Text cfgX, sy, gControlMode
+                EndIf
+                
+
+                bImage = IMG_MENUBULLET
+                //SetFont gFonts(FNT_MENUITEM)
+                // Onko tämä valittuna
+                If selection = miIndex Then
+                    bImage = IMG_SMENUBULLET
+                    //txtHelp = GetText("mih_" + mi\labelId)
+                    txtHelp = mi\help
+                    miSelected = mi\itemId
+                    miSubMenu = mi\subMenuId
+                    
+                    If miSelected = MI_CONTROLMODE Then
+                        txtHelp = txtHelp + GetText("control" + gControlMode)
+                    EndIf
+                EndIf
+                SetFont gFonts(FNT_MENUITEM)
+
+                // Piirretään ammus valinnan taakse
+                DrawImage gImages(bImage), 23, y
+                DrawImage gImages(IMG_BELTCLIP), 23 + 50, y
+
+                yt = y + ((59 - miH) / 2)
+                // Ensin varjot
+                Color 0, 0, 0
+                Text miX - 1, yt - 1, txtItem
+                Color 255, 255, 255
+                Text miX + 1, yt + 1, txtItem
+                // Ja sitten teksti päälle
+                Color 128, 128, 128
+                // Jos tämä on valittuna niin vaihdellaan väriä
+                If selection = miIndex Then 
+                    Color 0, Sin(fader) * 32 + 220, 0
+                EndIf
+                Text miX, yt, txtItem
+                
+                // Kasvatetaan y-arvoa rivivälin verran
+                y = y + miRH
+                miIndex + 1
+            EndIf
+        Next mi
+
+        // Kirjoitetaan ohjeteksti
+        If Len(txtHelp) > 0 Then
+            SetFont gFonts(FNT_MENUHELP)
+            Color 255, 255, 0
+            ix = mihX
+            iy = mihY
+            rh = TextHeight("X")
+            For l = 1 To CountWords(txtHelp, "|")
+                txtLine$ = GetWord2(txtHelp, l, "|")
+                For w = 1 To CountWords(txtLine)
+                    word$ = GetWord2(txtLine, w)
+                    If ix + TextWidth(word) > ScreenWidth() - mihX Then
+                        ix = mihX
+                        iy + rh
+                    EndIf
+                    Text ix, iy, word
+                    ix = ix + TextWidth(word + " ")
+                Next w
+                ix = mihX
+                iy + rh
+            Next l
+        EndIf
+        
+        keyReturn = KeyHit(cbKeyReturn)
+        // VALITAAN JOTAIN
+        If (keyReturn = True Or mc = True) And _menu <> MNU_SERVERLIST Then
+            // Edelliseen valikkoon tai päävalikosta ulos
+            If miSelected = MI_BACK Then
+                Exit
+                
+            // Vaihdetaan kieltä
+            ElseIf miSelected = MI_LANGUAGE Then
+                SetLanguage() // Glossary.cb
+                SaveConfig()  // Config.cb
+                GetLabels()
+                
+            // Vaihdetaan ohjausta
+            ElseIf miSelected = MI_CONTROLMODE Then
+                gControlMode + 1
+                If gControlMode > 2 Then gControlMode = 1
+                SaveConfig()  // Config.cb
+
+            // Vaihdetaan karttaa
+            ElseIf miSelected = MI_MAP Then
+                gGameMap + 1
+                If gGameMap > MAP_COUNT Then gGameMap = 1
+                SaveConfig()
+                
+            // Vaihdetaan pelimoodia
+            ElseIf miSelected = MI_GAMEMODE Then
+                gPlayMode + 1
+                If gPlayMode > MAX_MODES Then gPlayMode = 1
+                SaveConfig()
+                
+            // Jos valinta vie alavalikkoon niin sitten sinne
+            ElseIf miSubMenu > 0 Then
+                DrawMenu(miSubMenu)
+                
+            // Palvelimen toiminnot
+            ElseIf _menu = MNU_SERVER Then
+                If miSelected = MI_REGISTER Then
+                    //PlayMusic(OFF)
+                    CreateServer(True) // Server.cb
+                ElseIf miSelected = MI_START Then
+                    //PlayMusic(OFF)
+                    CreateServer(False) // Server.cb
+                EndIf
+                
+            ElseIf _menu = MNU_CLIENT Then
+                If miSelected = MI_START Then
+                    JoinGame(gAddress, Int(gPort))
+                EndIf
+                
+            ElseIf miSelected = MI_STATISTICS Then
+                gStatus = Not gStatus
+                SaveConfig()
+            
+            ElseIf miSelected = MI_HELP Then
+                Execute "doc\help_" + Lower(gLanguage) + ".html"
+            
+           EndIf
+            ClearKeys
+            UpdateGame
+            
+        ElseIf _menu = MNU_SERVERLIST Then
+        
+            If (keyReturn = True Or mSel = 1) And itemCount > 0 Then
+                JoinGame(GSSServerInfo(selection, GSS_SERVER_HOST), Int(GSSServerInfo(selection, GSS_SERVER_PORT)))
+                itemCount = FindServers()
+                firstVisible = 1
+                selection = 1
+                ClearKeys
+                UpdateGame
+            ElseIf KeyHit(cbKeyF5) Or mSel = 2 Then 
+                itemCount = FindServers()
+                firstVisible = 1
+                selection = 1
+                ClearKeys
+                UpdateGame
+            ElseIf mSel = 3 Then 
+                Exit
+            Else
+                DrawScreen
+            EndIf
+        Else
+            DrawScreen
+        EndIf
+        
+        // Vaihdetaan valintaa
+        If KeyHit(cbKeyUp) Then selection - 1
+        If KeyHit(cbKeyDown) Then selection + 1
+        If selection < 1 Then 
+            selection = miIndex - 1
+            If _menu = MNU_SERVERLIST Then selection = 1
+        EndIf
+        If selection >= miIndex Then 
+            selection = 1
+            If _menu = MNU_SERVERLIST Then selection = itemCount
+        EndIf
+        If selection <> oldSel Then
+            loopMapNum = 1
+            loopMapTime = Timer()
+            PlayGameSound(SND_SHOOT2, CameraX() + 800, CameraY())
+        EndIf
+        
+        // Jos jotain tekstiä muutettiin niin talletetaan asetukset
+        If gTextModified = True Then SaveConfig() // Config.cb
+
+        //PlayMusic()
+    // Escillä poistutaan
+    Until KeyHit(cbKeyEsc)
+    PlayGameSound(SND_RELOAD, CameraX(), CameraY())
+    ClearKeys
+    UpdateGame
+EndFunction
+
+
+//================================================================================
+// Etsitään palvelimet
+//================================================================================
+Function FindServers()
+    MsgBox(GetText("server_find"))
+    t = Timer()
+    ret = GSSFindServers()
+    Wait 300 - (Timer() - t)
+    Return ret
+EndFunction
+
+
+//================================================================================
+// Lisätään menuvalinta
+//================================================================================
+Function AddMenuItem(_menuId, _itemId, _labelId$, _subMenuId = 0)
+    mi.MENUITEMS = New(MENUITEMS)
+    mi\menuId       = _menuId
+    mi\itemId       = _itemId
+    mi\subMenuId    = _subMenuId
+    mi\labelId      = _labelId
+EndFunction
+
+Function GetLabels()
+    For mi.MENUITEMS = Each MENUITEMS
+        mi\label = GetText("mi_" + mi\labelId)
+        mi\help = GetText("mih_" + mi\labelId)
+    Next mi
+EndFunction
+
+Function BulletButton(_x, _y, _text$)
+    ret = False
+    bImage = IMG_MENUBULLET
+    mx = MouseX()
+    my = MouseY()
+    If mx >= _x And mx < _x + 341 And my >= _y + 9 And my < _y + 51 Then
+        If MouseHit(1) Then ret = True
+        bImage = IMG_SMENUBULLET
+    EndIf
+    DrawImage gImages(bImage), _x, _y
+    th = TextHeight(_text)
+    x = _x + 22
+    y = _y + (59 - th) / 2
+    Color 0, 0, 0
+    Text x - 1, y - 1, _text
+    Color 255, 255, 255
+    Text x + 1, y + 1, _text
+    Color 128, 128, 128
+    Text x, y, _text
+    Return ret
+EndFunction

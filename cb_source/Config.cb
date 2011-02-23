@@ -1,0 +1,110 @@
+//********************************************************************************
+// Config.cb
+//
+// K‰ytt‰j‰n asetukset
+//********************************************************************************
+
+//--------------------------------------------------------------------------------
+// Muuttujia
+//--------------------------------------------------------------------------------
+// Pelaajan nimi
+Global gProfile$
+gProfile = ""
+
+// Osoite johon yritet‰‰n yhteytt‰
+Global gAddress$
+gAddress = ""
+
+// Portti johon yritet‰‰n yhteytt‰
+Global gPort$
+gPort = ""
+
+// Palvelimen nimi
+Global gServerName$
+gServerName = ""
+
+// Bottien nimet
+Global gBotNames$
+gBotNames = "Bot_1,Bot_2,Bot_3,Bot_4,Bot_5"
+
+// Palvelimen portti
+Global gServerPort$
+gServerPort = ""
+
+Global gStatus, gShowFPS
+gStatus = True
+gShowFPS = False
+
+Global gMusicVolume
+gMusicVolume = 100
+
+Global gFXVolume
+gFXVolume = 50
+
+Global gGameMap, gGameMapName$
+gGameMap = 1
+
+Global gPeriodLength
+gPeriodLength = 5
+
+Global gControlMode
+gControlMode = 1
+
+Global gPlayMode
+gPlayMode = 1
+
+Global gDisableBots
+gDisableBots = 0
+
+ReadConfig()
+//--------------------------------------------------------------------------------
+// Luetaan asetukset jos tiedosto on olemassa
+//--------------------------------------------------------------------------------
+Function ReadConfig()
+    If FileExists("NetMatch.cfg") Then
+        f = OpenToRead("NetMatch.cfg")
+        While Not EOF(f)
+            txt$ = ReadLine(f)
+            key$ = Upper(GetWord2(txt, 1, "="))
+            value$ = GetWord2(txt, 2, "=")
+            value = Replace(value, "&#61;", "=")
+            If key = "LANGUAGE" Then SetLanguage(value)
+            If key = "PROFILE" Then gProfile = value
+            If key = "ADDRESS" Then gAddress = value
+            If key = "PORT" Then gPort = value
+            If key = "SERVERNAME" Then gServerName = value
+            If key = "SERVERPORT" Then gServerPort = value
+            If key = "STATISTICS" Then gStatus = (value = "1")
+            If key = "MUSICVOLUME" Then gMusicVolume = Int(value)
+            If key = "FXVOLUME" Then gFXVolume = Int(value)
+            If key = "MAP" Then gGameMapName = value
+            If key = "PERIODLENGTH" Then gPeriodLength = Int(value)
+            If key = "GAMEMODE" Then gPlayMode = Int(value)
+            If key = "CONTROLMODE" Then gControlMode = Min(2, Max(1, Int(value)))
+            If key = "DISABLEBOTS" Then gDisableBots = (value = "1")
+        Wend
+        CloseFile f
+    EndIf
+EndFunction
+
+//================================================================================
+// Asetusten talletus
+//================================================================================
+Function SaveConfig()
+    f = OpenToWrite("NetMatch.cfg")
+    WriteLine f, "Language=" + Replace(gLanguage, "=", "&#61;")
+    WriteLine f, "Profile=" + Replace(gProfile, "=", "&#61;")
+    WriteLine f, "Address=" + Replace(gAddress, "=", "&#61;")
+    WriteLine f, "Port=" + Replace(gPort, "=", "&#61;")
+    WriteLine f, "ServerName=" + Replace(gServerName, "=", "&#61;")
+    WriteLine f, "Map=" + gMapNames(gGameMap, 1)
+    WriteLine f, "ServerPort=" + Replace(gServerPort, "=", "&#61;")
+    WriteLine f, "Statistics=" + gStatus
+    WriteLine f, "MusicVolume=" + gMusicVolume
+    WriteLine f, "FXVolume=" + gFXVolume
+    WriteLine f, "PeriodLength=" + gPeriodLength
+    WriteLine f, "GameMode=" + gPlayMode
+    WriteLine f, "ControlMode=" + gControlMode
+    WriteLine f, "DisableBots=" + gDisableBots
+    CloseFile f
+EndFunction

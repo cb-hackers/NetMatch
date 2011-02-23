@@ -1,0 +1,97 @@
+//********************************************************************************
+// Items.cb
+//
+// Ker‰ilt‰v‰t tavarat
+//********************************************************************************
+
+//--------------------------------------------------------------------------------
+// Kokoelma tavaroille
+//--------------------------------------------------------------------------------
+Type ITEMS
+    Field itemId    As Integer  // Tunnus
+    Field itemType  As Integer  // Tavaran tyyppi
+    Field obj       As Integer  // Objekti
+EndType
+
+
+//================================================================================
+// Asetetaan kent‰lle joku poimittava tavara.
+//================================================================================
+Function SetItem(_type, _itemId, _x = 0, _y = 0)
+    
+    // K‰yd‰‰n kaikki tavarat l‰pi
+    iid = 0
+    For item.ITEMS = Each ITEMS
+        If item\itemId = _itemId Then 
+            iid = ConvertToInteger(item)
+            Exit
+        EndIf
+    Next item
+    //If _type < OBJ_ITEM_HEALTH Or _type > OBJ_ITEM_ROCKET Then Return iid
+    item = 0
+    // Jos tavaraa ei ollut niin luodaan sellainen
+    If iid = 0 Then
+        item.ITEMS = New(ITEMS)
+        item\itemId = _itemId
+        item\itemType = _type
+    Else
+        item = ConvertToType(iid)
+    EndIf
+    If gGameMode = SERVER Then
+        // Jos ollaan serveriss‰ eik‰ tavaraa ollut niin luodaan tyhj‰ objekti
+        If iid = 0 Then item\obj = MakeObject()
+        // Laitetaan tavara kent‰le johonkin
+        SpawnObject(item\obj)
+        // Luodaan kaikille clienteille viestit tavarasta
+        For player.PLAYERS = Each PLAYERS
+            If player\active = True And player\zombie = False Then
+                nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                nmsg\toPlayer   = player\playerId   // Kenelle l‰hetet‰‰n
+                nmsg\msgType    = NET_ITEM          // Mik‰ viesti
+                nmsg\itemId     = item\itemId       // Tavaran tunnus
+                nmsg\itemType   = item\itemType     // Tavaran tunnus
+                nmsg\x          = ObjectX(item\obj) // Sijainti
+                nmsg\y          = ObjectY(item\obj) // Sijainti
+            EndIf
+        Next player
+    EndIf
+    If gGameMode = CLIENT Then
+        // Jos ollaan clientiss‰ eik‰ tavaraa lˆytynyt niin tehd‰‰n sille objekti
+        If iid = 0 Then 
+            item\obj = CloneObject(gObjects(_type))
+            ObjectOrder item\obj, -1
+            ObjectOrder gMap, -1
+        EndIf
+        // Laitetaan paikoilleen
+        PositionObject item\obj, _x, _y
+        ShowObject item\obj, ON
+    EndIf 
+        Return ConvertToInteger(item)
+EndFunction
+
+
+Function PickItem(_itemType)
+    pick = False
+    wpn = 0
+    If _itemType = OBJ_ITEM_AMMO Then wpn = WPN_MGUN
+    If _itemType = OBJ_ITEM_ROCKET Then wpn = WPN_BAZOOKA
+    If _itemType = OBJ_ITEM_FUEL Then wpn = WPN_CHAINSAW
+    If _itemType = OBJ_ITEM_SHOTGUN Then wpn = WPN_SHOTGUN
+    If _itemType = OBJ_ITEM_LAUNCHER Then wpn = WPN_LAUNCHER
+        
+    If wpn <> 0 Then
+        If aWeapon(wpn, WPNF_AMMO) < aWeapon(wpn, WPNF_AMMO_MAX) Then 
+            pick = True
+            aWeapon(wpn, WPNF_AMMO) = Min(aWeapon(wpn, WPNF_AMMO_MAX), aWeapon(wpn, WPNF_AMMO) + aWeapon(wpn, WPNF_PICKCOUNT))
+            aWeaponAmmos(wpn) = aWeapon(wpn, WPNF_AMMO) * 3
+        EndIf
+    EndIf
+    Return pick
+EndFunction
+
+
+Function ShowItems(_show)
+    For item.ITEMS = Each ITEMS
+        ShowObject item\obj, _show
+    Next item
+EndFunction

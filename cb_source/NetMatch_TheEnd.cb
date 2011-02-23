@@ -1,0 +1,115 @@
+//********************************************************************************
+// NetMatch.cb
+//
+// P‰‰ohjelma
+//********************************************************************************
+Global gFullScreen, gDirectServer, gDirectReg
+gFullScreen = False
+gDirectServer = False
+gDirectReg = False
+
+cmdLine$ = CommandLine()
+For i = 1 To CountWords(cmdLine)
+    If Upper(GetWord2(cmdLine, i)) = "-F" Then gFullScreen = True
+    If Upper(GetWord2(cmdLine, i)) = "-P" Then gDirectServer = True
+    If Upper(GetWord2(cmdLine, i)) = "-S" Then gDirectServer = True : gDirectReg = True
+Next i
+If gDirectServer = True Then gFullScreen = False
+
+If gFullScreen Then
+    SCREEN 800, 600, 32, cbFullScreen
+Else
+    SCREEN 800, 600
+    SCREEN 800, 600, 32, cbSizable
+EndIf
+SAFEEXIT OFF
+
+Const NM_VERSION$   = "2.2"
+Const NM_REVISION$  = "a"
+Const NM_PATCH      = 1
+
+//--------------------------------------------------------------------------------
+// Includet
+//--------------------------------------------------------------------------------
+Include "Glossary.cb"
+Include "Config.cb"
+Include "Resource.cb"
+Include "Media.cb"
+Include "Map.cb"
+Include "Menu.cb"
+Include "Utils.cb"
+Include "cbGSS.cb"
+Include "cbNetwork.cb"
+Include "Server.cb"
+Include "Client.cb"
+Include "Message.cb"
+Include "Player.cb"
+Include "Game.cb"
+Include "NetMessage.cb"
+Include "Weapon.cb"
+Include "ClientMessage.cb"
+Include "Sound.cb"
+Include "Effect.cb"
+Include "Items.cb"
+Include "Log.cb"
+
+//gDebug = SERVER
+
+GSSInit("NetMatch", "v" + NM_VERSION + NM_REVISION) // cbGSS.cb
+SetWindow "NetMatch " + gGSSVersion
+
+GetTimeSync(True)
+
+//--------------------------------------------------------------------------------
+// K‰ynnistet‰‰n p‰‰valikko
+//--------------------------------------------------------------------------------
+If gDirectServer = False Then
+    DrawMenu(MNU_MAIN) // Menu.cb
+Else
+    CreateServer(gDirectReg)
+EndIf
+
+
+//--------------------------------------------------------------------------------
+// Poistetaan kaikki mediat
+//--------------------------------------------------------------------------------
+// Poistetaan pelaajat
+For player.PLAYERS = Each PLAYERS
+    Delete player
+Next player
+
+// Poistetaan tutkat
+For i = 1 To MAX_PLAYERS
+    If gDirectServer = False Then DeleteObject aRadar(i)
+Next i
+
+// Poistetaan kaikki fontit
+For i = 1 To FNT_COUNT
+    DeleteFont gFonts(i)
+Next i
+
+// Poistetaan kaikki kuvat
+For i = 1 To IMG_COUNT
+    If gImages(i) <> 0 Then DeleteImage gImages(i)
+Next i
+
+// Poistetaan kaikki objektit
+For i = 1 To OBJ_COUNT
+    If gObjects(i) <> 0 Then DeleteObject gObjects(i)
+Next i
+
+// Poistetaan kaikki ‰‰net
+For i = 1 To SND_COUNT
+    If gDirectServer = False Then DeleteSound gSounds(i)
+Next i
+
+// Poistetaan sanasto
+For gls.GLOSSARY = Each GLOSSARY
+    Delete gls
+Next gls
+
+// Poistetaan valikot
+For mi.MENUITEMS = Each MENUITEMS
+    Delete mi
+Next mi
+

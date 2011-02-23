@@ -1,0 +1,442 @@
+//********************************************************************************
+// Map.cb
+//
+// Karttaan liittyv‰t toiminnot
+//********************************************************************************
+
+Const MAP_VERSION#  = 1.1
+
+Global gMapMaxPlayers, gMapTeamPlayers, gMapMaxBots, gMapBotDelete
+Global gMapHealth, gMapAmmo, gMapRocket, gMapFuel, gMapShotgun, gMapLauncher
+Global  gMapAnimDelay
+gMapMaxPlayers  = 0
+gMapTeamPlayers = 0
+gMapMaxBots     = 0
+gMapBotDelete   = 0
+gMapHealth      = 0
+gMapAmmo        = 0
+gMapRocket      = 0
+gMapFuel        = 0
+gMapShotgun     = 0
+gMapLauncher    = 0
+gMapAnimDelay   = 0
+
+Global gBotWeapons$
+gBotWeapons = "1,2,3"
+
+Global gMapCRC
+gMapCRC         = 0
+
+Global MAP_COUNT
+MAP_COUNT = 0
+ChDir "map"
+mapFiles$ = ""
+mapAuthors$ = ""
+
+
+Global gMapNum
+gMapNum = 0
+
+StartSearch
+While True
+    file$ = FindFile()
+    If file = "" Then Exit
+    ext$ = Lower(GetWord2(file, 2, "."))
+
+    If ext = "mpr" Then
+        maps$ = ""
+        f = OpenToRead(file)
+        While Not EOF(f)
+            txt$ = ReadLine(f)
+            If Upper(GetWord2(txt, 1, "=")) = "MAPS" Then
+                maps = Trim(GetWord2(txt, 2, "="))
+                Exit
+            EndIf
+        Wend
+        CloseFile f
+        loopMaps$ = ""
+        For i = 1 To CountWords(maps, ",")
+            mapFile$ = GetWord2(maps, i, ",") + ".mpc"
+            If FileExists(mapFile) Then
+                mapVersion# = 0
+                mVersionData = ExtractData(mapfile, "versioninfo.txt")
+                If mVersionData <> 0 Then
+                    mapVersion# = PeekFloat(mVersionData, 0)
+                    If mapVersion = MAP_VERSION Then
+                        If loopMaps = "" Then loopMaps = GetWord2(file, 1, ".")
+                        loopMaps = loopMaps + ":" + GetWord2(mapFile, 1, ".")
+                    EndIf
+                EndIf
+            EndIf
+        Next i
+        If Len(loopMaps) > 0 Then
+            If Len(mapFiles) > 0 Then 
+                mapFiles = mapFiles + ","
+                mapAuthors = mapAuthors + "|"
+            EndIf
+            mapFiles = mapFiles + loopMaps
+            MAP_COUNT + 1
+        EndIf
+    EndIf
+    
+    If ext = "mpc" Then
+    
+        mapVersion# = 0
+        mVersionData = ExtractData(file, "versioninfo.txt")
+        If mVersionData <> 0 Then
+            mapVersion# = PeekFloat(mVersionData, 0)
+        EndIf
+        If mapVersion = MAP_VERSION Then
+            offset = 4
+            strLen = PeekInt(mVersionData, offset) : offset + 4
+            author$ = ""
+            For i = 1 To strLen
+                c = PeekByte(mVersionData, offset) : offset + 1
+                author = author + Chr(c)
+            Next i
+            If Len(mapFiles) > 0 Then 
+                mapFiles = mapFiles + ","
+                mapAuthors = mapAuthors + "|"
+            EndIf
+            mapFiles = mapFiles + GetWord2(file, 1, ".")
+            mapAuthors = mapAuthors + Replace(author, "|", ";")
+            MAP_COUNT + 1
+        Else
+            DrawImage gImages(IMG_BACKGROUND), 0, 0
+            Error(GetText("incorrect_map") + " (" + file + ")")
+        EndIf
+        If mVersionData <> 0 Then
+            DeleteMEMBlock mVersionData
+        EndIf
+    EndIf
+Wend
+EndSearch
+
+Dim gMapNames$(Int(Max(1, MAP_COUNT)), 3)
+Dim gMapImages(Int(Max(1, MAP_COUNT)), 2)
+gGameMap = 0
+If MAP_COUNT > 0 Then
+    For i = 1 To MAP_COUNT
+        file$ = GetWord2(mapFiles, i, ",")
+        //gMapNames(i, 1) = GetWord2(file, 1, ".")
+        gMapNames(i, 1) = file
+        gMapNames(i, 2) = GetWord2(mapAuthors, i, "|")
+        If Lower(gMapNames(i, 1)) = Lower(gGameMapName) Then gGameMap = i
+    Next i
+//    StartSearch
+//    i = 1
+//    While True
+//        file$ = FindFile()
+//        If file = "" Then Exit
+//        ext$ = Lower(GetWord2(file, 2, "."))
+//        If ext = "mpc" Then
+//            
+//            If mapVersion = MAP_VERSION Then
+//                gMapNames(i) = GetWord2(file, 1, ".")
+//                If Lower(gMapNames(i)) = Lower(gGameMapName) Then gGameMap = i
+//                i + 1
+//            EndIf
+//        EndIf
+//    Wend
+//    EndSearch
+EndIf
+ChDir ".."
+For i = 1 To MAP_COUNT
+    If CountWords(gMapNames(i, 1), ":") = 1 Then
+        gMapImages(i, 1) = LoadResourceImage(gMapNames(i, 1) + "_thb.pxi", "map/" + gMapNames(i, 1) + ".mpc")
+    EndIf
+    //gMapImages(i, 2) = LoadResourceImage(gMapNames(i) + ".pxi", "map/" + gMapNames(i) + ".mpc")
+Next i
+
+//Dim gMaps$(MAP_COUNT, 3)
+//gMaps(1, 1) = "Warehouse"
+//gMaps(1, 2) = "warehouse.map"
+//gMaps(1, 3) = IMG_THUMBNAIL1 + ""
+//gMaps(2, 1) = "Map 2"
+//gMaps(2, 2) = "map1.map"
+
+Global gMap, gFloor
+gMap = 0
+gFloor = 0
+
+Global gServerMap$
+gServerMap = ""
+
+Global gServerMapLoop, gServerMapLoopNum
+gServerMapLoop = 1
+gServerMapLoopNum = 1
+
+Global gTileW#, gTileH#
+gTileW  = 48
+gTileH  = 48
+//gTileW = ObjectSizeX(gMap) / MapWidth()
+//gTileH = ObjectSizeY(gMap) / MapHeight()
+
+
+//================================================================================
+// Lis‰t‰‰n/siirret‰‰n objekti satunnaiseen kohtaan kartalle
+//================================================================================
+Function SpawnObject(_obj)
+Debug("SpawnObject BEGIN")
+    tileWh = gTileW / 2
+    tileHh = gTileH / 2
+    While True
+        x = Rand(1, MapWidth())
+        y = Rand(1, MapHeight())
+        tBack = GetMap2(0, x, y)
+        tHit = GetMap2(2, x, y)
+        If tBack > 0 And tHit = 0 Then
+            wx = (x * gTileW - tileWh) - ((MapWidth() * gTileW) / 2)
+            wy = ((y * gTileH - tileHh) - ((MapHeight() * gTileH) / 2)) * -1
+            PositionObject _obj, wx, wy
+            RotateObject _obj, Rand(0, 360)
+            Exit
+         EndIf
+    Wend
+Debug("SpawnObject END")
+EndFunction
+
+
+//================================================================================
+// Tarkistetaan ett‰ annettu positio on kartalla
+//================================================================================
+Function InMap(_x#, _y#)
+    mapX# = (ObjectSizeX(gMap) / 2.0) - ObjectX(gMap)
+    mapY# = (ObjectSizeY(gMap) / 2.0) - ObjectY(gMap)
+    tileX# = RoundUp((_x + mapX) / gTileW)
+    tileY# = RoundUp((mapY - _y) / gTileH)
+    backTile = GetMap2(0, tileX, tileY)
+    hitTile = GetMap2(2, tileX, tileY)
+    If hitTile = 1 Then Return False
+    If backTile = 0 Then Return False
+    Return True
+EndFunction
+
+Function LoadGameMap(_mapName$, _loopNum = 0)
+    gMapMaxPlayers  = 10
+    gMapTeamPlayers = 5
+    gMapMaxBots     = 5
+    gMapBotDelete   = 7
+    gMapHealth      = 5
+    gMapAmmo        = 5
+    gMapRocket      = 5
+    gMapFuel        = 5
+    gMapShotgun     = 5
+    gMapLauncher    = 5
+    gBotWeapons     = "1,2,3"
+
+    cfgName$ = _mapName + ".cfg"
+    If CountWords(_mapName, ":") > 1 Then cfgName = GetWord2(_mapName, 1, ":") + ".mpr"
+    _mapName = GetWord2(_mapName, _loopNum + 1, ":")
+    found = False
+    For i = 1 To MAP_COUNT
+        If Lower(gMapNames(i, 1)) = Lower(_mapName) Then found = True
+    Next i
+    If found = False Then
+        Error(Replace(GetText("map_not_found"), "%1", _mapName))
+        Return False
+    EndIf
+    If gGameMode = CLIENT Then
+        If gFloor <> 0 Then
+            DeleteObject gFloor
+            gFloor = 0
+        EndIf
+        imgFloor = LoadResourceImage(_mapName + "_back.pxi", "map/" + _mapName + ".mpc", False)
+        If imgFloor <> 0 Then 
+            gFloor = MakeObjectFloor()
+            PaintObject gFloor, imgFloor
+            //DeleteImage imgFloor
+        EndIf
+    EndIf
+    
+    If gMap <> 0 Then
+        DeleteObject gMap
+    EndIf
+    gMap = LoadResourceMap(_mapName)
+    
+    If gGameMode = SERVER Then
+        LoadMapConfig(cfgName)
+//        gMapMaxPlayers  = 10
+//        gMapMaxBots     = 5
+//        gMapBotDelete   = 7
+//        gMapHealth      = 5
+//        gMapAmmo        = 5
+//        gMapRocket      = 5
+//        gMapFuel        = 5
+//        gMapShotgun     = 5
+//        gMapLauncher    = 5
+//        gBotWeapons     = "1,2,3"
+
+        
+//        cfgFile$ = "map/" + _mapName + ".cfg"
+//        gBotNames = ""
+//        If FileExists(cfgFile) Then
+//            f = OpenToRead(cfgFile)
+//            While Not EOF(f)
+//                txt$ = ReadLine(f)
+//                key$ = Upper(GetWord2(txt, 1, "="))
+//                value$ = Trim(GetWord2(txt, 2, "="))
+//                If key = "MAXPLAYERS" Then gMapMaxPlayers = Int(value)
+//                If key = "BOTCOUNT" Then gMapMaxBots = Int(value)
+//                If key = "BOTDEPARTLIMIT" Then gMapBotDelete = Int(value)
+//                If key = "HEALTHITEMS" Then gMapHealth = Int(value)
+//                If key = "SMGITEMS" Then gMapAmmo = Int(value)
+//                If key = "BAZOOKAITEMS" Then gMapRocket = Int(value)
+//                If key = "CHAINSAWITEMS" Then gMapFuel = value
+//                If key = "SHOTGUNITEMS" Then gMapShotgun = value
+//                If key = "LAUNCHERITEMS" Then gMapLauncher = value
+//                If key = "BOTNAMES" Then gBotNames = value
+//                If key = "BOTWEAPONS" Then gBotWeapons = value
+//            Wend
+//            CloseFile f
+//            If gMapMaxPlayers < 1 Or gMapMaxPlayers > MAX_PLAYERS Then gMapMaxPlayers = 10
+//            If gMapMaxBots >= gMapMaxPlayers Then gMapMaxBots = Int(gMapMaxPlayers / 2)
+//            If gMapBotDelete <= gMapMaxBots Then gMapBotDelete = gMapMaxBots + Int((gMapMaxPlayers - gMapMaxBots) / 2)
+//            If gMapBotDelete < gMapMaxBots Then gMapBotDelete = gMapMaxBots
+            
+//            tmpWeapons$ = ""
+//            For i = 1 To CountWords(gBotWeapons, ",")
+//                wpn = Int(GetWord2(gBotWeapons, i, ","))
+//                If wpn >= 1 And wpn <= WPN_COUNT Then
+//                    If Len(tmpWeapons) > 0 Then tmpWeapons = tmpWeapons + ","
+//                    tmpWeapons = tmpWeapons + Str(wpn)
+//                EndIf
+//            Next i
+//            gBotWeapons = tmpWeapons
+//            If gBotWeapons = "" Then
+//                gBotWeapons = "1,2,3"
+//            EndIf
+//        EndIf
+        For player.PLAYERS = Each PLAYERS
+            botName$            = "Bot_" + player\playerId
+            If CountWords(gBotNames, ",") >= player\playerId Then botName = Trim(GetWord2(gBotNames, player\playerId, ","))
+            player\botName = botName
+        Next player
+    EndIf
+    
+    gTileW = ObjectSizeX(gMap) / MapWidth()
+    gTileH = ObjectSizeY(gMap) / MapHeight()
+    ObjectPickable gMap, ON
+    ShowObject gMap, OFF
+    
+    Return True
+EndFunction
+
+
+Function LoadMapConfig(_cfgName$)
+//error(_cfgname)
+        
+    cfgFile$ = "map/" + Replace(_cfgName, " ", "_")
+    gBotNames = ""
+    If FileExists(cfgFile) Then
+        f = OpenToRead(cfgFile)
+        While Not EOF(f)
+            txt$ = ReadLine(f)
+            key$ = Upper(GetWord2(txt, 1, "="))
+            value$ = Trim(GetWord2(txt, 2, "="))
+            If key = "MAXPLAYERS" Then gMapMaxPlayers = Int(value)
+            If key = "TEAMPLAYERS" Then gMapTeamPlayers = Int(value)
+            If key = "BOTCOUNT" Then gMapMaxBots = Int(value)
+            If key = "BOTDEPARTLIMIT" Then gMapBotDelete = Int(value)
+            If key = "HEALTHITEMS" Then gMapHealth = Int(value)
+            If key = "SMGITEMS" Then gMapAmmo = Int(value)
+            If key = "BAZOOKAITEMS" Then gMapRocket = Int(value)
+            If key = "CHAINSAWITEMS" Then gMapFuel = value
+            If key = "SHOTGUNITEMS" Then gMapShotgun = value
+            If key = "LAUNCHERITEMS" Then gMapLauncher = value
+            If key = "BOTNAMES" Then gBotNames = value
+            If key = "BOTWEAPONS" Then gBotWeapons = value
+        Wend
+        CloseFile f
+        If gMapMaxPlayers < 1 Or gMapMaxPlayers > MAX_PLAYERS Then gMapMaxPlayers = 10
+        If gMapMaxBots >= gMapMaxPlayers Then gMapMaxBots = Int(gMapMaxPlayers / 2)
+        If gMapBotDelete < gMapMaxBots Then gMapBotDelete = gMapMaxBots
+            
+        tmpWeapons$ = ""
+        For i = 1 To CountWords(gBotWeapons, ",")
+            wpn = Int(GetWord2(gBotWeapons, i, ","))
+            If wpn >= 1 And wpn <= WPN_COUNT Then
+                If Len(tmpWeapons) > 0 Then tmpWeapons = tmpWeapons + ","
+                tmpWeapons = tmpWeapons + Str(wpn)
+            EndIf
+        Next i
+        gBotWeapons = tmpWeapons
+        If gBotWeapons = "" Then
+            gBotWeapons = "1,2,3"
+        EndIf
+    EndIf
+EndFunction
+
+Function SaveMapConfig(_mapName$)
+    cfgFile$ = "map/" + _mapName + ".cfg"
+    f = OpenToWrite(cfgFile)
+    
+    WriteLine f, "# Pelaajien maksimim‰‰r‰"
+    WriteLine f, "MaxPlayers=" + gMapMaxPlayers
+    WriteLine f, ""
+    WriteLine f, "# Bottien m‰‰r‰"
+    WriteLine f, "BotCount=" + gMapMaxBots
+    WriteLine f, ""
+    WriteLine f, "# Kun pelaajam‰‰r‰ ylitt‰‰ t‰m‰n arvon, poistuu botti pelist‰"
+    WriteLine f, "BotDepartLimit=" + gMapBotDelete
+    WriteLine f, ""
+    WriteLine f, "# Bottien nimet"
+    WriteLine f, "BotNames=" + gBotNames
+    WriteLine f, ""
+    WriteLine f, "# Bottien aseet pilkulla eroteltuna"
+    WriteLine f, "# 1 = Pistoolit"
+    WriteLine f, "# 2 = Konepitooli"
+    WriteLine f, "# 3 = Sinko"
+    WriteLine f, "# 4 = Haulikko"
+    WriteLine f, "# 5 = Moottorisaha"
+    WriteLine f, "# 6 = Kranaatinlaukaisin"
+    WriteLine f, "BotWeapons=" + gBotWeapons
+    WriteLine f, ""
+    WriteLine f, ""
+    WriteLine f, "# Kent‰lt‰ ker‰ilt‰vien tavaroiden lukum‰‰r‰t"
+    WriteLine f, ""
+    WriteLine f, "# L‰‰kint‰pakkaukset"
+    WriteLine f, "HealthItems=" + gMapHealth
+    WriteLine f, ""
+    WriteLine f, "# Konepistoolin ammuslaatikot"
+    WriteLine f, "SMGItems=" + gMapAmmo
+    WriteLine f, ""
+    WriteLine f, "# Singon ammuslaatikot"
+    WriteLine f, "BazookaItems=" + gMapRocket
+    WriteLine f, ""
+    WriteLine f, "# Haulikon ammuslaatikot"
+    WriteLine f, "ShotgunItems=" + gMapShotgun
+    WriteLine f, ""
+    WriteLine f, "# Moottorisahan bensakanisterit"
+    WriteLine f, "ChainsawItems=" + gMapFuel
+    WriteLine f, ""
+    WriteLine f, "# Kranaatinlaukaisimen ammukset"
+    WriteLine f, "LauncherItems=" + gMapLauncher
+    
+    CloseFile f
+EndFunction
+
+
+Function GetMapThumbnail(_mapName$)
+    For i = 1 To MAP_COUNT
+        If gMapNames(i, 1) = _mapName Then
+            Return gMapImages(i, 1)
+        EndIf
+    Next i
+    Return 0
+EndFunction
+
+Function GetMapAuthor(_mapName$)
+    For i = 1 To MAP_COUNT
+        If gMapNames(i, 1) = _mapName Then
+            Return gMapNames(i, 2)
+        EndIf
+    Next i
+    Return ""
+EndFunction
+
+Function GetCurrentMapName()
+    mapName$ = gMapNames(gGameMap, 1)
+    Return GetWord2(mapName, gServerMapLoop + 1, ":")
+EndFunction
+

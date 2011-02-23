@@ -1,0 +1,137 @@
+//********************************************************************************
+// Utils.cb
+//
+// Yleisiä funktioita
+//********************************************************************************
+
+//--------------------------------------------------------------------------------
+// Pelin vakionopeuden muuttujat
+//--------------------------------------------------------------------------------
+Global g_frameTime#
+g_frameTime = 0.0
+Global g_tmpTime
+g_tmpTime = 0
+
+//================================================================================
+// Palautetaan siirtymä (pikseliä sekunnissa)
+//================================================================================
+Function PxPerSec(px#)
+    Return px# * g_frameTime
+End Function
+
+//================================================================================
+// Palautetaan kääntymä (astetta sekunnissa)
+//================================================================================
+Function DgrPerSec(dgr#)
+    Return dgr# * g_frameTime
+End Function
+
+//================================================================================
+// Päivitetään vakionopeusajastin
+//================================================================================
+Function UpdateFrameTimer()
+    curTime = TIMER()
+    If g_tmpTime = 0 Then g_tmpTime = curTime
+    g_frameTime = (curTime - g_tmpTime) / 1000.0
+    g_tmpTime = curTime
+End Function
+
+//================================================================================
+// Toimiva GetWord-funktio, CB:n oma kusee ääkkösiin päättyvien sanojen kanssa.
+// @author Jare
+//================================================================================
+Function GetWord2$(stri$, index, separator$ = " ")
+    count_word    = 1
+    word_begin    = 1
+    pos            = 0
+    Repeat
+        pos            = InStr(stri, separator, pos+1)
+        word$        = Mid(stri, word_begin, pos-word_begin)
+        word_begin    = pos+1
+        If index = count_word Then Return word
+        count_word + 1
+    Until pos = False
+    word = Mid(stri, word_begin, pos-word_begin)
+    If index = count_word Then Return word Else Return ""
+EndFunction
+
+//================================================================================
+// Syöttökenttä
+//================================================================================
+Global gInputBlinker, gTextModified
+gInputBlinker = 0
+gTextModified = False
+Function InputText(_x, _y, _w, _h, _text$, _onlyNums = 0)
+    origText$ = _text
+
+    // Otetaan nykyinen väri talteen
+    r = getRGB(RED)
+    g = getRGB(GREEN)
+    b = getRGB(BLUE)
+    
+    // Ensin syöttökentän tausta mustaksi
+    Color 0, 0, 0
+    Box _x - 2, _y, _w, _h, ON
+    
+    // Kentän reunoille kehykset
+    Color r, g, b
+    Box _x - 3, _y - 1, _w + 2, _h + 2, OFF
+
+    // Mitä näppäintä on painettu
+    key = GetKey()
+    
+    // Deletellä teksti tyhjäksi
+    If key = 4 Then _text = ""
+    
+    // Sallitaanko vain numerot
+    If _onlyNums = True Then
+        If key >= 48 And key <= 57 Then
+            _text = _text + Chr(key)
+        EndIf
+    Else
+        // Teksti ei saa mennä kentän yli
+        If TextWidth(_text) < _w - 20 Then
+            If (key => 32 And key <= 126) Or InStr("åäöÅÄÖ", Chr(key)) > 0 Then 
+                _text = _text + Chr(key)
+            EndIf
+        EndIf
+    EndIf
+    
+    // Backspace
+    If key = 8 And Len(_text) > 0 Then
+        _text = Left(_text, Len(_text) - 1)
+    EndIf
+    
+    // Kursorin vilkutus
+    If gInputBlinker + 1000 < Timer() Then
+        gInputBlinker = Timer()
+    EndIf
+    tmpTxt$ = _text
+    If gInputBlinker + 500 < Timer() Then tmpTxt = tmpTxt + "_"
+    Text _x, _y, tmpTxt
+    
+    If origText <> _text Then gTextModified = True
+    Return _text
+EndFunction
+
+Global gTimeStart, gTimeDiff
+
+Function GetTimeSync(_start = 0)
+    t = Int(Timer() / 1000)
+    tmStart = GetTime()
+    If tmStart < gTimeStart Or _start = True Then
+        gTimeStart = GetTime()
+        gTimeDiff = gTimeStart - t
+    EndIf
+    diff = tmStart - t
+    Return diff - gTimeDiff
+EndFunction
+
+Function GetTime()
+    timeText$ = Time()
+    h = Int(GetWord2(timeText, 1, ":"))
+    m = Int(GetWord2(timeText, 2, ":"))
+    s = Int(GetWord2(timeText, 3, ":"))
+    t = s + (m * 60) + (h * 3600)
+    Return t
+EndFunction

@@ -1,0 +1,945 @@
+//********************************************************************************
+// Client.cb
+//
+// Clienttiin liittyvät toiminnot
+//********************************************************************************
+
+
+//================================================================================
+// Liitytään peliin
+//================================================================================
+Function JoinGame(_host$, _port)
+    If Len(Trim(gProfile)) = 0 Then 
+        Error(GetText("no_name"))
+        Return False
+    EndIf
+    MsgBox(GetText("loading_game"))
+    gCurrentPlayerId = 0
+    // Alustetaan yhteys
+    nRet = InitClient(_host, _port, 1000)
+    If nRet <> 0 Then
+        // Yhteys palvelimelle epäonnistui
+        msg$ = "(" + nRet + ") " + GetNetErrorString(nRet)
+        Error(msg)
+        Return False
+    EndIf
+    gGameMode = CLIENT
+
+    // Aseiden lippaat tyhjiksi
+    For i = 1 To WPN_COUNT
+        aWeapon(i, WPNF_AMMO) = 0
+        aWeaponAmmos(i) = 0
+    Next i
+    // Kirjaudutaan peliin
+    If Login(True) = 0 Then 
+        // Kirjautuminen epäonnistui, palataan takaisin.
+        gGameMode = MENU
+        Return False
+    EndIf
+    crc = gMapCRC
+    If LoadGameMap(gServerMap) = False Then
+        Login(False)
+        gGameMode = MENU
+        Return False
+    EndIf
+    If gMapCRC <> crc Then
+        Error(GetText("map_not_match"))
+        Login(False)
+        If gFloor <> 0 Then
+            DeleteObject gFloor
+            gFloor = 0
+        EndIf
+        gGameMode = MENU
+        Return False
+    EndIf
+    SetMap gMap, ON, ON
+
+    gNameTitle      = GetText("player_name")
+    gKillsTitle     = GetText("kills")
+    gDeathsTitle    = GetText("deaths")
+    gTimeTitle      = GetText("time_left")
+
+    // Alustetaan pelaajat
+    ClearCollisions
+    For player.PLAYERS = Each PLAYERS
+        player\clientId     = ""
+        player\active       = False
+        player\loggedIn     = False
+        player\leftLegObj   = CloneObject(gObjects(OBJ_FOOT_LEFT))
+        player\rightLegObj  = CloneObject(gObjects(OBJ_FOOT_RIGHT))
+        player\obj          = CloneObject(gObjects(OBJ_PLAYER1))
+        player\fireObj      = CloneObject(gObjects(OBJ_FIRE1))
+        player\fireObj2     = CloneObject(gObjects(OBJ_FIRE1))
+        player\weapon       = WPN_PISTOL
+        player\passCount    = 1
+        ShowObject player\obj, OFF
+        ShowObject player\leftLegObj, OFF
+        ShowObject player\rightLegObj, OFF
+        ShowObject player\fireObj, OFF
+        // Törmäystunnistus vain omalle pelaajalle
+        If player\playerId = gCurrentPlayerId Then
+            SetupCollision player\obj, gMap, 2, 4, 2
+            ObjectRange player\obj, OBJECT_RANGE
+        EndIf
+    Next player
+    
+    ClientLoop()
+    SetMap gMap, OFF, OFF
+    
+    // Kirjaudutaan ulos
+    Login(False)
+    
+    gGameMode = MENU
+    ShowObject gMap, OFF
+
+    If gFloor <> 0 Then
+        DeleteObject gFloor
+        gFloor = 0
+    EndIf
+
+    // Poistetaan kaikki pelaajaobjektit
+    For player.PLAYERS = Each PLAYERS
+        DeleteObject player\obj
+        DeleteObject player\leftLegObj
+        DeleteObject player\rightLegObj
+        DeleteObject player\fireObj
+        DeleteObject player\fireObj2
+        StopGameSound(player\idleSound)
+    Next player
+    
+    // Poistetaan kaikki viestit
+    For cmsg.CLIENT_MESSAGES = Each CLIENT_MESSAGES
+        Delete cmsg
+    Next cmsg
+    
+    // Poistetaan kaikki ammukset
+    For bullet.BULLETS = Each BULLETS
+        DeleteObject bullet\obj
+        Delete bullet
+    Next bullet
+
+    // Poistetaan räjähdysanimaatiot
+    For expl.EXPL_ANIMS = Each EXPL_ANIMS
+        Delete expl
+    Next expl
+    
+    // Piilotetaan tutkat
+    For i = 1 To MAX_PLAYERS
+        ShowObject aRadar(i), OFF
+        ShowObject aRadar(i), OFF
+    Next i
+
+    // Poistetaan partikkeliefektit
+    For particle.FX_COLORPARTICLES = Each FX_COLORPARTICLES
+        Delete particle
+    Next particle
+    
+    // Poistetaan ukkojen räjähdykset
+    For bexpl.BODY_EXPLOSION = Each BODY_EXPLOSION
+        DeleteObject bexpl\obj
+        Delete bexpl
+    Next bexpl
+
+    // Poistetaan poimittavat tavarat
+    For item.ITEMS = Each ITEMS
+        DeleteObject item\obj
+        Delete item
+    Next item
+    SetWindow "NetMatch " + gGSSVersion
+    ShowMouse ON
+EndFunction
+
+
+//--------------------------------------------------------------------------------
+// Clientin vaatimia muuttujia
+//--------------------------------------------------------------------------------
+Global gClientDataSended, gNetFPS, gNetFPSCounter, gNetFPSTimer, gFirstLoop
+Global gConsoleMessage$, gConsoleText$, gConsoleMode
+Global gBbs, gBbsCount, gBbsTimer
+Global gShowFloor
+
+//================================================================================
+// Clientin pääsilmukka
+//================================================================================
+Function ClientLoop()
+    ShowObject gMap, ON
+    If gMapAnimDelay > 0 Then
+        PlayObject gMap, 0, 0, Float(gMapAnimDelay) / 10.0
+    EndIf
+    ClearKeys
+    ShowMouse gImages(IMG_SIGHT)
+    // Muuttujien nollaukset
+    gFirstLoop          = True
+    gPlayerCount        = 0
+    gConsoleMessage     = ""
+    gClientDataSended   = False
+    gNetFPS             = 0
+    gNetFPSCounter      = 0
+    gNetFPSTimer        = Timer()
+    gConsoleMode        = False
+    gConsoleText$       = ""
+    gBbsCount           = 0
+    gBbs                = 0
+    gBbsTimer           = 0
+    gBbsTimer           = Timer()
+    //bEsc                = False
+    ClearKeys2()
+    gShowFloor          = True
+
+    ClsColor 0, 0, 0
+    Cls
+    Repeat
+//COM1        gLastPlayerCount = gPlayerCount
+        player.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerId))
+        
+//        hided = (player\visible - Timer() > SPAWN_BLINKER / 2)
+//        If player\health > 0 Then
+//            ShowObject player\obj, ON
+//            ShowObject player\leftLegObj, ON
+//            ShowObject player\rightLegObj, ON
+//            ObjectRange player\obj, OBJECT_RANGE
+//        EndIf
+        
+//        If player\weapon = WPN_CHAINSAW And aWeapon(WPN_CHAINSAW, WPNF_AMMO) > 0 And player\health > 0 Then
+//            If player\idleTimer + 2000 < Timer() Then
+//                player\idleTimer = Timer()
+//                player\idleSound = PlayGameSound(SND_CHAINSAW, ObjectX(player\obj), ObjectY(player\obj))
+//            EndIf
+//        Else
+//            StopGameSound(player\idleSound)
+//        EndIf
+
+        If ReadDataFromServer() = False Then Exit
+        SendDataToServer()
+        UpdateBodyExplosion()
+        GameUpdate()
+        
+//        If hided Then
+//            ShowObject player\obj, OFF
+//            ShowObject player\leftLegObj, OFF
+//            ShowObject player\rightLegObj, OFF
+//        EndIf
+        
+        If player\loggedIn Then DrawGame
+        DrawGameStatus()
+        DrawClientMessages()
+        UpdateExplodeAnimation()
+
+        If gConsoleMode = False Then
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // CONSOLE OFF >>>
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            volAdjust = KeyDown(cbKeyV) Or KeyDown(cbKeyM)
+            // Pelaajaa voidaan kontrolloida vain jos se on hengissä
+            If gSessionComplete = False And player\loggedIn = True And player\health > 0 And volAdjust = False Then
+            
+                obj = player\obj
+                If MouseMoveX() <> 0 Or MouseMoveY() <> 0 Then
+                    // Jos hiiri liikkuu niin käännetään sitä kohti
+                    RotateObject obj, -GetAngle(ObjectX(obj), ObjectY(obj), MouseWX(), MouseWY())
+                    // Tähtäin näkyviin
+                    ShowMouse gImages(IMG_SIGHT)
+                EndIf
+                
+//                hided = False
+//                If player\visible - Timer() > SPAWN_BLINKER / 2 Then
+//                    ShowObject player\obj, ON
+//                    ShowObject player\leftLegObj, ON
+//                    ShowObject player\rightLegObj, ON
+//                    ObjectRange player\obj, OBJECT_RANGE
+//                    UpdateGame2()
+//                    hided = True
+//                EndIf
+                
+                If LeftKey() Or RightKey() Then ShowMouse OFF
+                If gControlMode = 1 Then
+                    If KeyDown(cbKeyW) Or UpKey() Then MoveObject obj, PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyS) Or DownKey() Then MoveObject obj, -PxPerSec(BACKWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyA) Then MoveObject obj, 0, -PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyD) Then MoveObject obj, 0, PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                EndIf
+                If gControlMode = 2 Then
+                    moveX = 0
+                    moveY = 0
+                    If KeyDown(cbKeyW) Then moveY = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyS) Then moveY = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyA) Then moveX = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyD) Then moveX = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    TranslateObject obj, moveX, moveY
+                EndIf
+                
+                If LeftKey() Then TurnObject obj, DgrPerSec(TURN_SPEED)
+                If RightKey() Then TurnObject obj, -DgrPerSec(TURN_SPEED)
+                //If KeyHit(cbKeyEsc) Then bEsc = True
+                UpdateGame2()
+                
+//                If hided Then
+//                   ShowObject player\obj, OFF
+//                    ShowObject player\leftLegObj, OFF
+//                    ShowObject player\rightLegObj, OFF
+//                EndIf
+                
+                // Aseen vaihto
+                // Voidaan yleensä edes vaihtaa
+                If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() Then
+                    onlyLoaded = False
+                    If gMouseHit2 = True Or gKeyTab = True Then
+                        onlyLoaded = True
+                        gMouseRoll = 1
+                    EndIf
+                    If gMouseRoll <> 0 Then 
+                        While True
+                            player\weapon = player\weapon + gMouseRoll
+                            If player\weapon > WPN_COUNT Then player\weapon = 1
+                            If player\weapon < 1 Then player\weapon = WPN_COUNT
+                            player\lastShoot = 0
+                            If onlyLoaded = False Then Exit
+                            If aWeapon(player\weapon, WPNF_AMMO) > 0 Then Exit
+                            If player\weapon = WPN_PISTOL Then Exit
+                        Wend
+                    Else
+                        For w = 1 To WPN_COUNT
+                            If aWeapon(w, WPNF_KEY) <> 0 Then
+                                If KeyDown(aWeapon(w, WPNF_KEY)) Then
+                                    player\weapon = w
+                                    player\lastShoot = 0
+                                EndIf
+                            EndIf
+                        Next w
+                    EndIf
+                EndIf
+                // Vaihdetaan console-tilaan
+//                If gKeyC Then 
+//                    gConsoleText = ""
+//                    gConsoleMode = True
+//                    ClearKeys
+//                EndIf
+            EndIf
+            
+            If gConsoleMode = False Then
+                // Vaihdetaan console-tilaan
+                If gKeyC Then 
+                    gConsoleText = ""
+                    gConsoleMode = True
+                    ClearKeys
+                EndIf
+            EndIf
+            
+            If gKeyG Then 
+                gStatus = Not gStatus
+                SaveConfig()
+            EndIf
+            If gKeyF Then 
+                gShowFPS = Not gShowFPS
+            EndIf
+            If gFloor <> 0 And gKeyB Then 
+                gShowFloor = Not gShowFloor
+                ShowObject gFloor, gShowFloor
+            EndIf
+            
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // CONSOLE OFF <<<
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        EndIf
+        
+//        If ReadDataFromServer() = False Then Exit
+//        SendDataToServer()
+//        UpdateBodyExplosion()
+//        GameUpdate()
+        If gSessionComplete = False Then
+            CloneCameraPosition player\obj
+        EndIf
+        
+        
+//        If player\loggedIn Then DrawGame
+//        DrawGameStatus()
+//        DrawClientMessages()
+//        UpdateExplodeAnimation()
+
+
+        If gConsoleMode = True Then
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // CONSOLE ON >>>
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            SetFont gFonts(FNT_SETUP)
+            Color 255, 255, 0
+            gConsoleText = InputText(10, 565, 780, 25, gConsoleText)
+            If gKeyReturn Then
+                gConsoleText = Trim(gConsoleText)
+                If Len(gConsoleText) > 0 Then
+                    gConsoleMessage = gConsoleText
+                EndIf
+                gConsoleMode = False
+                gConsoleText = ""
+                ClearKeys
+            EndIf
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            // CONSOLE ON <<<
+            //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        EndIf
+        
+        If gConsoleMode = False Then
+            If KeyDown(cbKeyV) = True And KeyDown(cbKeyM) = False Then 
+                If DownKey() Then AdjustVolume(-1, 0)
+                If UpKey() Then AdjustVolume(1, 0)
+                SetFont gFonts(FNT_SETUP)
+                Color 255, 255, 0
+                Text 10, 550, GetText("mi_fx_vol") + ": " + gFXVolume
+            EndIf
+            If KeyDown(cbKeyM)= True And KeyDown(cbKeyV) = False Then 
+                If DownKey() Then AdjustVolume(-1, 1)
+                If UpKey() Then AdjustVolume(1, 1)
+                SetFont gFonts(FNT_SETUP)
+                Color 255, 255, 0
+                Text 10, 550, GetText("mi_music_vol") + ": " + gMusicVolume
+            EndIf
+        EndIf
+        
+        If gKeyEsc Then 
+            If gConsoleMode = True Then 
+                gConsoleMode = False
+                gConsoleText = ""
+                gEsc = False
+                ClearKeys
+            Else
+                Exit
+            EndIf
+        EndIf
+        DrawToWorld ON
+        UpdateParticleEffects()
+        DrawToWorld OFF
+        ClearKeys2()
+        If Abs(GetTimeSync()) > 3 Then
+            Error(GetText("speedhack"))
+            Exit
+        EndIf
+        If aWeapon(player\weapon, WPNF_AMMO) * 3 <> aWeaponAmmos(player\weapon) Then
+            Error(GetText("hack"))
+            Exit
+        EndIf
+
+        If player\loggedIn Then DrawScreen
+        UpdateGame2()
+        PlayMusic()
+    Forever
+    PlayMusic(OFF)
+    StopGameSound(idleSound)
+
+    ClearKeys
+EndFunction
+
+
+
+//================================================================================
+// Luetaan serverin lähettämää dataa
+//================================================================================
+Function ReadDataFromServer()
+    // Ei jäädä lukemaan dataa jos mitään ei ole lähetettykään
+    If gClientDataSended = False Then Return True
+    
+    // Nyt luetaan
+    nRet = ClientRead()
+    // Jos paluuarvo on alle 0 niin kaikki data ei ole vielä tullut palvelimelta
+    If nRet < 0 Then Return True
+    gClientDataSended = False
+
+    // Päivitetään letlag-mittari
+    gNetFPSCounter + 1
+    If gNetFPSTimer + 1000 < Timer() Then
+        gNetFPSTimer = Timer()
+        gNetFPS = gNetFPSCounter
+        gNetFPSCounter = 0
+    EndIf
+    
+    // Lukemisessa tuli joku virhe
+    If nRet <> 0 Then 
+        If nRet = 10060 Then Return True
+        msg$ = "(" + nRet + ") " + GetNetErrorString(nRet)
+        Error(msg)
+        Return False
+    EndIf
+
+    // Piilotetaan kaikki pelaajat sillä myöhemmin näytetään vain ne joista saadaan tietoja.
+    For plr.PLAYERS = Each PLAYERS
+        ShowObject plr\obj, OFF
+        ShowObject plr\leftLegObj, OFF
+        ShowObject plr\rightLegObj, OFF
+        ShowObject plr\fireObj, OFF
+        ShowObject plr\fireObj2, OFF
+        // Kasvatetaan myös passCounttia jotta tiedetään jos joku pelaajista tulee
+        // näkyviin.
+        // Edellisellä kierroksella näkyvissä olleet pelaajat siirretään uusille paikoilleen
+        // pehmeästi mutta piilossa olleet suoraan.
+        plr\passCount = plr\passCount + 1
+    Next plr
+
+    // Piilotetaan myös kaikki tutkat
+    For i = 1 To MAX_PLAYERS
+        ShowObject aRadar(i), OFF
+        ShowObject aRadar(i), OFF
+    Next i
+    gRadarId = 0
+    
+    // Muistipalan alussa on aina saapuneen datan pituus joka luetaan tässä pois
+    gBbsCount = gBbsCount + _Net_GetInt()
+    If gBbsTimer + 1000 < Timer() Then
+        gBbsTimer = Timer()
+        gBbs = gBbsCount
+        gBbsCount = 0
+    EndIf
+    
+    // Luetaan kaikki saapuneet viestit
+    While True
+        netmsg = _Net_GetByte() // Viestin tunnus
+        
+        If netmsg = NET_PLAYER Then
+        
+            // Palaajadataa tulossa
+            playerId        = _Net_GetByte()    // Pelaajan tunnus
+            player.PLAYERS  = ConvertToType(gPlayers(playerId))
+            player\prevHealth = player\health
+            player\active   = True
+            player\x        = _Net_GetShort()   // Sijainti
+            player\y        = _Net_GetShort()   // Sijainti
+            player\angle    = _Net_GetShort()   // Kulma
+            weapon          = _Net_GetByte()    // Ase
+            player\hasAmmos = _Net_GetByte()    // Onko ammuksia
+            player\health   = _Net_GetByte()    // Terveys
+            If player\health > 128 Then player\health = player\health - 256
+            player\kills    = _Net_GetShort()  // Tapot
+            player\deaths   = _Net_GetShort()  // Kuolemat
+            player\team     = _Net_GetByte()    // Joukkue
+            player\spawnTime= _Net_GetByte()    // Haavoittumaton
+            newPlayer       = Not player\loggedIn
+            player\loggedIn = True
+            wakeUp = False
+            If weapon < 1 Or weapon > WPN_COUNT Then weapon = player\weapon
+            // Tutkitaan onko terveys vähentynyt ja kuinka paljon.
+            // Siitä päätellään veriroiskeen suuruus.
+            eff# = Min(4, (player\prevHealth - player\health) / 10.0)
+            If eff > 0 Then 
+                Blood(player\x, player\y, eff)
+                PlayGameSound(Rand(SND_HIT1, SND_HIT4), player\x, player\y)
+            EndIf
+            If player\passCount > 1 Or newPlayer = True Then
+                player\death = False
+            EndIf
+            
+            If player\health > 0 Then
+                If player\death = True Then wakeUp = True
+                player\death = False
+                If player\spawnTime = 0 Then
+                    player\visible = 0
+                Else
+                    If player\visible - Timer() < 0 Then player\visible = Timer() + SPAWN_BLINKER
+                    //player\visible = Not player\visible
+                EndIf
+                ShowObject player\obj, ON
+                ShowObject player\leftLegObj, ON
+                ShowObject player\rightLegObj, ON
+                ObjectRange player\obj, OBJECT_RANGE
+//                If player\visible - Timer() > SPAWN_BLINKER / 2 Then
+//                    //ShowObject player\obj, OFF
+//                    //ShowObject player\leftLegObj, OFF
+//                    //ShowObject player\rightLegObj, OFF
+//                EndIf
+
+            Else
+                If player\death = False Then
+                    PlayGameSound(Rand(SND_DIE1, SND_DIE9), player\x, player\y)
+                    BodyExplosion(player\x, player\y, eff, player\team)
+                EndIf
+                player\death = True
+            EndIf
+            
+            // Jos pelaaja on edellisellä kierroksella ollut piilossa niin viedään 
+            // suoraan oikeaan paikkaan. Tai jos pelaaja on uusi.
+            If player\passCount > 1 Or newPlayer = True Or wakeUp = True And gSessionComplete = False Then
+                PositionObject player\obj, player\x, player\y
+                RotateObject player\obj, player\angle
+                player\death = False
+                If player\playerId = gCurrentPlayerId Then
+                    If InMap(player\x, player\y) = False Then
+                        SpawnObject(player\obj)
+                    EndIf
+                EndIf
+            EndIf
+            If player\weapon <> weapon Then player\lastShoot = 0
+            If player\playerId <> gCurrentPlayerId Then
+                player\weapon = weapon
+                If newPlayer = True Then
+                    // Uusi pelaaja on osallistunut peliin.
+                    // Asetetaan oman pelaajan törmäys.
+                    plr.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerId))
+                    If plr\active = True Then
+                        SetupCollision plr\obj, player\obj, 2, 2, 2
+                        ObjectRange plr\obj, OBJECT_RANGE
+                    EndIf
+                EndIf
+            Else
+                // Oma pelaaja on juuri osallistunut peliin
+                If newPlayer = True Then
+                    // Asetetaan törmäykset muihin pelaajiin
+                    For plr.PLAYERS = Each PLAYERS
+                        If plr\active And plr\playerId <> player\playerId Then
+                            SetupCollision player\obj, plr\obj, 2, 2, 2
+                            ObjectRange plr\obj, OBJECT_RANGE
+                        EndIf
+                    Next plr
+                EndIf
+            EndIf
+            player\passCount = 0
+        
+        ElseIf netmsg = NET_PLAYERNAME Then 
+        
+            // Pelaajien nimiä tulossa
+            playerId        = _Net_GetByte()    // Pelaajan tunnus
+            player.PLAYERS  = ConvertToType(gPlayers(playerId))
+            player\name     = _Net_GetString()  // Nimi
+            player\zombie   = _Net_GetByte()    // Onko botti
+            player\active   = True
+            // Listalla näytettävä nimi
+            player\statName = CheckPlayerName(player\name)
+//COM1            gPlayerCount + 1
+        
+        ElseIf netmsg = NET_LOGIN Then
+        
+            // Joku liittyi peliin
+            playerId        = _Net_GetByte()
+            name$           = _Net_GetString()
+            zombie          = _Net_GetByte()
+            player.PLAYERS  = ConvertToType(gPlayers(playerId))
+            player\name     = name
+            player\active   = True
+            player\kills    = 0
+            player\deaths   = 0
+            player\zombie   = 0
+            player\statName = CheckPlayerName(player\name)
+            AddClientMessage(Replace(GetText("player_login"), "%1", name), netmsg)
+//COM1            gPlayerCount + 1
+            
+        ElseIf netmsg = NET_NOLOGIN Then
+        
+            Error(GetText("player_removed"))
+            Return False
+        
+        ElseIf netmsg = NET_LOGOUT Then
+        
+            // Joku poistui pelistä
+            playerId = _Net_GetByte()
+            player.PLAYERS  = ConvertToType(gPlayers(playerId))
+            player\active = False
+            player\loggedIn = False
+            If player\name <> "" Then
+                AddClientMessage(Replace(GetText("player_logout"), "%1", player\name), netmsg)
+            EndIf
+//COM1            gPlayerCount - 1
+            
+        ElseIf netmsg = NET_NEWBULLET Then
+        
+            // Uusi ammus on ammuttu
+            bulletId    = _Net_GetInt()     // Ammuksen tunnus
+            playerId    = _Net_GetByte()    // Kuka ampui
+            weapon      = _Net_GetByte()    // Millä aseella
+            sndPlay     = _Net_GetByte()    // Soitetaanko ääni
+            x           = _Net_GetShort()   // Sijainti
+            y           = _Net_GetShort()   // Sijainti
+            angle       = _Net_GetShort()   // Kulma
+
+            // Haetaan ampunut pelaaja
+            player.PLAYERS  = ConvertToType(gPlayers(playerId))
+            
+            If weapon <> WPN_CHAINSAW Then
+                bullet.BULLETS = New(BULLETS)
+                bullet\bulletId = bulletId
+                bullet\playerId = playerId
+                bullet\weapon   = weapon
+                bullet\shooted  = Timer()
+                bullet\obj      = CloneObject(gObjects(aWeapon(weapon, WPNF_BULLET)))
+                bullet\moved    = False
+                PositionObject bullet\obj, x, y
+                RotateObject bullet\obj, angle
+                ShowObject bullet\obj, ON
+                ObjectRange bullet\obj, 5
+                UpdateGame2()
+                SetupCollision bullet\obj, gMap, 2, 4, 1
+                // Suuliekki
+                If player\active = True And player\health > 0 And player\passCount = 0 Then
+                    player\showFire = True
+                EndIf
+            Else
+                // Moottorisaha
+                If player\lastSound + 250 > Timer() Then sndPlay = False
+            EndIf
+            
+            If sndPlay = True Then
+                player\lastSound = Timer()
+                PlayGameSound(aWeapon(weapon, WPNF_SHOOTSOUND), x, y)
+            EndIf
+
+        ElseIf netmsg = NET_TEXTMESSAGE Then
+        
+            // Tekstiviesti saapuu
+            playerId = _Net_GetByte()
+            msgText$ = _Net_GetString()
+            player.PLAYERS  = ConvertToType(gPlayers(playerId))
+            AddClientMessage(msgText, netmsg, player\name)
+            
+        ElseIf netmsg = NET_BULLETHIT Then
+        
+            // Ammuksen osumaviesti saapuu
+            bulletId    = _Net_GetInt()     // Ammuksen tunnus
+            playerId    = _Net_GetByte()    // Keneen osui
+            x           = _Net_GetShort()   // Missä osui
+            y           = _Net_GetShort()   // Missä osui
+            weapon      = _Net_GetByte()    // Mistä aseesta ammus on
+
+            // Jos ammus oli singosta tai kranaatinlaukaisimesta niin luodaan räjähdysanimaatio
+            If (weapon = WPN_BAZOOKA Or weapon = WPN_LAUNCHER) And InScreen(x, y, 200) = True Then
+                PlayGameSound(aWeapon(weapon, WPNF_HITSOUND), x, y)
+                expl.EXPL_ANIMS = New(EXPL_ANIMS)
+                expl\x      = x
+                expl\y      = y
+                expl\frame  = 0
+                expl\tStamp = Timer()
+                expl\frames = 16
+                expl\img    = IMG_EXPLOSION1
+                expl\w      = 128
+                expl\h      = 128
+            EndIf
+            
+            // Etsitään ammus
+            bid = FindBullet(bulletId)
+            If bid <> 0 Then
+                bullet.BULLETS = ConvertToType(bid)
+                DeleteObject bullet\obj
+                Delete bullet
+            EndIf
+            
+        ElseIf netmsg = NET_RADAR Then
+        
+            // Näkymättömissä olevan pelaajan tutkatieto
+            ang# = Float(_Net_GetByte()) / 255.0 * 360.0
+            team = _Net_GetByte()
+            player.PLAYERS  = ConvertToType(gPlayers(gCurrentPlayerId))
+            AddRadar(player\obj, ang, team)
+            
+        ElseIf netmsg = NET_ITEM Then
+        
+            // Kentälle tulee joku tavara tai sen paikka muuttui
+            itemId      = _Net_GetByte()    // Tunnus
+            itemType    = _Net_GetByte()    // Tyyppi
+            x           = _Net_GetShort()   // Sijainti
+            y           = _Net_GetShort()   // Sijainti
+            SetItem(itemType, itemId, x, y)
+            
+        ElseIf netmsg = NET_KILLMESSAGE Then
+
+            // Joku tappoi jonkun
+            playerId    = _Net_GetByte()    // Kuka tappoi
+            playerId2   = _Net_GetByte()    // Kenet
+            weapon      = _Net_GetByte()    // Millä aseella
+            k1          = _Net_GetShort()  // Tappajan tapot
+            d1          = _Net_GetShort()  // Tappajan kuolmeat
+            k2          = _Net_GetShort()  // Uhrin tapot
+            d2          = _Net_GetShort()  // Uhrin kuolemat
+            cmsg.CLIENT_MESSAGES = New(CLIENT_MESSAGES)
+            cmsg\timeStamp  = Timer()
+            cmsg\msgType    = NET_KILLMESSAGE
+            plr.PLAYERS     = ConvertToType(gPlayers(playerId))
+            plr\kills       = k1
+            plr\deaths      = d1
+            cmsg\name1      = plr\name
+            cmsg\team1      = plr\team
+            plr.PLAYERS     = ConvertToType(gPlayers(playerId2))
+            cmsg\name2      = plr\name
+            cmsg\team2      = plr\team
+            plr\kills       = k2
+            plr\deaths      = d2
+            cmsg\img        = aWeapon(weapon, WPNF_ICON)
+        
+        ElseIf netmsg = NET_SESSIONTIME Then
+        
+            // Pelisession aikatiedot
+            sessionComplete = gSessionComplete
+            gSessionTime    = _Net_GetInt() // Erän pituus
+            lapTime         = _Net_GetInt() // Kuinka kauan on pelattu
+            gTimeLeft = gSessionTime - lapTime
+            gSessionComplete = _Net_GetByte()   // Loppuiko erä
+            If gSessionTime = 0 Then gSessionComplete = False
+            If gSessionComplete = True Then
+                ShowItems(OFF)
+                player.PLAYERS  = ConvertToType(gPlayers(gCurrentPlayerId))
+                player\death    = True
+                player\weapon   = WPN_PISTOL
+                For i = 1 To WPN_COUNT
+                    aWeapon(i, WPNF_AMMO) = 0
+                    aWeaponAmmos(i) = 0
+                Next i
+            EndIf
+            // Jos uusi erä käynnistyi juuri niin tyhjennetään tilastot
+            If gSessionComplete = False And sessionComplete = True Then
+                ShowItems(ON)
+                For player.PLAYERS = Each PLAYERS
+                    player\deaths = 0
+                    player\kills = 0
+                    player\death = True
+                Next player
+                player.PLAYERS  = ConvertToType(gPlayers(gCurrentPlayerId))
+                SpawnObject(player\obj)
+            EndIf
+            
+        ElseIf netmsg = NET_MAPCHANGE Then
+        
+            mapName$ = _Net_GetString()
+            crc = _Net_GetInt()
+            If gServerMap <> mapName And gTimeLeft < -5 Then
+                // Siivotaan ruumiinpalaset
+                For bexpl.BODY_EXPLOSION = Each BODY_EXPLOSION
+                    DeleteObject bexpl\obj
+                    Delete bexpl
+                Next bexpl
+                
+                If LoadGameMap(mapName) = False Then
+                    Return False
+                EndIf
+                If gMapCRC <> crc Then
+                    Error(GetText("map_not_match"))
+                    If gFloor <> 0 Then
+                        DeleteObject gFloor
+                        gFloor = 0
+                    EndIf
+                    Return False
+                EndIf
+                If gFloor <> 0 Then ShowObject gFloor, gShowFloor
+                //ShowItems(ON)
+                SetMap gMap, ON, ON
+                ObjectOrder gMap, -1
+                ShowObject gMap, ON
+                PositionCamera 0, 0
+                ClearCollisions
+                player.PLAYERS  = ConvertToType(gPlayers(gCurrentPlayerId))
+                SetupCollision player\obj, gMap, 2, 4, 2
+                ObjectRange player\obj, OBJECT_RANGE
+                For plr.PLAYERS = Each PLAYERS
+                    If plr\active = True And plr\playerId <> player\playerId Then
+                        SetupCollision player\obj, plr\obj, 2, 2, 2
+                    EndIf
+                Next plr
+
+                gServerMap = mapName
+            EndIf
+        
+        Else
+            // Tuntematon viesti tai viestit loppui
+            Exit
+        EndIf
+    Wend
+//COM1    CalcPlayers()
+    
+    Return True
+EndFunction
+
+
+//================================================================================
+// Lähetetään serverille dataa
+//================================================================================
+Function SendDataToServer()
+    // Jos viesti on jo lähetetty mutta vastausta ei ole luettu niin ei lähetetä uudestaan
+    If gClientDataSended = True Then Return False
+
+    // Muistipalan alustus ensin
+    _Net_InitMemBlock()
+
+    // Haetaan ensin omat tiedot
+    player.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerId))
+
+    // Jos peli on juuri käynnistetty ja ollaan täällä ensimmäistä kertaa
+    // niin pyydetään serveriltä kaikkien pelaajien nimet.
+    If gFirstLoop = True Then
+//COM1        gPlayerCount = 0
+        _Net_PutByte(NET_PLAYERNAME)        // Pyydetään kaikki tiedot
+        _Net_PutByte(gCurrentPlayerId)      // Pelaajatunnus
+        _Net_PutByte(NET_END)               // Viestin loppu
+        gFirstLoop = False
+        gClientDataSended = True
+        ClientSendBack()
+        Return True
+    EndIf
+    
+    // Poimitaanko joku tavara
+    pickedItem = 0
+    If gSessionComplete = False And player\health > 0 Then
+        For item.ITEMS = Each ITEMS
+            If Distance2(player\obj, item\obj) < 30 Then
+                pick = False
+                If item\itemType = OBJ_ITEM_HEALTH Then
+                    If player\health < 100 Then pick = True
+                Else
+                    pick = PickItem(item\itemType)
+                EndIf
+//                If item\itemType = OBJ_ITEM_HEALTH And player\health < 100 Then pick = True //: player\health = Min(100, player\health + 50)
+//                If item\itemType = OBJ_ITEM_AMMO And aWeapon(WPN_MGUN, WPNF_AMMO) < aWeapon(WPN_MGUN, WPNF_AMMO_MAX) Then pick = True : aWeapon(WPN_MGUN, WPNF_AMMO) = Min(aWeapon(WPN_MGUN, WPNF_AMMO_MAX), aWeapon(WPN_MGUN, WPNF_AMMO) + 50)
+//                If item\itemType = OBJ_ITEM_ROCKET And aWeapon(WPN_BAZOOKA, WPNF_AMMO) < aWeapon(WPN_BAZOOKA, WPNF_AMMO_MAX) Then pick = True : aWeapon(WPN_BAZOOKA, WPNF_AMMO) = Min(aWeapon(WPN_BAZOOKA, WPNF_AMMO_MAX), aWeapon(WPN_BAZOOKA, WPNF_AMMO) + 5)
+//                If item\itemType = OBJ_ITEM_FUEL And aWeapon(WPN_CHAINSAW, WPNF_AMMO) < aWeapon(WPN_CHAINSAW, WPNF_AMMO_MAX) Then pick = True : aWeapon(WPN_CHAINSAW, WPNF_AMMO) = Min(aWeapon(WPN_CHAINSAW, WPNF_AMMO_MAX), aWeapon(WPN_CHAINSAW, WPNF_AMMO) + 50)
+//                If item\itemType = OBJ_ITEM_SHOTGUN And aWeapon(WPN_SHOTGUN, WPNF_AMMO) < aWeapon(WPN_SHOTGUN, WPNF_AMMO_MAX) Then pick = True : aWeapon(WPN_SHOTGUN, WPNF_AMMO) = Min(aWeapon(WPN_SHOTGUN, WPNF_AMMO_MAX), aWeapon(WPN_SHOTGUN, WPNF_AMMO) + 10)
+                If pick = True Then
+                    PlayGameSound(SND_PICK, ObjectX(player\obj), ObjectY(player\obj))
+                    pickedItem = item\itemId
+                    DeleteObject item\obj
+                    Delete item
+                    Exit
+                EndIf
+            EndIf
+        Next item
+    EndIf
+    
+    // Lähetetään pelaajan tiedot
+    _Net_PutByte(NET_PLAYER)                // Viestin tyyppi
+    _Net_PutByte(gCurrentPlayerId)          // Pelaajatunnus
+    _Net_PutShort(ObjectX(player\obj))      // Sijainti
+    _Net_PutShort(ObjectY(player\obj))      // Sijainti
+    _Net_PutShort(ObjectAngle(player\obj))  // Kulma
+    _Net_PutByte(player\weapon)             // Ase
+    ammoExists = False
+    If aWeapon(player\weapon, WPNF_AMMO) > 0 Then ammoExists = True
+    _Net_PutByte(ammoExists)
+    // Tutkitaan voidaanko lähettää tieto ampumisesta
+    shootNow = 0
+    If (MouseDown(1) = True Or KeyDown(cbKeySpace) = True) And gConsoleMode = False And gSessionComplete = False And player\spawnTime = 0 Then
+        // Onko ase latingissa
+        If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() And player\health > 0 Then
+            // Onko ammuksia
+            If aWeapon(player\weapon, WPNF_AMMO) > 0 Or aWeapon(player\weapon, WPNF_AMMO_MAX) = 0 Then
+                // Latingissa on, vähennetään ammuksia
+                aWeapon(player\weapon, WPNF_AMMO) = aWeapon(player\weapon, WPNF_AMMO) - 1
+                aWeaponAmmos(player\weapon) = aWeapon(player\weapon, WPNF_AMMO) * 3
+                player\lastShoot = Timer()
+                shootNow = True
+            Else
+                PlayGameSound(SND_EMPTY, ObjectX(player\obj), ObjectY(player\obj))
+                player\lastShoot = Timer()
+            EndIf
+        EndIf
+    EndIf
+    _Net_PutByte(shootNow)
+    _Net_PutByte(pickedItem)
+
+    // Lähetetään tekstiviesti jos sellainen on
+    If Len(gConsoleMessage) > 0 Then
+        _Net_PutByte(NET_TEXTMESSAGE)
+        _Net_PutString(gConsoleMessage)
+        gConsoleMessage = ""
+    EndIf
+    
+    If gSessionComplete = True Then
+        _Net_PutByte(NET_MAPCHANGE)
+        _Net_PutString(gServerMap)
+    EndIf
+    
+    
+    _Net_PutByte(NET_END)
+    ClientSendBack()
+    gClientDataSended = True
+EndFunction
+

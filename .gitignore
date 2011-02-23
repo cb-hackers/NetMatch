@@ -1,0 +1,28 @@
+# Ei valmista exe‰ repoon
+*.exe
+
+# Pikakuvakkeet pois
+*.lnk
+
+# Notepad++:n varmuuskopiotiedostoja ei repoon
+*.bak
+nppBackup
+
+# Ei tartte servulogeja pist‰‰ repoon myˆsk‰‰ testailujen j‰ljilt :p
+serverlog.txt
+
+# J‰tet‰‰ jokasen omaks valinnaks, millaset configit tekee :P
+NetMatch.cfg
+
+# cbResourcella t‰ytyy itse compilata NetMatch.dat filu. S‰‰stet‰‰n repon tilaa.
+NetMatch.dat
+
+# J‰tet‰‰n CBRC.exen luoma cbrs.reg filu pois, ja v‰liaikaiset .pxi tiedostot myˆs
+cbrs.reg
+*.pxi
+
+# J‰tet‰‰n bannilistat pois
+ipban.txt
+
+# Perhanan Windows
+Thumbs.db

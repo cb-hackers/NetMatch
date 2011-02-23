@@ -1,0 +1,117 @@
+//********************************************************************************
+// Message.cb
+//
+// Ruudulla näytettävät ilmoitukset
+//********************************************************************************
+
+
+//--------------------------------------------------------------------------------
+// Ilmoitustyypit
+//--------------------------------------------------------------------------------
+Const MSG_INFO_NOWAIT   = 0     // Info mutta ei odota näppäintä
+Const MSG_INFO          = 1     // Info
+Const MSG_ERROR         = 2     // Virheilmoitus
+
+
+//================================================================================
+// Virheilmoitus
+//================================================================================
+Function Error(_message$)
+    msg$ = _message
+    If Right(msg, 1) <> "|" Then msg = msg + "|"
+    MsgBox(msg + "|" + GetText("press_to_continue"), GetText("error"), MSG_ERROR)
+EndFunction
+
+
+//================================================================================
+// Viesti
+//================================================================================
+Function MsgBox(_text$, _caption$ = "", _type = 0)
+    ClearKeys
+    imgBack = MakeImage(ScreenWidth(), ScreenHeight())
+    CopyBox 0, 0, ScreenWidth(), ScreenHeight(), 0, 0, SCREEN(), Image(imgBack)
+    
+    imgMsg = MakeImage(ScreenWidth(), ScreenHeight())
+    DrawToImage imgMsg
+    
+    maxW = 0
+    maxH = 25
+    
+    Color 0, 0, 255
+    If _type = MSG_ERROR Then Color 255, 0, 0
+    Box 0, 0, ScreenWidth(), ScreenHeight(), ON
+    
+    Color 255, 255, 0
+    If _type <> MSG_INFO_NOWAIT Then
+        SetFont gFonts(FNT_MENUITEM)
+        tw = TextWidth(_caption)
+        th = TextHeight(_caption)
+        Color 0, 0, 0
+        Text (ScreenWidth() - tw) / 2 + 3, -1*(5 + 3), _caption
+        Color 255, 255, 0
+        Text (ScreenWidth() - tw) / 2, -1*5, _caption
+        maxW = tw + 50
+        maxH = th + 40
+    EndIf
+
+    Color 255, 255, 0
+    SetFont gFonts(FNT_MESSAGEBOX)
+    textLines$ = ""
+    lastLine$ = ""
+
+    For row = 1 To CountWords(_text, "|")
+        txtLine$ = GetWord2(_text, row, "|")
+        For word = 1 To CountWords(txtLine)
+            oneword$ = GetWord2(txtLine, word)
+            lastLine = lastLine + oneword + " "
+            tw = TextWidth(Trim(lastLine))
+            If tw > ScreenWidth() - 100 Then
+                textLines = textLines + "|" + oneword + " "
+                lastLine = ""
+            Else
+                maxW = Max(maxW, tw + 30)
+                textLines = textLines + oneword + " "
+            EndIf
+        Next word
+        textLines = Trim(textLines) + "|"
+        lastLine = ""
+    Next row
+
+    For row = 1 To CountWords(textLines, "|")
+        txtLine$ = GetWord2(textLines, row, "|")
+        tw = TextWidth(txtLine)
+        Text (ScreenWidth() - tw) / 2, -1*maxH, txtLine
+//        CenterText ScreenWidth() / 2, maxH, txtLine, 0
+        maxH = maxH + TextHeight(txtLine)
+    Next row
+    
+
+    x = (ScreenWidth() - maxW) / 2
+    y = (ScreenHeight() - maxH) / 2
+    Box x, 0, maxW, maxH, OFF
+    Box x + 2, 2, maxW - 4, maxH - 4, OFF
+    
+    CopyBox x, 0, maxW, maxH, x, y, Image(imgMsg), Image(imgBack)
+
+
+    DrawToScreen
+    
+    retKey = 0
+    tStart = Timer()
+    Repeat
+        DrawGame
+        DrawImage imgBack, 0, 0
+        DrawScreen
+        retKey = GetKey()
+        If _type = MSG_INFO_NOWAIT Then Exit
+        If gDirectServer = True Then
+            If tStart + 2000 < Timer() Then Exit
+        EndIf
+    Until retKey <> 0 Or MouseHit(1) = True
+    DrawImage imgBack, 0, 0
+    ClearKeys
+    UpdateGame
+    DeleteImage imgBack
+    DeleteImage imgMsg
+    Return retKey
+EndFunction

@@ -1,0 +1,19 @@
+Function WriteLog(_text$)
+    fs = FileSize("serverlog.txt")
+    f = OpenToEdit("serverlog.txt")
+    SeekFile f, fs
+    WriteLine f, LSet(Date() + " " + Time(), 22) + _text
+    CloseFile f
+EndFunction
+
+Global gDebug
+gDebug = 0
+
+Function Debug(_text$)
+    If gDebug <> gGameMode Then Return False
+    fs = FileSize("debug.txt")
+    f = OpenToEdit("debug.txt")
+    SeekFile f, fs
+    WriteLine f, LSet(Date() + " " + Time(), 22) + Timer() + " " + _text
+    CloseFile f
+EndFunction

@@ -1,0 +1,264 @@
+//********************************************************************************
+// Effect.cb
+// 
+// Tehosteiden hallinta.
+//********************************************************************************
+
+
+Const ECS_RED       = 1
+Const ECS_GREEN     = 2
+Const ECS_BLUE      = 3
+Const ECS_MINCOLOR  = 4
+Const ECS_MAXCOLOR  = 5
+
+Dim aEffectColorSet(0, 5)
+Global g_ColorSetCount
+g_ColorSetCount = 0
+
+Type FX_COLORPARTICLES
+    Field ColorR        As Float
+    Field ColorG        As Float
+    Field ColorB        As Float
+    Field PosX          As Float
+    Field PosY          As Float
+    Field VelX          As Float
+    Field VelY          As Float
+    Field Size          As Float
+    Field Shrink        As Float
+    Field Fadevar       As Float
+    Field GravityX      As Float
+    Field GravityY      As Float
+EndType
+
+Global lastEffectUpdate
+lastEffectUpdate = Timer()
+
+Function UpdateParticleEffects()
+    //If lastEffectUpdate = 0 Then lastEffectUpdate = Timer()
+    currentTime = Timer()
+    et# = (currentTime - lastEffectUpdate) / 1000.0
+    lastEffectUpdate = currentTime
+    
+    For particle.FX_COLORPARTICLES = Each FX_COLORPARTICLES
+        del = False
+        x# = particle\PosX
+        y# = particle\PosY
+        s# = particle\Size
+        Color particle\ColorR, particle\ColorG, particle\ColorB
+        Circle x - s / 2, y - s / 2, s, ON
+        
+        particle\PosX = particle\PosX + particle\VelX * et
+        particle\PosY = particle\PosY + particle\VelY * et
+        particle\VelX = particle\VelX + particle\GravityX * et
+        particle\VelY = particle\VelY + particle\GravityY * et
+        particle\Size = Max(0, particle\Size - particle\Shrink * et)
+        If particle\Size <= 0 Then del = True
+        particle\ColorR = Min(255, Max(0, particle\ColorR + particle\Fadevar * et))
+        particle\ColorG = Min(255, Max(0, particle\ColorG + particle\Fadevar * et))
+        particle\ColorB = Min(255, Max(0, particle\ColorB + particle\Fadevar * et))
+        If particle\ColorR <= 0 And particle\ColorG <= 0 And particle\ColorB <= 0 Then del = True
+        If del = True Then Delete particle
+    Next particle
+    Return True
+EndFunction
+
+Function CreateColorParticleEffect(x#, y#, dir#, range#, amount, size1#, size2#, speed1#, speed2#, shrink1#, shrink2#, fade1#, fade2#, gx#, gy#, colors$)
+    ParseColorSet(colors)
+    For i = 1 To amount
+        colorSetNum = Rand(1, g_ColorSetCount)
+        r = aEffectColorSet(colorSetNum, ECS_RED)
+        g = aEffectColorSet(colorSetNum, ECS_GREEN)
+        b = aEffectColorSet(colorSetNum, ECS_BLUE)
+        minColor = aEffectColorSet(colorSetNum, ECS_MINCOLOR)
+        maxColor = aEffectColorSet(colorSetNum, ECS_MAXCOLOR)
+        c = Rand(minColor, maxColor)
+        If r = -1 Then r = c
+        If g = -1 Then g = c
+        If b = -1 Then b = c
+    
+        angle# = Rnd(0, range) + dir + 90
+        speed# = Rnd(speed1, speed2)
+        drop.FX_COLORPARTICLES  = New(FX_COLORPARTICLES)
+        drop\ColorR     = r
+        drop\ColorG     = g
+        drop\ColorB     = b
+        drop\PosX       = x
+        drop\PosY       = y
+        drop\VelX       = Sin(angle) * speed
+        drop\velY       = Cos(angle) * speed
+        drop\Size       = Rnd(size1, size2)
+        drop\Shrink     = Rnd(shrink1, shrink2)
+        drop\Fadevar    = Rnd(fade1, fade1)
+        drop\GravityX   = gx
+        drop\GravityY   = gy
+    Next i
+    Return True
+EndFunction
+
+Function ParseColorSet(colors$)
+    numSets = CountWords(colors, "|")
+    g_ColorSetCount = numSets
+    ReDim aEffectColorSet(numSets, 5)
+    For i = 1 To numSets
+        colorSet$ = GetWord2(colors, i, "|")
+        colorElementSets = CountWords(colorSet, ":")
+        colorElementSet$ = GetWord2(colorSet, 1, ":")
+        colorElements$ = Upper(GetWord2(colorElementSet, 1, ","))
+        colorValues$ = GetWord2(colorElementSet, 2, ",")
+        minColor = 0
+        maxColor = 0
+        If CountWords(colorValues, "-") > 1 Then
+            minColor = Int(GetWord2(colorValues, 1, "-"))
+            maxColor = Int(GetWord2(colorValues, 2, "-"))
+        Else
+            minColor = Int(colorValues)
+            maxColor = minColor
+        EndIf
+        aEffectColorSet(i, ECS_RED)      = 0
+        aEffectColorSet(i, ECS_GREEN)    = 0
+        aEffectColorSet(i, ECS_BLUE)     = 0
+        aEffectColorSet(i, ECS_MINCOLOR) = minColor
+        aEffectColorSet(i, ECS_MAXCOLOR) = maxColor
+        For j = 1 To Len(colorElements)
+            ce$ = Mid(colorElements, j, 1)
+            If ce = "R" Then aEffectColorSet(i, ECS_RED) = -1
+            If ce = "G" Then aEffectColorSet(i, ECS_GREEN) = -1
+            If ce = "B" Then aEffectColorSet(i, ECS_BLUE) = -1
+        Next j
+        if colorElementSets > 1 Then
+            constantColors$ = GetWord2(colorSet, 2, ":")
+            numConstants = CountWords(constantColors, ",")
+            For j = 1 To numConstants
+                constantColor$ = Upper(GetWord2(constantColors, j, ","))
+                If Mid(constantColor, 1, 1) = "R" Then aEffectColorSet(i, ECS_RED) = Int(Mid(constantColor, 2))
+                If Mid(constantColor, 1, 1) = "G" Then aEffectColorSet(i, ECS_GREEN) = Int(Mid(constantColor, 2))
+                If Mid(constantColor, 1, 1) = "B" Then aEffectColorSet(i, ECS_BLUE) = Int(Mid(constantColor, 2))
+            Next j
+        EndIf
+    Next i
+    Return True
+EndFunction
+
+
+
+//==============================================================================
+// Veriroiske
+//==============================================================================
+Function Blood(_x, _y, _volume#, _dir# = 0, _range# = 360)
+    If InScreen(_x, _y, 100) = False Then Return False
+    dir     = 0         // Partikkelien lähtösuunta
+    range   = 360       // Kuinka laajalle alueelle partikkelit leviää. Alkaen kulmasta "dir"
+    amount  = _volume * 10  // Partikkelien lukumäärä
+    size1   = 1         // Pienin mahdollinen partikkeli
+    size2   = _volume * 5   // Suurin mahdollinen partikkeli
+    speed1  = 90        // Pienin lähtönopeus (pikseliä sekunnissa)
+    speed2  = 200       // Suurin lähtönopeus (pikseliä sekunnissa)
+    shrink1 = _volume * 10   // Pienin yksittäisen partikkelin kutistuma (pikseliä sekunnissa)
+    shrink2 = _volume * 25   // Suurin yksittäisen partikkelin kutistuma (pikseliä sekunnissa)
+    fade1   = 0         // Vaalennus/tummennus. Pienin nopeus (väriarvoa sekunnissa)
+    fade2   = 0         // Vaalennus/tummennus. Suurin nopeus (väriarvoa sekunnissa)
+    gx      = 0         // Vaikutus sivuttaisliikkeeseem esim tuuli. (pikseliä sekunnissa)
+    gy      = 0         // Vaikutus pystyliikkeesees esim painovoima. (pikseliä sekunnissa)
+    colors$ = "r,128-255"   // Partikkelin väri on aina punainen
+    CreateColorParticleEffect(_x, _y, dir, range, amount, size1, size2, speed1, speed2, shrink1, shrink2, fade1, fade2, gx, gy, colors)
+    Return True
+EndFunction
+
+
+//==============================================================================
+// Kipinä
+//==============================================================================
+Function Sparking(_x, _y)
+    If InScreen(_x, _y, 50) = False Then Return False
+    dir     = 0         // Partikkelien lähtösuunta
+    range   = 360       // Kuinka laajalle alueelle partikkelit leviää. Alkaen kulmasta "dir"
+    amount  = 10        // Partikkelien lukumäärä
+    size1   = 2         // Pienin mahdollinen partikkeli
+    size2   = 4         // Suurin mahdollinen partikkeli
+    speed1  = 50        // Pienin lähtönopeus (pikseliä sekunnissa)
+    speed2  = 90        // Suurin lähtönopeus (pikseliä sekunnissa)
+    shrink1 = 20        // Pienin yksittäisen partikkelin kutistuma (pikseliä sekunnissa)
+    shrink2 = 20        // Suurin yksittäisen partikkelin kutistuma (pikseliä sekunnissa)
+    fade1   = -50       // Vaalennus/tummennus. Pienin nopeus (väriarvoa sekunnissa)
+    fade2   = -50       // Vaalennus/tummennus. Suurin nopeus (väriarvoa sekunnissa)
+    gx      = 0         // Vaikutus sivuttaisliikkeeseem esim tuuli. (pikseliä sekunnissa)
+    gy      = 0         // Vaikutus pystyliikkeesees esim painovoima. (pikseliä sekunnissa)
+    colors$ = ":r255,g128|:r255,g255" // Väriarvo väliltä 128-255 joka vaikuttaa jokaiseen värikomponenttiin
+    CreateColorParticleEffect(_x, _y, dir, range, amount, size1, size2, speed1, speed2, shrink1, shrink2, fade1, fade2, gx, gy, colors)
+    Return True
+EndFunction
+
+
+
+Type BODY_EXPLOSION
+    Field obj           As Integer
+    Field destA         As Float
+    Field destX         As Float
+    Field destY         As Float
+    Field bloodDelay    As Integer
+    Field bloodVol      As Float
+    Field tStamp        As Integer
+EndType
+
+
+Function BodyExplosion(_x, _y, _power#, _team)
+    For i = 1 To 5
+        For j = 1 To ((i > 1) + 1)
+            bexpl.BODY_EXPLOSION = New(BODY_EXPLOSION)
+            objId = OBJ_PART1
+            If _team = 2 And i > 1 Then objId = OBJ_PART2_2 - 1
+            bexpl\obj = CloneObject(gObjects(objId + i - 1))
+            bexpl\destA = Rnd(0, 359)
+            a# = Rnd(0, 359)
+            bexpl\destX = _x - Sin(a) * Rnd(0, _power) * 30
+            bexpl\destY = _y + Cos(a) * Rnd(0, _power) * 30
+            bexpl\bloodDelay = Rand(500, 2000)
+            bexpl\bloodVol = Rnd(0, _power)
+            RotateObject bexpl\obj, a
+            PositionObject bexpl\obj, _x, _y
+            SetupCollision bexpl\obj, gMap, 2, 4, 2
+            UpdateGame2()
+            //MoveObject bexpl\obj, Rnd(0, _power * 20)
+            //TurnObject bexpl\obj, a
+            bexpl\tStamp = Timer()
+            //Blood(ObjectX(bexpl\obj), ObjectY(bexpl\obj), _power)
+            ObjectOrder bexpl\obj, -1
+        Next j
+        
+        bexpl.BODY_EXPLOSION = New(BODY_EXPLOSION)
+        bexpl\obj = CloneObject(gObjects(Rand(OBJ_BLOOD1, OBJ_BLOOD8)))
+        ObjectOrder bexpl\obj, -1
+        a# = Rnd(0, 359)
+        bexpl\destA = a
+        bexpl\destX = _x - Sin(a) * Rnd(0, _power) * 15
+        bexpl\destY = _y + Cos(a) * Rnd(0, _power) * 15
+        bexpl\bloodDelay = 0
+        bexpl\bloodVol = 0
+        bexpl\tStamp = Timer()
+        PositionObject bexpl\obj, bexpl\destX, bexpl\destY
+
+    Next i
+    ObjectOrder gMap, -1
+EndFunction
+
+
+Function UpdateBodyExplosion()
+    For bexpl.BODY_EXPLOSION = Each BODY_EXPLOSION
+        x# = CurveValue(bexpl\destX, ObjectX(bexpl\obj), 5)
+        y# = CurveValue(bexpl\destY, ObjectY(bexpl\obj), 5)
+        moveX# = x - ObjectX(bexpl\obj)
+        moveY# = y - ObjectY(bexpl\obj)
+        TranslateObject bexpl\obj, moveX, moveY
+        //PositionObject bexpl\obj, x, y
+        a# = CurveAngle(bexpl\destA, ObjectAngle(bexpl\obj), 5)
+        RotateObject bexpl\obj, a
+        bexpl\bloodVol = CurveValue(0, bexpl\bloodVol, 10)
+        If bexpl\tStamp + bexpl\bloodDelay > Timer() Then
+            Blood(ObjectX(bexpl\obj), ObjectY(bexpl\obj), bexpl\bloodVol, a, 20)
+        EndIf
+        If bexpl\tStamp + 10000 < Timer() Then 
+            DeleteObject bexpl\obj
+            Delete bexpl
+        EndIf
+    Next bexpl
+EndFunction

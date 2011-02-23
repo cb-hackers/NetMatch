@@ -1,0 +1,483 @@
+//********************************************************************************
+// Media.cb
+//
+// Kuvat, objektit, fontit ja ‰‰net
+//********************************************************************************
+
+Const RESOURCE_ARCHIVE$ = "NetMatch.dat"
+
+Global gLoadedItems#
+gLoadedItems = 0
+
+Global gMusic
+gMusic = 0
+
+//--------------------------------------------------------------------------------
+// Fontit
+//--------------------------------------------------------------------------------
+Const FNT_MENUTITLE     = 1     // Valikon otsikko
+Const FNT_MENUITEM      = 2     // Valikon valinnat
+Const FNT_SETUP         = 3     // Valikossa olevat asetukset
+Const FNT_MESSAGEBOX    = 4     // Ilmoitusten fontti
+Const FNT_MENUHELP      = 5     // Valikon helppitekstit
+Const FNT_SMALL         = 6     // Pelaajien nimet
+Const FNT_MSG           = 7     // Viestit
+Const FNT_MSGBOLD       = 8     // Viestit lihavoituna
+Const FNT_STAT          = 9     // Er‰n lopputulokset
+Const FNT_STATBOLD      = 10    // Er‰n lopputulokset
+Const FNT_COUNT         = 10    // Fonttien lukum‰‰r‰
+
+//--------------------------------------------------------------------------------
+// Ladataan fontit
+//--------------------------------------------------------------------------------
+Dim gFonts(FNT_COUNT)
+gFonts(FNT_MENUTITLE)   = LoadFont("Impact", 30)
+gFonts(FNT_MENUITEM)    = LoadFont("Impact", 30)
+gFonts(FNT_SETUP)       = LoadFont("Arial", 25, ON)
+gFonts(FNT_MESSAGEBOX)  = LoadFont("Arial", 25, ON)
+gFonts(FNT_MENUHELP)    = LoadFont("Arial", 15, ON)
+gFonts(FNT_SMALL)       = LoadFont("Arial", 11, ON)
+gFonts(FNT_MSG)         = LoadFont("Arial", 15)
+gFonts(FNT_MSGBOLD)     = LoadFont("Arial", 15, ON)
+gFonts(FNT_STAT)        = LoadFont("Arial", 30)
+gFonts(FNT_STATBOLD)    = LoadFont("Arial", 30, ON)
+
+
+//--------------------------------------------------------------------------------
+// Kuvat
+//--------------------------------------------------------------------------------
+Const IMG_BACKGROUND    = 1     // Valikon tausta
+Const IMG_LOGO          = 2     // Logo
+Const IMG_WEAPON1       = 3     // Pistooli
+Const IMG_WEAPON2       = 4     // Konekiv‰‰ri
+Const IMG_WEAPON3       = 5     // Sinko
+Const IMG_HEALTHBAR     = 6     // Terveysmittari
+Const IMG_EXPLOSION1    = 7     // R‰j‰hdysanimaatio
+Const IMG_SIGHT         = 8     // T‰ht‰in
+Const IMG_MENUBULLET    = 9     // Valikkokuvaa
+Const IMG_SMENUBULLET   = 10    // Valikkokuvaa
+Const IMG_BELTCLIP      = 11    // Valikkokuvaa
+Const IMG_MENUBACK      = 12    // Valikon tausta
+Const IMG_SMOKEANIM     = 13    // Savuvana
+Const IMG_SWEAPON1      = 14    // Pistooli (pieni)
+Const IMG_SWEAPON2      = 15    // Konekiv‰‰ri (pieni)
+Const IMG_SWEAPON3      = 16    // Sinko (pieni)
+Const IMG_WEAPON4       = 17    // Moottorisaha
+Const IMG_SWEAPON4      = 18    // Moottorisaha (pieni)
+Const IMG_WEAPON5       = 19    // Haulikko
+Const IMG_SWEAPON5      = 20    // Haulikko (pieni)
+Const IMG_WEAPON6       = 21    // Kranaatinlaukaisin
+Const IMG_SWEAPON6      = 22    // Kranaatinlaukaisin (pieni)
+Const IMG_MOUSE         = 23    // Hiirikursori
+Const IMG_COUNT         = 23    // Kuvien lukum‰‰r‰
+
+
+//--------------------------------------------------------------------------------
+// Objektit
+//--------------------------------------------------------------------------------
+Const OBJ_PLAYER1       = 1     // Pistoolimies
+Const OBJ_PLAYER2       = 2     // Konekiv‰‰rimier
+Const OBJ_PLAYER3       = 3     // Sinkomies
+Const OBJ_AMMO1         = 4     // Pistoolin ammus
+Const OBJ_AMMO2         = 5     // Konekiv‰‰rin ammus
+Const OBJ_AMMO3         = 6     // Singon ammus
+Const OBJ_FOOT_LEFT     = 7     // Vasen jalka
+Const OBJ_FOOT_RIGHT    = 8     // Oikea jalka
+Const OBJ_RADAR         = 9     // Tutka
+Const OBJ_PART1         = 10    // Ruumiinosia
+Const OBJ_PART2         = 11    // Ruumiinosia
+Const OBJ_PART3         = 12    // Ruumiinosia
+Const OBJ_PART4         = 13    // Ruumiinosia
+Const OBJ_PART5         = 14    // Ruumiinosia
+Const OBJ_FIRE1         = 15    // Suuliekki
+Const OBJ_FIRE2         = 16    // Suuliekki
+Const OBJ_FIRE3         = 17    // Suuliekki
+Const OBJ_ITEM_HEALTH   = 18    // Healthpack
+Const OBJ_ITEM_AMMO     = 19    // Kk:n ammuksia
+Const OBJ_ITEM_ROCKET   = 20    // Singon ammuksia
+Const OBJ_ITEM_FUEL     = 21    // Moottorisahan bensaa
+Const OBJ_BLOOD1        = 22    // Verta
+Const OBJ_BLOOD2        = 23    // Verta
+Const OBJ_BLOOD3        = 24    // Verta
+Const OBJ_BLOOD4        = 25    // Verta
+Const OBJ_BLOOD5        = 26    // Verta
+Const OBJ_BLOOD6        = 27    // Verta
+Const OBJ_BLOOD7        = 28    // Verta
+Const OBJ_BLOOD8        = 29    // Verta
+Const OBJ_PLAYER4       = 30    // Moottorisahamies
+Const OBJ_PLAYER5       = 31    // Haulikkomies
+Const OBJ_PLAYER6       = 32    // Kranaattimies
+Const OBJ_ITEM_SHOTGUN  = 33    // Haulikon ammuksia
+Const OBJ_ITEM_LAUNCHER = 34    // Kranaatteja
+Const OBJ_AMMO6         = 35    // Kranaatti
+Const OBJ_NULL          = 36    // Tyhj‰
+Const OBJ_PART2_2       = 37    // Ruumiinosia
+Const OBJ_PART3_2       = 38    // Ruumiinosia
+Const OBJ_PART4_2       = 39    // Ruumiinosia
+Const OBJ_PART5_2       = 40    // Ruumiinosia
+Const OBJ_PLAYER1_2     = 41    // Pistoolimies
+Const OBJ_PLAYER2_2     = 42    // Konekiv‰‰rimier
+Const OBJ_PLAYER3_2     = 43    // Sinkomies
+Const OBJ_PLAYER4_2     = 44    // Moottorisahamies
+Const OBJ_PLAYER5_2     = 45    // Haulikkomies
+Const OBJ_PLAYER6_2     = 46    // Kranaattimies
+Const OBJ_RADAR2        = 47    // Tutka
+Const OBJ_COUNT         = 47    // Objektien lukum‰‰r‰
+
+//--------------------------------------------------------------------------------
+// ƒ‰net
+//--------------------------------------------------------------------------------
+Const SND_SHOOT1        = 1     // Pistoolin laukaus
+Const SND_SHOOT2        = 2     // Konekiv‰‰rin laukaus
+Const SND_SHOOT3        = 3     // Singon laukaus
+Const SND_EMPTY         = 4     // Click eli tyhj‰ ase
+Const SND_BULLETHIT1    = 5     // Pistoolin ammuksen osuma
+Const SND_BULLETHIT2    = 6     // Konekiv‰‰rin ammuksen osuma
+Const SND_BULLETHIT3    = 7     // Singon ammuksen osuma
+Const SND_DIE1          = 8     // Kuoleman ‰‰ni
+Const SND_DIE2          = 9     // Kuoleman ‰‰ni
+Const SND_DIE3          = 10    // Kuoleman ‰‰ni
+Const SND_DIE4          = 11    // Kuoleman ‰‰ni
+Const SND_DIE5          = 12    // Kuoleman ‰‰ni
+Const SND_DIE6          = 13    // Kuoleman ‰‰ni
+Const SND_DIE7          = 14    // Kuoleman ‰‰ni
+Const SND_DIE8          = 15    // Kuoleman ‰‰ni
+Const SND_DIE9          = 16    // Kuoleman ‰‰ni
+Const SND_HIT1          = 17    // Osuma
+Const SND_HIT2          = 18    // Osuma
+Const SND_HIT3          = 19    // Osuma
+Const SND_HIT4          = 20    // Osuma
+Const SND_PICK          = 21    // Poimitaan jotain
+Const SND_FOOTSTEP      = 22    // Askel
+Const SND_RELOAD        = 23    // Lataus
+Const SND_SHOOT4        = 24    // Moottorisaha
+Const SND_SHOOT5        = 25    // Haulikko
+Const SND_CHAINSAW      = 26    // Moottorisahan tyhj‰k‰ynti
+Const SND_LAUNCHER      = 27    // Kranaatinlaukaisin
+Const SND_COUNT         = 27    // ƒ‰nien lukum‰‰r‰
+
+
+
+
+//--------------------------------------------------------------------------------
+// Ladataan kuvat
+//--------------------------------------------------------------------------------
+Dim gImages(IMG_COUNT)
+gImages(IMG_BACKGROUND) = LoadResourceImage("background.png") : ShowLoading()
+CheckUpdates()
+// Jos menn‰‰n suoraan servuun, niin ei ladata mediaa _OlLENKAAN_ ;)
+If gDirectServer = False Then
+    gImages(IMG_LOGO)       = LoadResourceImage("logo.png") : ShowLoading()
+    gImages(IMG_WEAPON1)    = LoadResourceImage("pistol.png") : ShowLoading()
+    gImages(IMG_WEAPON2)    = LoadResourceImage("machinegun.png") : ShowLoading()
+    gImages(IMG_WEAPON3)    = LoadResourceImage("bazooka.png") : ShowLoading()
+    gImages(IMG_WEAPON4)    = LoadResourceImage("chainsaw.png") : ShowLoading()
+    gImages(IMG_WEAPON5)    = LoadResourceImage("shotgun.png") : ShowLoading()
+    gImages(IMG_WEAPON6)    = LoadResourceImage("launcher.png") : ShowLoading()
+    gImages(IMG_HEALTHBAR)  = LoadResourceImage("healthbar.png") : ShowLoading()
+    gImages(IMG_EXPLOSION1) = LoadResourceImage("expl1.png") : ShowLoading()
+    gImages(IMG_SIGHT)      = LoadResourceImage("sight.png") : ShowLoading()
+    gImages(IMG_MENUBULLET) = LoadResourceImage("menubullet.png") : ShowLoading()
+    gImages(IMG_SMENUBULLET)= LoadResourceImage("smenubullet.png") : ShowLoading()
+    gImages(IMG_BELTCLIP)   = LoadResourceImage("beltclip.png") : ShowLoading()
+    gImages(IMG_MENUBACK)   = LoadResourceImage("menuback.png") : ShowLoading()
+    gImages(IMG_SMOKEANIM)  = LoadResourceImage("smokeanim.png") : ShowLoading()
+    gImages(IMG_SWEAPON1)   = LoadResourceImage("pistol_small.png") : ShowLoading()
+    gImages(IMG_SWEAPON2)   = LoadResourceImage("machinegun_small.png") : ShowLoading()
+    gImages(IMG_SWEAPON3)   = LoadResourceImage("bazooka_small.png") : ShowLoading()
+    gImages(IMG_SWEAPON4)   = LoadResourceImage("chainsaw_small.png") : ShowLoading()
+    gImages(IMG_SWEAPON5)   = LoadResourceImage("shotgun_small.png") : ShowLoading()
+    gImages(IMG_SWEAPON6)   = LoadResourceImage("launcher_small.png") : ShowLoading()
+    gImages(IMG_MOUSE)      = LoadResourceImage("mousepointer.png") : ShowLoading()
+EndIf
+
+//--------------------------------------------------------------------------------
+// Ladataan objektit
+//--------------------------------------------------------------------------------
+Dim gObjects(OBJ_COUNT)
+If gDirectServer = False Then
+    gObjects(OBJ_PLAYER1)       = LoadResourceObject("player1.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER2)       = LoadResourceObject("player2.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER3)       = LoadResourceObject("player3.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER4)       = LoadResourceObject("player4.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER5)       = LoadResourceObject("player5.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER6)       = LoadResourceObject("player6.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER1_2)     = LoadResourceObject("player1_2.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER2_2)     = LoadResourceObject("player2_2.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER3_2)     = LoadResourceObject("player3_2.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER4_2)     = LoadResourceObject("player4_2.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER5_2)     = LoadResourceObject("player5_2.png", 45) : ShowLoading()
+    gObjects(OBJ_PLAYER6_2)     = LoadResourceObject("player6_2.png", 45) : ShowLoading()
+    gObjects(OBJ_AMMO1)         = LoadResourceObject("pistol_bullet.png", 45) : ShowLoading()
+    gObjects(OBJ_AMMO2)         = LoadResourceObject("tracer_bullet.png", 45) : ShowLoading()
+    gObjects(OBJ_AMMO3)         = LoadResourceObject("rocket.png", 45) : ShowLoading()
+    gObjects(OBJ_AMMO6)         = LoadResourceObject("grenade.png", 45) : ShowLoading()
+    gObjects(OBJ_FOOT_LEFT)     = LoadResourceObject("foot_left.png", 45) : ShowLoading()
+    gObjects(OBJ_FOOT_RIGHT)    = LoadResourceObject("foot_right.png", 45) : ShowLoading()
+    gObjects(OBJ_RADAR)         = LoadResourceObject("radar.png", 45) : ShowLoading()
+    gObjects(OBJ_RADAR2)        = LoadResourceObject("radar2.png", 45) : ShowLoading()
+    gObjects(OBJ_PART1)         = LoadResourceObject("bodypart1.png", 45) : ShowLoading()
+    gObjects(OBJ_PART2)         = LoadResourceObject("bodypart2.png", 45) : ShowLoading()
+    gObjects(OBJ_PART3)         = LoadResourceObject("bodypart3.png", 45) : ShowLoading()
+    gObjects(OBJ_PART4)         = LoadResourceObject("bodypart4.png", 45) : ShowLoading()
+    gObjects(OBJ_PART5)         = LoadResourceObject("bodypart5.png", 45) : ShowLoading()
+    gObjects(OBJ_PART2_2)       = LoadResourceObject("bodypart2_2.png", 45) : ShowLoading()
+    gObjects(OBJ_PART3_2)       = LoadResourceObject("bodypart3_2.png", 45) : ShowLoading()
+    gObjects(OBJ_PART4_2)       = LoadResourceObject("bodypart4_2.png", 45) : ShowLoading()
+    gObjects(OBJ_PART5_2)       = LoadResourceObject("bodypart5_2.png", 45) : ShowLoading()
+    gObjects(OBJ_FIRE1)         = LoadResourceObject("fire1.png", 45) : ShowLoading()
+    gObjects(OBJ_FIRE2)         = LoadResourceObject("fire2.png", 45) : ShowLoading()
+    gObjects(OBJ_FIRE3)         = LoadResourceObject("fire3.png", 45) : ShowLoading()
+    gObjects(OBJ_ITEM_HEALTH)   = LoadResourceObject("health_item.png") : ShowLoading()
+    gObjects(OBJ_ITEM_AMMO)     = LoadResourceObject("machinegun_item.png") : ShowLoading()
+    gObjects(OBJ_ITEM_ROCKET)   = LoadResourceObject("bazooka_item.png") : ShowLoading()
+    gObjects(OBJ_ITEM_FUEL)     = LoadResourceObject("chainsaw_item.png") : ShowLoading()
+    gObjects(OBJ_ITEM_SHOTGUN)  = LoadResourceObject("shotgun_item.png") : ShowLoading()
+    gObjects(OBJ_ITEM_LAUNCHER) = LoadResourceObject("launcher_item.png") : ShowLoading()
+    gObjects(OBJ_BLOOD1)        = LoadResourceObject("blood1.png") : ShowLoading()
+    gObjects(OBJ_BLOOD2)        = LoadResourceObject("blood2.png") : ShowLoading()
+    gObjects(OBJ_BLOOD3)        = LoadResourceObject("blood3.png") : ShowLoading()
+    gObjects(OBJ_BLOOD4)        = LoadResourceObject("blood4.png") : ShowLoading()
+    gObjects(OBJ_BLOOD5)        = LoadResourceObject("blood5.png") : ShowLoading()
+    gObjects(OBJ_BLOOD6)        = LoadResourceObject("blood6.png") : ShowLoading()
+    gObjects(OBJ_BLOOD7)        = LoadResourceObject("blood7.png") : ShowLoading()
+    gObjects(OBJ_BLOOD8)        = LoadResourceObject("blood8.png") : ShowLoading()
+    gObjects(OBJ_NULL)          = MakeObject() : ShowLoading()
+    
+    // Piilotetaan kaikki objektit
+    For i = 1 To OBJ_COUNT
+        If gObjects(i) <> 0 Then
+            ShowObject gObjects(i), OFF
+        EndIf
+    Next i
+Else
+    // Servu k‰ynnistettiin suoraan, luodaan kaikkien objektien tilalle tyhj‰t.
+    For i = 1 To OBJ_COUNT
+        gObjects(i) = MakeObject()
+    Next i
+EndIf
+
+//--------------------------------------------------------------------------------
+// Ladataan ‰‰net
+//--------------------------------------------------------------------------------
+Dim gSounds(SND_COUNT)
+If gDirectServer = False Then
+    gSounds(SND_SHOOT1)     = LoadResourceSound("pistol_shot.wav") : ShowLoading()
+    gSounds(SND_SHOOT2)     = LoadResourceSound("machinegun_shot.wav") : ShowLoading()
+    gSounds(SND_SHOOT3)     = LoadResourceSound("bazooka_shot.wav") : ShowLoading()
+    gSounds(SND_SHOOT4)     = LoadResourceSound("chainsaw.wav") : ShowLoading()
+    gSounds(SND_SHOOT5)     = LoadResourceSound("shotgun.wav") : ShowLoading()
+    gSounds(SND_EMPTY)      = LoadResourceSound("empty.wav") : ShowLoading()
+    gSounds(SND_BULLETHIT1) = LoadResourceSound("bullethit.wav") : ShowLoading()
+    gSounds(SND_BULLETHIT2) = LoadResourceSound("bullethit.wav") : ShowLoading()
+    gSounds(SND_BULLETHIT3) = LoadResourceSound("boom.wav") : ShowLoading()
+    gSounds(SND_DIE1)       = LoadResourceSound("dead1.wav") : ShowLoading()
+    gSounds(SND_DIE2)       = LoadResourceSound("dead2.wav") : ShowLoading()
+    gSounds(SND_DIE3)       = LoadResourceSound("dead3.wav") : ShowLoading()
+    gSounds(SND_DIE4)       = LoadResourceSound("dead4.wav") : ShowLoading()
+    gSounds(SND_DIE5)       = LoadResourceSound("dead5.wav") : ShowLoading()
+    gSounds(SND_DIE6)       = LoadResourceSound("dead6.wav") : ShowLoading()
+    gSounds(SND_DIE7)       = LoadResourceSound("dead7.wav") : ShowLoading()
+    gSounds(SND_DIE8)       = LoadResourceSound("dead8.wav") : ShowLoading()
+    gSounds(SND_DIE9)       = LoadResourceSound("dead9.wav") : ShowLoading()
+    gSounds(SND_HIT1)       = LoadResourceSound("hit1.wav") : ShowLoading()
+    gSounds(SND_HIT2)       = LoadResourceSound("hit2.wav") : ShowLoading()
+    gSounds(SND_HIT3)       = LoadResourceSound("hit3.wav") : ShowLoading()
+    gSounds(SND_HIT4)       = LoadResourceSound("hit4.wav") : ShowLoading()
+    gSounds(SND_PICK)       = LoadResourceSound("pick.wav") : ShowLoading()
+    gSounds(SND_FOOTSTEP)   = LoadResourceSound("footstep.wav") : ShowLoading()
+    gSounds(SND_RELOAD)     = LoadResourceSound("reload.wav") : ShowLoading()
+    gSounds(SND_CHAINSAW)   = LoadResourceSound("chainsaw_idle.wav") : ShowLoading()
+    gSounds(SND_LAUNCHER)   = LoadResourceSound("launcher.wav") : ShowLoading()
+EndIf
+
+//================================================================================
+// Lataupalkki
+//================================================================================
+Function ShowLoading()
+    totalItems# = IMG_COUNT + OBJ_COUNT + SND_COUNT + 1
+    DrawGame
+    DrawImage gImages(IMG_BACKGROUND), 0, 0
+    gLoadedItems + 1
+    SetFont gFonts(FNT_SETUP)
+    Color 255, 255, 0
+    CenterText 400, 260, GetText("loading")
+    Box 299, 299, 202, 22, OFF
+    pr# = gLoadedItems / totalItems * 100.0
+    Color 0, 255, 0
+    Box 300, 300, pr * 2, 20, ON
+    DrawScreen
+EndFunction
+
+
+Function LoadResourceImage(_fileName$, _archive$ = "", _makeError = 1)
+    If gDirectServer = True And _fileName <> "background.png" And _archive = "" Then Return 0
+//SetWindow "IMAGE " + _fileName
+
+//    If _archive = "media" Then
+//        img = LoadImage(_archive + "\" + Replace(_fileName, ".pxi", ".png"))
+//        Return img
+//    EndIf
+    If _archive = "" Then 
+        _archive = RESOURCE_ARCHIVE
+        _fileName = _fileName + ".pxi"
+    EndIf
+
+    d = ExtractData(_archive, _fileName)
+    If d = 0 And _makeError = 1 Then 
+        MakeError "Resource image " + _fileName + " not found!"
+    EndIf
+    If d = 0 Then Return 0
+    
+    w = PeekInt(d, 0)
+    h = PeekInt(d, 4)
+    o = 8
+    s = w * h
+    p = 0
+    img = MakeImage(w, h)
+    Lock Image(img)
+    For y = 0 To h - 1
+        For x = 0 To w - 1
+            r = PeekByte(d, o)
+            g = PeekByte(d, o + 1)
+            b = PeekByte(d, o + 2)
+            o + 3
+            c = (r Shl 16) + (g Shl 8) + b
+            PutPixel2 x, y, c, Image(img)
+            p + 1
+        Next x
+    Next y
+    Unlock Image(img)
+    DeleteMEMBlock d
+    Return img
+EndFunction
+
+
+Function LoadResourceObject(_fileName$, _quality = 1)
+    If gDirectServer Then Return 0
+    img = LoadResourceImage(_fileName)
+    obj = MakeObject(_quality)
+    PaintObject obj, -img
+    DeleteImage img
+    Return obj
+EndFunction
+
+
+Function LoadResourceMap(_mapName$)
+
+    archive$ = "map/" + _mapName + ".mpc"
+    gMapCRC = Crc32(archive)
+    
+//    map = LoadMap("media/" + Replace(_mapName, ".map", ".til"), "media/tileset.png")
+    //map = LoadMap("map\" + _mapName + ".til", "map\" + _mapName + ".png")
+    
+    
+    //Return map
+
+    d = ExtractData(archive, _mapName + ".map")
+    If d = 0 Then 
+        MakeError "Resource map " + _mapName + " not found!"
+    EndIf
+    o = 0
+    w = PeekByte(d, o) : o + 1
+    h = PeekByte(d, o) : o + 1
+    tw = PeekByte(d, o) : o + 1
+    th = PeekByte(d, o) : o + 1
+    map = MakeMap(w, h, tw, th)
+    For y = 1 To h
+        For x = 1 To w
+            For l = 0 To 3
+                EditMap map, l, x, y, PeekByte(d, o) : o + 1
+            Next l
+        Next x
+    Next y
+    
+    img = LoadResourceImage(_mapName + ".pxi", archive)
+    PaintObject map, img
+    DeleteImage img
+
+    maskR = PeekByte(d, o) : o + 1
+    maskG = PeekByte(d, o) : o + 1
+    maskB = PeekByte(d, o) : o + 1
+    MaskObject map, maskR, maskG, maskB
+    SetMap map, OFF, OFF
+    
+    While True
+        animTile = PeekByte(d, o) : o + 1
+        If animTile = 0 Then Exit
+        animLength = PeekByte(d, o) : o + 1
+        animDelay = PeekByte(d, o) : o + 1
+        SetTile animTile, animLength, animDelay
+    Wend
+    DeleteMEMBlock d
+
+    //gMapMaxPlayers  = GetMap2(3, 1, 1)
+    //gMapMaxBots     = GetMap2(3, 2, 1)
+    //gMapBotDelete   = GetMap2(3, 3, 1)
+    //gMapHealth      = GetMap2(3, 4, 1)
+    //gMapAmmo        = GetMap2(3, 5, 1)
+    //gMapRocket      = GetMap2(3, 6, 1)
+    gMapAnimDelay   = GetMap2(3, 1, 1)
+    
+    Return map
+EndFunction
+
+
+Function LoadResourceSound(_sndName$)
+    If gDirectServer Then Return 0
+//SetWindow "SOUND " + _sndName
+//    snd = LoadSound("media/" + _sndName)
+//    Return snd
+
+    ExtractData(RESOURCE_ARCHIVE, _sndName, _sndName)
+    If FileExists(_sndName) = False Then
+        MakeError "Resource sound " + _sndName + " not found!"
+    EndIf
+    snd = LoadSound(_sndName)
+    DeleteFile _sndName
+    Return snd
+EndFunction
+
+
+Function CheckUpdates()
+    DrawImage gImages(IMG_BACKGROUND), 0, 0
+    MsgBox(GetText("update_check"), "NetMatch", MSG_INFO_NOWAIT)
+    url$ = "http://netmatch.vesq.org/cbee/download/version.txt"
+    t = Timer()
+    result = HTTPGet(url)
+    Wait 1000 - (Timer() - t)
+    If result = 200 Then
+        HTTPLoadContent()
+        ret$ = ""
+        If HTTP_ContentLength < 3 Then Return False
+        For i = 1 To 3
+            ret = ret + Chr(_Net_GetByte())
+        Next i
+        If ret <> "NM:" Then Return False
+        ret = ""
+        For i = 4 To HTTP_ContentLength
+            b = _Net_GetByte()
+            ret = ret + Chr(b)
+        Next i
+        If CountWords(ret, ":") < 3 Then Return False
+        latestVersion$  = GetWord2(ret, 1, ":")
+        latestRevision$ = GetWord2(ret, 2, ":")
+        latestPatch     = Int(GetWord2(ret, 3, ":"))
+        
+        newVersion = False
+        key = 0
+        msg$ = ""
+        If Float(latestVersion) > Float(NM_VERSION) Or (Float(latestVersion) = Float(NM_VERSION) And latestRevision > NM_REVISION) Then
+            newVersion = True
+        ElseIf latestPatch > NM_PATCH Then
+            newVersion = True
+        EndIf
+        If newVersion Then
+            If MsgBox(GetText("new_version"), "NetMatch", MSG_INFO) = 13 Then
+                Execute("http://netmatch.vesq.org/download.php")
+                End
+            EndIf
+        EndIf
+    EndIf
+    Return False
+EndFunction

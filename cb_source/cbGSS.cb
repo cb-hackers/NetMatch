@@ -1,0 +1,200 @@
+//********************************************************************************
+// cbGSS.cb
+//
+// Game Server Service
+//********************************************************************************
+
+Const GSSRegUrl$ = "http://netmatch.vesq.org/cbee/gss.php"
+
+Const GSS_MAX_SERVERS       = 100
+Const GSS_SERVER_NAME       = 1
+Const GSS_SERVER_HOST       = 2
+Const GSS_SERVER_PORT       = 3
+Const GSS_SERVER_INFO       = 4
+Const GSS_SERVER_VERSION    = 5
+   
+Dim aGSSServerData$(GSS_MAX_SERVERS, 5)
+Global gGSSServerCount
+gGSSServerCount = 0
+
+Global gGSSProfile$, gGSSVersion$, gGSSServerPort, gGSSRegistered
+gGSSProfile     = ""
+gGSSVersion     = ""
+gGSSServerPort  = 0
+gGSSRegistered  = False
+
+
+//================================================================================
+// GSS perustietojen asettaminen
+//================================================================================
+Function GSSInit(_profile$, _version$)
+    gGSSProfile = _profile
+    gGSSVersion = _version
+EndFunction
+
+
+//================================================================================
+// Palvelimen rekisteröinti
+//================================================================================
+Function GSSRegister(_port, _description$)
+    gGSSServerPort = _port
+    url$ = GSSRegUrl + "?profile=" + URLEncode(gGSSProfile) + "&ver=" + URLEncode(gGSSVersion)
+    url = url + "&mode=reg"
+    url = url + "&desc=" + URLEncode(_description)
+    url = url + "&port=" + gGSSServerPort
+    // Lähetetään rekisteröintipyyntö
+    ret = HTTPGet(url)
+    If ret <> 200 Then Return False
+    start = Timer()
+    cid$ = ""
+    Repeat
+        nRet = ServerRead()
+        If nRet = 0 Then
+            If GetWord2(NET_ClientId, 2, ":") = "544437095" Then
+                If _Net_GetString() = "GSS+" Then
+                    // GSS lähetti varmistuksen joten rekisteröinti onnistui
+                    //url = url + "&validated=yes"
+                    //HTTPGet(url)
+                    gGSSRegistered = True
+                    gGSSLastUpdate = 0
+                    Return True
+                EndIf
+            EndIf
+        EndIf
+    Until start + 5000 < Timer()
+    // Vastausta ei tullut määräaikaan joten rekisteröinti ei onnistunut
+    
+    Return False
+EndFunction
+
+
+//================================================================================
+// Rekisteröinnin poisto
+//================================================================================
+Function GSSUnregister()
+    If gGSSRegistered = False Then Return False
+    url$ = GSSRegUrl + "?profile=" + URLEncode(gGSSProfile) + "&port=" + gGSSServerPort
+    url = url + "&mode=unreg"
+    HTTPGet(url, True)
+    gGSSRegistered = False
+EndFunction
+
+
+Global gGSSLastUpdate
+gGSSLastUpdate = 0
+//================================================================================
+// Päivitetään GSS:n tilanne
+//================================================================================
+Function GSSUpdate(_data$, _forceUpdate = 0)
+    If gGSSRegistered = False Then Return True
+    // Päivitys vain minuutin välein ellei päivitystä pakoteta
+    If gGSSLastUpdate + 60000 > Timer() Then 
+        If _forceUpdate = False Then Return False
+    EndIf
+    gGSSLastUpdate = Timer()
+    
+    url$ = GSSRegUrl + "?profile=" + URLEncode(gGSSProfile) + "&port=" + gGSSServerPort
+    url = url + "&mode=update"
+    url = url + "&data=" + URLEncode(_data)
+    If HTTPGet(url, True) = 200 Then Return True
+    Return False
+EndFunction
+
+
+//================================================================================
+// Etsitään kaikki rekisteröidyt palvelimet
+//================================================================================
+Function GSSFindServers()
+    gGSSServerCount = 0
+    For i = 1 To GSS_MAX_SERVERS
+        For j = 1 To 4
+            aGSSServerData(i, j) = ""
+        Next j
+    Next i
+    
+    url$ = GSSRegUrl + "?mode=list&profile=" + URLEncode(gGSSProfile) + "&ver=" + URLEncode(gGSSVersion)
+    If HTTPGet(url) = 200 Then
+        HTTPLoadContent()
+        ret$ = ""
+        If HTTP_ContentLength < 4 Then Return 0
+        For i = 1 To 4
+            ret = ret + Chr(_Net_GetByte())
+        Next i
+        If ret <> "GSS:" Then Return 0
+        ret = ""
+        For i = 1 To HTTP_ContentLength
+            b = _Net_GetByte()
+            If b = 10 Then
+                _GSSParseServer(ret)
+                ret = ""
+            Else
+                ret = ret + Chr(b)
+            EndIf
+        Next i
+    EndIf
+    Return gGSSServerCount
+EndFunction
+
+
+//================================================================================
+// Parsitaan palvelintiedot
+//================================================================================
+Function _GSSParseServer(_data$)
+    iCount = CountWords(_data, "|")
+    name$ = ""
+    host$ = ""
+    port$ = ""
+    info$ = ""
+    version$ = ""
+    For i = 1 To iCount
+        itemData$ = GetWord2(_data, i, "|")
+        dataKey$ = Trim(GetWord2(itemData, 1, "="))
+        dataValue$ = Trim(GetWord2(itemData, 2, "="))
+        dataValue = Replace(dataValue, "&#34;", Chr(34))
+        dataValue = Replace(dataValue, "&#36;", "$")
+        dataValue = Replace(dataValue, "&#60;", "<")
+        dataValue = Replace(dataValue, "&#61;", "=")
+        dataValue = Replace(dataValue, "&#62;", ">")
+        dataValue = Replace(dataValue, "&#92;", "\")
+        dataValue = Replace(dataValue, "&#124;", "|")
+        If dataKey = "name" Then name = dataValue
+        If dataKey = "addr" Then host = dataValue
+        If dataKey = "port" Then port = dataValue
+        If dataKey = "info" Then info = dataValue
+        If dataKey = "ver" Then version = dataValue
+    Next i
+    If Len(name) = 0 Then Return False
+    If Len(host) = 0 Then Return False
+    If Len(port) = 0 Then Return False
+    gGSSServerCount + 1
+    aGSSServerData(gGSSServerCount, GSS_SERVER_NAME) = name
+    aGSSServerData(gGSSServerCount, GSS_SERVER_HOST) = host
+    aGSSServerData(gGSSServerCount, GSS_SERVER_PORT) = port
+    aGSSServerData(gGSSServerCount, GSS_SERVER_INFO) = info
+    aGSSServerData(gGSSServerCount, GSS_SERVER_VERSION) = version
+    Return True
+EndFunction
+
+
+//================================================================================
+// Palautetaan palvelimen tieto
+//================================================================================
+Function GSSServerInfo(_server, _field)
+    Return aGSSServerData(_server, _field)
+EndFunction
+
+
+//================================================================================
+//================================================================================
+Function URLEncode(url$)
+    For i = 1 To Len(url$)
+        char = Asc(Mid(url$, i, 1))
+        If (char <= 47) Or (char >= 58 And char <= 64) Or (char >= 91 And char <= 96) Or (char >= 123) Then
+            merkki$ = "%" + Right(Hex(char), 2)
+        Else
+            merkki$ = Chr(char)
+        EndIf
+        uusi$ = uusi$ + merkki$
+    Next i
+    Return uusi$
+EndFunction 

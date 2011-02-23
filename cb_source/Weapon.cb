@@ -1,0 +1,656 @@
+//********************************************************************************
+// Weapon.cb
+//
+// Aseet ja ammukset
+//********************************************************************************
+
+
+//--------------------------------------------------------------------------------
+// Aseet
+//--------------------------------------------------------------------------------
+Const WPN_PISTOL        = 1     // Pistooli
+Const WPN_MGUN          = 2     // Konepistooli
+Const WPN_BAZOOKA       = 3     // Sinko
+Const WPN_SHOTGUN       = 4     // Haulikko
+Const WPN_LAUNCHER      = 5     // Kranaatinlaukaisin
+Const WPN_CHAINSAW      = 6     // Moottorisaha
+Const WPN_COUNT         = 6     // Aseiden lukum‰‰r‰
+
+
+//--------------------------------------------------------------------------------
+// Aseiden ominaisuudet
+//--------------------------------------------------------------------------------
+Const WPNF_CHARACTER    = 1     // Pelihahmon objekti
+Const WPNF_RELOADTIME   = 2     // Aseen latausaika
+Const WPNF_BULLET       = 3     // Ammusobjekti
+Const WPNF_SHOOTSOUND   = 4     // Ampumisen ‰‰ni
+Const WPNF_HITSOUND     = 5     // Osuman ‰‰ni
+Const WPNF_BULLETSPEED  = 6     // Ammuksen lentonopeus
+Const WPNF_BULLET_FORTH = 7     // Ammuksen l‰htˆpaikka pelaajan etupuolella
+Const WPNF_BULLET_YAW   = 8     // Ammuksen l‰htˆpaikka sivusuunnassa
+Const WPNF_DAMAGE       = 9     // Ammuksen aiheuttama tuho
+Const WPNF_DAMAGERANGE  = 10    // Tuhoalueen laajuus
+Const WPNF_SPREAD       = 11    // Hajonta asteina
+Const WPNF_ANIM_IMAGE   = 12    // Animaatiokuva kun osuu
+Const WPNF_ANIM_LENGTH  = 13    // Animaation pituus
+Const WPNF_ANIM_DELAY   = 14    // Animaation viive
+Const WPNF_IMAGE        = 15    // Aseen infokuva
+Const WPNF_AMMO         = 16    // Aseessa olevat ammukset
+Const WPNF_AMMO_MAX     = 17    // Ammusten maksimim‰‰r‰
+Const WPNF_FIRE         = 18    // Suuliekkianimaatio
+Const WPNF_FIREPOS      = 19    // Miss‰ kohdassa suuliekki n‰ytet‰‰n (pituussuunnassa)
+Const WPNF_ICON         = 20    // Pieni ikoni tappoviesteihin
+Const WPNF_PICKCOUNT    = 21    // Kuinka paljon tavaraa saa poimittaessa
+Const WPNF_KEY          = 22    // N‰pp‰in jolla t‰m‰ ase valitaan
+Const WPNF_SAFERANGE    = 23    // Et‰isyys jonka alle kohteesta oleva botti ei ammu
+Const WPNF_SHOOTRANGE   = 24    // Et‰isyys jonka alle kohteesta oleva botti ampuu
+Const WPNF_CHARACTER2   = 25    // Pelihahmon objekti (tiimi 2)
+Const WPNF_WEIGHT       = 26    // Aseen paino, vaikuttaa liikkumisen nopeuteen. 100=normaali
+Const WPNF_COUNT        = 26    // Tietoalkioiden lukum‰‰r‰
+
+
+//--------------------------------------------------------------------------------
+// Asetaulukko ja sen alustus
+//--------------------------------------------------------------------------------
+Dim aWeapon(WPN_COUNT, WPNF_COUNT)
+Dim aWeaponAmmos(WPN_COUNT)
+
+
+// Pistooli
+aWeapon(WPN_PISTOL, WPNF_RELOADTIME)    = 500
+aWeapon(WPN_PISTOL, WPNF_BULLETSPEED)   = 1200
+aWeapon(WPN_PISTOL, WPNF_BULLET_FORTH)  = 33
+aWeapon(WPN_PISTOL, WPNF_BULLET_YAW)    = 10
+aWeapon(WPN_PISTOL, WPNF_DAMAGE)        = 19
+aWeapon(WPN_PISTOL, WPNF_DAMAGERANGE)   = 0
+aWeapon(WPN_PISTOL, WPNF_SPREAD)        = 0
+aWeapon(WPN_PISTOL, WPNF_AMMO)          = 0
+aWeapon(WPN_PISTOL, WPNF_AMMO_MAX)      = 0
+aWeapon(WPN_PISTOL, WPNF_IMAGE)         = IMG_WEAPON1
+aWeapon(WPN_PISTOL, WPNF_BULLET)        = OBJ_AMMO1
+aWeapon(WPN_PISTOL, WPNF_CHARACTER)     = OBJ_PLAYER1
+aWeapon(WPN_PISTOL, WPNF_CHARACTER2)    = OBJ_PLAYER1_2
+aWeapon(WPN_PISTOL, WPNF_SHOOTSOUND)    = SND_SHOOT1
+aWeapon(WPN_PISTOL, WPNF_HITSOUND)      = SND_BULLETHIT1
+aWeapon(WPN_PISTOL, WPNF_FIRE)          = OBJ_FIRE1
+aWeapon(WPN_PISTOL, WPNF_FIREPOS)       = 33
+aWeapon(WPN_PISTOL, WPNF_ICON)          = IMG_SWEAPON1
+aWeapon(WPN_PISTOL, WPNF_KEY)           = cbKey1
+aWeapon(WPN_PISTOL, WPNF_SAFERANGE)     = 100
+aWeapon(WPN_PISTOL, WPNF_SHOOTRANGE)    = 500
+aWeapon(WPN_PISTOL, WPNF_WEIGHT)        = 100
+
+// Konekiv‰‰ri
+aWeapon(WPN_MGUN, WPNF_RELOADTIME)      = 100
+aWeapon(WPN_MGUN, WPNF_BULLETSPEED)     = 1000
+aWeapon(WPN_MGUN, WPNF_BULLET_FORTH)    = 29
+aWeapon(WPN_MGUN, WPNF_BULLET_YAW)      = 8
+aWeapon(WPN_MGUN, WPNF_DAMAGE)          = 17
+aWeapon(WPN_MGUN, WPNF_DAMAGERANGE)     = 0
+aWeapon(WPN_MGUN, WPNF_SPREAD)          = 2
+aWeapon(WPN_MGUN, WPNF_AMMO)            = 0
+aWeapon(WPN_MGUN, WPNF_AMMO_MAX)        = 150
+aWeapon(WPN_MGUN, WPNF_IMAGE)           = IMG_WEAPON2
+aWeapon(WPN_MGUN, WPNF_BULLET)          = OBJ_AMMO2
+aWeapon(WPN_MGUN, WPNF_CHARACTER)       = OBJ_PLAYER2
+aWeapon(WPN_MGUN, WPNF_CHARACTER2)      = OBJ_PLAYER2_2
+aWeapon(WPN_MGUN, WPNF_SHOOTSOUND)      = SND_SHOOT2
+aWeapon(WPN_MGUN, WPNF_HITSOUND)        = SND_BULLETHIT2
+aWeapon(WPN_MGUN, WPNF_FIRE)            = OBJ_FIRE2
+aWeapon(WPN_MGUN, WPNF_FIREPOS)         = 29
+aWeapon(WPN_MGUN, WPNF_ICON)            = IMG_SWEAPON2
+aWeapon(WPN_MGUN, WPNF_PICKCOUNT)       = 50
+aWeapon(WPN_MGUN, WPNF_KEY)             = cbKey2
+aWeapon(WPN_MGUN, WPNF_SAFERANGE)       = 200
+aWeapon(WPN_MGUN, WPNF_SHOOTRANGE)      = 500
+aWeapon(WPN_MGUN, WPNF_WEIGHT)          = 100
+
+// Sinko
+aWeapon(WPN_BAZOOKA, WPNF_RELOADTIME)   = 1500
+aWeapon(WPN_BAZOOKA, WPNF_BULLETSPEED)  = 900
+aWeapon(WPN_BAZOOKA, WPNF_BULLET_FORTH) = 30
+aWeapon(WPN_BAZOOKA, WPNF_BULLET_YAW)   = 8
+aWeapon(WPN_BAZOOKA, WPNF_DAMAGE)       = 150
+aWeapon(WPN_BAZOOKA, WPNF_DAMAGERANGE)  = 250
+aWeapon(WPN_BAZOOKA, WPNF_SPREAD)       = 0
+aWeapon(WPN_BAZOOKA, WPNF_AMMO)         = 0
+aWeapon(WPN_BAZOOKA, WPNF_AMMO_MAX)     = 10
+aWeapon(WPN_BAZOOKA, WPNF_IMAGE)        = IMG_WEAPON3
+aWeapon(WPN_BAZOOKA, WPNF_BULLET)       = OBJ_AMMO3
+aWeapon(WPN_BAZOOKA, WPNF_CHARACTER)    = OBJ_PLAYER3
+aWeapon(WPN_BAZOOKA, WPNF_CHARACTER2)   = OBJ_PLAYER3_2
+aWeapon(WPN_BAZOOKA, WPNF_SHOOTSOUND)   = SND_SHOOT3
+aWeapon(WPN_BAZOOKA, WPNF_HITSOUND)     = SND_BULLETHIT3
+aWeapon(WPN_BAZOOKA, WPNF_FIRE)         = OBJ_FIRE3
+aWeapon(WPN_BAZOOKA, WPNF_FIREPOS)      = -25
+aWeapon(WPN_BAZOOKA, WPNF_ICON)         = IMG_SWEAPON3
+aWeapon(WPN_BAZOOKA, WPNF_PICKCOUNT)    = 5
+aWeapon(WPN_BAZOOKA, WPNF_KEY)          = cbKey3
+aWeapon(WPN_BAZOOKA, WPNF_SAFERANGE)    = 300
+aWeapon(WPN_BAZOOKA, WPNF_SHOOTRANGE)   = 500
+aWeapon(WPN_BAZOOKA, WPNF_WEIGHT)       = 115
+
+// Haulikko
+aWeapon(WPN_SHOTGUN, WPNF_RELOADTIME)   = 1000
+aWeapon(WPN_SHOTGUN, WPNF_BULLETSPEED)  = 900
+aWeapon(WPN_SHOTGUN, WPNF_BULLET_FORTH) = 33
+aWeapon(WPN_SHOTGUN, WPNF_BULLET_YAW)   = 10
+aWeapon(WPN_SHOTGUN, WPNF_DAMAGE)       = 20
+aWeapon(WPN_SHOTGUN, WPNF_DAMAGERANGE)  = 0
+aWeapon(WPN_SHOTGUN, WPNF_SPREAD)       = 15
+aWeapon(WPN_SHOTGUN, WPNF_AMMO)         = 0
+aWeapon(WPN_SHOTGUN, WPNF_AMMO_MAX)     = 20
+aWeapon(WPN_SHOTGUN, WPNF_IMAGE)        = IMG_WEAPON5
+aWeapon(WPN_SHOTGUN, WPNF_BULLET)       = OBJ_AMMO1
+aWeapon(WPN_SHOTGUN, WPNF_CHARACTER)    = OBJ_PLAYER5
+aWeapon(WPN_SHOTGUN, WPNF_CHARACTER2)   = OBJ_PLAYER5_2
+aWeapon(WPN_SHOTGUN, WPNF_SHOOTSOUND)   = SND_SHOOT5
+aWeapon(WPN_SHOTGUN, WPNF_HITSOUND)     = SND_BULLETHIT1
+aWeapon(WPN_SHOTGUN, WPNF_FIRE)         = OBJ_FIRE2
+aWeapon(WPN_SHOTGUN, WPNF_FIREPOS)      = 33
+aWeapon(WPN_SHOTGUN, WPNF_ICON)         = IMG_SWEAPON5
+aWeapon(WPN_SHOTGUN, WPNF_PICKCOUNT)    = 10
+aWeapon(WPN_SHOTGUN, WPNF_KEY)          = cbKey4
+aWeapon(WPN_SHOTGUN, WPNF_SAFERANGE)    = 150
+aWeapon(WPN_SHOTGUN, WPNF_SHOOTRANGE)   = 300
+aWeapon(WPN_SHOTGUN, WPNF_WEIGHT)       = 100
+
+// Moottorisaha
+aWeapon(WPN_CHAINSAW, WPNF_RELOADTIME)  = 100
+aWeapon(WPN_CHAINSAW, WPNF_BULLETSPEED) = 0
+aWeapon(WPN_CHAINSAW, WPNF_BULLET_FORTH)= 45
+aWeapon(WPN_CHAINSAW, WPNF_BULLET_YAW)  = 9
+aWeapon(WPN_CHAINSAW, WPNF_DAMAGE)      = 70
+aWeapon(WPN_CHAINSAW, WPNF_DAMAGERANGE) = 60
+aWeapon(WPN_CHAINSAW, WPNF_SPREAD)      = 0
+aWeapon(WPN_CHAINSAW, WPNF_AMMO)        = 0
+aWeapon(WPN_CHAINSAW, WPNF_AMMO_MAX)    = 100
+aWeapon(WPN_CHAINSAW, WPNF_IMAGE)       = IMG_WEAPON4
+aWeapon(WPN_CHAINSAW, WPNF_BULLET)      = OBJ_NULL
+aWeapon(WPN_CHAINSAW, WPNF_CHARACTER)   = OBJ_PLAYER4
+aWeapon(WPN_CHAINSAW, WPNF_CHARACTER2)  = OBJ_PLAYER4_2
+aWeapon(WPN_CHAINSAW, WPNF_SHOOTSOUND)  = SND_SHOOT4
+aWeapon(WPN_CHAINSAW, WPNF_HITSOUND)    = 0
+aWeapon(WPN_CHAINSAW, WPNF_FIRE)        = OBJ_NULL
+aWeapon(WPN_CHAINSAW, WPNF_ICON)        = IMG_SWEAPON4
+aWeapon(WPN_CHAINSAW, WPNF_PICKCOUNT)   = 50
+aWeapon(WPN_CHAINSAW, WPNF_KEY)         = cbKey6
+aWeapon(WPN_CHAINSAW, WPNF_SAFERANGE)   = 60
+aWeapon(WPN_CHAINSAW, WPNF_SHOOTRANGE)  = 150
+aWeapon(WPN_CHAINSAW, WPNF_WEIGHT)      = 90
+
+// Kranaatinlaukaisin
+aWeapon(WPN_LAUNCHER, WPNF_RELOADTIME)  = 1000
+aWeapon(WPN_LAUNCHER, WPNF_BULLETSPEED) = 400
+aWeapon(WPN_LAUNCHER, WPNF_BULLET_FORTH)= 32
+aWeapon(WPN_LAUNCHER, WPNF_FIREPOS)     = 36
+aWeapon(WPN_LAUNCHER, WPNF_BULLET_YAW)  = 8
+aWeapon(WPN_LAUNCHER, WPNF_DAMAGE)      = 200
+aWeapon(WPN_LAUNCHER, WPNF_DAMAGERANGE) = 150
+aWeapon(WPN_LAUNCHER, WPNF_SPREAD)      = 5
+aWeapon(WPN_LAUNCHER, WPNF_AMMO)        = 0
+aWeapon(WPN_LAUNCHER, WPNF_AMMO_MAX)    = 6
+aWeapon(WPN_LAUNCHER, WPNF_IMAGE)       = IMG_WEAPON6
+aWeapon(WPN_LAUNCHER, WPNF_BULLET)      = OBJ_AMMO6
+aWeapon(WPN_LAUNCHER, WPNF_CHARACTER)   = OBJ_PLAYER6
+aWeapon(WPN_LAUNCHER, WPNF_CHARACTER2)  = OBJ_PLAYER6_2
+aWeapon(WPN_LAUNCHER, WPNF_SHOOTSOUND)  = SND_LAUNCHER
+aWeapon(WPN_LAUNCHER, WPNF_HITSOUND)    = SND_BULLETHIT3
+aWeapon(WPN_LAUNCHER, WPNF_FIRE)        = OBJ_NULL
+aWeapon(WPN_LAUNCHER, WPNF_ICON)        = IMG_SWEAPON6
+aWeapon(WPN_LAUNCHER, WPNF_PICKCOUNT)   = 2
+aWeapon(WPN_LAUNCHER, WPNF_KEY)         = cbKey5
+aWeapon(WPN_LAUNCHER, WPNF_SAFERANGE)   = 300
+aWeapon(WPN_LAUNCHER, WPNF_SHOOTRANGE)  = 400
+aWeapon(WPN_LAUNCHER, WPNF_WEIGHT)      = 110
+
+//--------------------------------------------------------------------------------
+// Ilmassa lent‰v‰t ammukset
+//--------------------------------------------------------------------------------
+Type BULLETS
+    Field bulletId  As Integer  // Ammuksen tunnus
+    Field playerId  As Integer  // Kuka ampui
+    Field weapon    As Integer  // Mill‰ aseella t‰m‰ on ammuttu
+    Field obj       As Integer  // Objekti
+    Field prevPosX  As Float    // Ammuksen edellinan paikka
+    Field prevPosY  As Float    // Ammuksen edellinan paikka
+    Field moved     As Integer  // Onko ammusta viel‰ liikutettu yht‰‰n
+    Field shooted   As Integer  // Koska ammuttu
+EndType
+
+Global gLastBulletId
+gLastBulletId = 0
+
+
+//--------------------------------------------------------------------------------
+// R‰j‰hdysanimaatiot
+//--------------------------------------------------------------------------------
+Type EXPL_ANIMS
+    Field x         As Integer  // R‰j‰hdyspaikka
+    Field y         As Integer  // R‰j‰hdyspaikka
+    Field frame     As Integer  // N‰ytett‰v‰ frame
+    Field tStamp    As Integer  // Animaation aikaleima
+    Field img       As Integer  // R‰j‰hdyskuva
+    Field frames    As Integer  // Animaation kuvien m‰‰r‰
+    Field w         As Integer  // Framen leveys
+    Field h         As Integer  // Framen korkeus
+EndType
+
+
+//================================================================================
+// Etsit‰‰n ammus
+//================================================================================
+Function FindBullet(_bulletId)
+    // K‰yd‰‰n kaikki ammukset l‰pi
+    For bullet.BULLETS = Each BULLETS
+        If bullet\bulletId = _bulletId Then Return ConvertToInteger(bullet)
+    Next bullet
+    Return 0
+EndFunction
+
+
+//================================================================================
+// Palvelin luo ammuksen
+//================================================================================
+Function CreateServerBullet(_playerId, _doubleBullet = 0)
+    // Ei tehd‰ ammusta jos er‰ on p‰‰ttynyt
+    If gSessionComplete = True Then Return False
+    
+    // Haetaan pelaaja joka ampui
+    player.PLAYERS = ConvertToType(gPlayers(_playerId))
+    // Luodaan ammus
+    gLastBulletId + 1
+    bullet.BULLETS  = New(BULLETS)
+    bullet\bulletId = gLastBulletId     // Ammuksen tunnus
+    bullet\weapon   = player\weapon     // Mill‰ aseella ammuttu
+    bullet\playerId = _playerId         // Kuka ampui
+    bullet\shooted  = Timer()           // Koska ammuttu
+    bullet\obj      = MakeObject()      // Tyhj‰ objekti
+    bullet\moved    = False
+    ObjectRange bullet\obj, 5
+    CloneObjectOrientation bullet\obj, player\obj
+    CloneObjectPosition bullet\obj, player\obj
+    // Mist‰ ammus l‰htee pelaajaan n‰hden
+    bPos = aWeapon(player\weapon, WPNF_BULLET_YAW)
+    If _doubleBullet = True And player\weapon = WPN_PISTOL Then bPos = bPos * -1
+    MoveObject bullet\obj, aWeapon(player\weapon, WPNF_BULLET_FORTH), bPos
+    bullet\prevPosX = ObjectX(bullet\obj)
+    bullet\prevPosY = ObjectY(bullet\obj)
+    // Hajonta
+    spread = aWeapon(player\weapon, WPNF_SPREAD)
+    If player\weapon = WPN_LAUNCHER Then
+        If _doubleBullet Then spread = -spread
+    Else
+        spread = Rnd(-spread, spread)
+    EndIf
+    TurnObject bullet\obj, spread
+    If player\weapon = WPN_SHOTGUN Then
+        MoveObject bullet\obj, Rand(0, 20)
+    EndIf
+Debug("Check bullet BEGIN")
+    i = 0
+    While True
+        If InMap(ObjectX(bullet\obj), ObjectY(bullet\obj)) = True Then Exit
+        MoveObject bullet\obj, -1
+        i + 1
+        If i > 50 Then
+            DeleteObject bullet\obj
+            Delete bullet
+            Return False
+        EndIf
+    Wend
+Debug("Check bullet END")
+    UpdateGame2()
+    SetupCollision bullet\obj, gMap, 2, 4, 1
+
+    // Lis‰t‰‰n ammusviesti l‰hetett‰v‰ksi jokaiselle pelaajalle
+    For plr.PLAYERS = Each PLAYERS
+        // L‰hetet‰‰n viesti kaikille muille paitsi boteille
+        If plr\active And plr\zombie = False Then
+            nmsg.NET_MESSAGES = New(NET_MESSAGES)
+            nmsg\toPlayer   = plr\playerId      // Kenelle l‰hetet‰‰n
+            nmsg\msgType    = NET_NEWBULLET     // Mik‰ viesti
+            nmsg\bulletId   = bullet\bulletId   // Ammuksen tunnus
+            nmsg\sndPlay    = (_doubleBullet = 0)
+            nmsg\weapon     = player\weapon
+            nmsg\playerId   = _playerId
+            nmsg\x          = ObjectX(bullet\obj)
+            nmsg\y          = ObjectY(bullet\obj)
+        EndIf
+    Next plr
+    If (player\weapon = WPN_PISTOL Or player\weapon = WPN_LAUNCHER) And _doubleBullet = False Then
+        // Jos t‰m‰ on ammuttu pistoolilla niin tehd‰‰n viel‰ toinen ammus koska
+        // pistooleja on kaksi ja molemmat ampuu samaan aikaan.
+        CreateServerBullet(_playerId, True)
+    EndIf
+    
+    // Haulikosta l‰htee monta kutia
+    If player\weapon = WPN_SHOTGUN And _doubleBullet < 6 Then
+        CreateServerBullet(_playerId, _doubleBullet + 1)
+    EndIf
+EndFunction
+
+
+//================================================================================
+// Siirret‰‰n ammuksia
+//================================================================================
+Function MoveBullets()
+    // K‰yd‰‰n kaikki ammukset l‰pi
+    For bullet.BULLETS = Each BULLETS
+        // Nopeus riippuu siit‰ mill‰ aseella se on ammuttu
+        speed = aWeapon(bullet\weapon, WPNF_BULLETSPEED)
+        If bullet\moved = False Then
+            bullet\moved = True
+            speed = 0
+        EndIf
+        // Jos ammus on ammuttu singolla niin tehd‰‰n savuvana
+        If gGameMode = CLIENT And bullet\weapon = WPN_BAZOOKA Then
+            If InScreen(ObjectX(bullet\obj), ObjectY(bullet\obj), 100) = True Then
+                expl.EXPL_ANIMS = New(EXPL_ANIMS)
+                expl\x      = ObjectX(bullet\obj)
+                expl\y      = ObjectY(bullet\obj)
+                expl\frame  = 0
+                expl\tStamp = Timer()
+                expl\frames = 16
+                expl\img    = IMG_SMOKEANIM
+                expl\w      = 20
+                expl\h      = 20
+            EndIf
+        EndIf
+        MoveObject bullet\obj, PxPerSec(speed)
+        UpdateGame2()
+        bx# = ObjectX(bullet\obj)
+        by# = ObjectY(bullet\obj)
+        hit = False
+
+        // Jos on ammuttu kranaatinlaukaisimella niin tutkitaan aikaviive
+        If bullet\weapon = WPN_LAUNCHER Then
+            If bullet\shooted + 1000 < Timer() Then
+                hit = True
+                
+                // Lis‰t‰‰n viestijonoon ilmoitus osumasta.
+                If gGameMode = SERVER Then
+                    For plr.PLAYERS = Each PLAYERS
+                        // L‰hetet‰‰n viesti kaikille muille paitsi boteille
+                        If plr\active = True And plr\zombie = False Then
+                            nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                            nmsg\toPlayer   = plr\playerId      // Kenelle viesti l‰hetet‰‰n
+                            nmsg\msgType    = NET_BULLETHIT     // Mik‰ viesti
+                            nmsg\bulletId   = bullet\bulletId   // Ammuksen tunnus
+                            nmsg\playerId   = 0                 // Keneen osui
+                            nmsg\x          = bx                // Miss‰ osui
+                            nmsg\y          = by                // Miss‰ osui
+                            nmsg\weapon     = bullet\weapon     // Mill‰ aseella ammus ammuttiin
+                        EndIf
+                    Next plr
+                                    
+                    CheckExplodeRange(bullet\weapon, bx, by, bullet\playerId)
+                EndIf
+            EndIf
+        EndIf
+        
+        // Osuiko sein‰‰n tai meniko kartalta ulos
+        If hit = False And (CountCollisions(bullet\obj) Or InMap(bx, by) = False Or bullet\weapon = WPN_CHAINSAW) Then
+            hit = True
+//            bounce = False
+//            If bullet\weapon = WPN_LAUNCHER Then bounce = True
+            // Osui sein‰‰n tai meni ulos
+            If gGameMode = CLIENT Then
+                PlayGameSound(aWeapon(bullet\weapon, WPNF_HITSOUND), bx, by)
+                // Jos ammus oli singosta niin luodaan r‰j‰hdysanimaatio
+                If bullet\weapon = WPN_BAZOOKA Or bullet\weapon = WPN_LAUNCHER Then
+                    If InScreen(bx, by, 200) = True Then
+                        expl.EXPL_ANIMS = New(EXPL_ANIMS)
+                        expl\x      = bx
+                        expl\y      = by
+                        expl\frame  = 0
+                        expl\tStamp = Timer()
+                        expl\frames = 16
+                        expl\img    = IMG_EXPLOSION1
+                        expl\w      = 128
+                        expl\h      = 128
+                    EndIf
+                Else
+                    // Kipinˆinti sein‰lle jos ammus on jostain muusta kuin singosta
+                    Sparking(bx, by)
+                EndIf
+            ElseIf gGameMode = SERVER
+                CheckExplodeRange(bullet\weapon, bx, by, bullet\playerId)
+            EndIf
+//            If bounce = False Then hit = True
+            // Kimmotus
+//            If bounce = True Then
+//                // Tutkitaan ammuksen suuntaa ja tˆrm‰yskulmaa ja niiden perusteella 
+//                // asetetaan uusi suunta koska ammus kimpoaa sein‰st‰.
+//                a# = CollisionAngle(bullet\obj, 1)
+//                ba# = ObjectAngle(bullet\obj)
+//                vx# = -Cos(ba)
+//                vy# = Sin(ba)
+//                If a = 0 And vx > 0 Then vx = vx * -1
+//                If a = 180 And vx < 0 Then vx = vx * -1
+//                If a = 90 And vy < 0 Then vy = vy * -1
+//                If a = 270 And vy > 0 Then vy = vy * -1
+//                //If a = 0 Or a = 180 Then vx = vx * -1
+//                //If a = 90 Or a = 270 Then vy = vy * -1
+//                a = GetAngle(vx, vy, 0, 0)
+//                RotateObject bullet\obj, a
+//                MoveObject bullet\obj, 10
+//            EndIf
+        ElseIf hit = False Then
+            // Ei osunut sein‰‰n mutta osuiko pelaajaan.
+            // Tutkitaan vain serveriss‰
+            If gGameMode = SERVER And gSessionComplate = False Then
+                // Ammuksen kulkema matka
+                move# = Distance(bullet\prevPosX, bullet\prevPosY, bx, by)
+                xMove# = (bx - bullet\prevPosX) / move
+                yMove# = (by - bullet\prevPosY) / move
+                For player.PLAYERS = Each PLAYERS
+                    protected = (player\spawnTime + SPAWN_PROTECT > Timer())
+                    // Osuma tutkitaan vain jos pelaaja on aktiivinen ja hengiss‰
+                    If protected = False And player\active = True And player\health > 0 Then
+                        
+                        // Ammus on voinut kulkea yhden framen aikana paljonkin joten
+                        // tutkitaan osumat ammuksen kulkureitilt‰ noin 10 pikselin v‰lein
+                        // ettei ammus p‰‰se pelaajan "l‰pi"
+                        steps = RoundUp(move / 5.0)
+                        If steps > 0 Then
+                            // Tutkitaan v‰lipisteet
+                            stp# = move / steps
+                            For i = 1 To steps
+                                bPos# = Float(i) * stp
+                                bx = bullet\prevPosX + (xMove * bPos)
+                                by = bullet\prevPosY + (yMove * bPos)
+                                // Nyt tarkistetaan osuma.
+                                // Osumaa itseens‰ ei tarkisteta
+                                If player\playerId <> bullet\playerId And Distance(ObjectX(player\obj), ObjectY(player\obj), bx, by) < 20 Then
+                                    // Osui
+                                    // Talletetan tieto ampujasta
+                                    player\shootedBy = bullet\playerId
+                                    
+                                    // Lis‰t‰‰n viestijonoon ilmoitus osumasta.
+                                    For plr.PLAYERS = Each PLAYERS
+                                        // L‰hetet‰‰n viesti kaikille muille paitsi boteille
+                                        If plr\active = True And plr\zombie = False Then
+                                            nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                                            nmsg\toPlayer   = plr\playerId      // Kenelle viesti l‰hetet‰‰n
+                                            nmsg\msgType    = NET_BULLETHIT     // Mik‰ viesti
+                                            nmsg\bulletId   = bullet\bulletId   // Ammuksen tunnus
+                                            nmsg\playerId   = player\playerId   // Keneen osui
+                                            nmsg\x          = bx                // Miss‰ osui
+                                            nmsg\y          = by                // Miss‰ osui
+                                            nmsg\weapon     = bullet\weapon     // Mill‰ aseella ammus ammuttiin
+                                        EndIf
+                                    Next plr
+                                    
+                                    // Tutkitaan ensin oliko t‰m‰ r‰j‰hdys
+                                    If CheckExplodeRange(bullet\weapon, bx, by, bullet\playerId) = False Then 
+                                        // Ei ollut r‰j‰hdys
+                                        player\health = Max(-127, player\health - aWeapon(bullet\weapon, WPNF_DAMAGE))
+                                        // Kuolema
+                                        If player\health <= 0 Then
+                                            // Lis‰t‰‰n osutulle palaajalle kuolema
+                                            player\death = True
+                                            player\timeToDeath = Timer()
+                                            player\deaths = player\deaths + 1
+                                            // Ampuja
+                                            plr.PLAYERS = ConvertToType(gPlayers(bullet\playerId))
+                                            // Onko ampuja viel‰ peliss‰
+                                            If plr\active = True Then
+                                                If player\team = plr\team And gPlayMode > DM Then
+                                                    // Perkeleen teamkilleri! V‰hennet‰‰n tappo.
+                                                    plr\kills = plr\kills - 1
+                                                Else
+                                                    // Osuttiin vastustajaan, lis‰t‰‰n tappo.
+                                                    plr\kills = plr\kills + 1
+                                                EndIf
+                                                UpdatePlayerProt(plr\playerId)
+                                                
+                                                // L‰hetet‰‰n tappoviesti
+                                                For mplr.PLAYERS = Each PLAYERS
+                                                    // L‰hetet‰‰n viesti kaikille muille paitsi boteille
+                                                    If mplr\active = True And mplr\zombie = False Then
+                                                        nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                                                        nmsg\toPlayer   = mplr\playerId     // Kenelle viesti l‰hetet‰‰n
+                                                        nmsg\msgType    = NET_KILLMESSAGE   // Mik‰ viesti
+                                                        nmsg\weapon     = bullet\weapon     // Mill‰ aseella tapettiin
+                                                        nmsg\playerId   = plr\playerId      // Tappaja
+                                                        nmsg\playerId2  = player\playerId   // Uhri
+                                                    EndIf
+                                                Next mplr
+                                            EndIf
+                                        EndIf
+                                        UpdatePlayerProt(player\playerId)
+                                    EndIf
+                                    
+                                    hit = True
+                                    Exit
+                                EndIf
+                            Next i
+                            If hit = True Then Exit
+                        EndIf
+                    EndIf
+                Next player
+            EndIf
+            If gSessionComplete = True Then 
+                hit = True
+            EndIf
+        EndIf
+        If bullet\weapon = WPN_CHAINSAW Then hit = True
+
+        If hit = True Then
+            // Poistetaan ammus kokoelmasta
+            DeleteObject bullet\obj
+            Delete bullet
+        Else
+            bullet\prevPosX = bx
+            bullet\prevPosY = by
+        EndIf
+
+    Next bullet
+EndFunction
+
+
+//================================================================================
+// Tutkitaan onko pelaajia r‰j‰hdyksen vaikutusalueella
+//================================================================================
+Function CheckExplodeRange(_weapon, _x, _y, _shooter)
+    // Onko er‰ loppunut
+    If gSessionComplete = True Then Return False
+    
+    dr = aWeapon(_weapon, WPNF_DAMAGERANGE)
+    // Poistutaan jos ammus ei ole r‰j‰ht‰v‰‰ mallia
+    If dr = 0 Then Return False
+    wDamage = aWeapon(_weapon, WPNF_DAMAGE)
+
+    For player.PLAYERS = Each PLAYERS
+        protected = (player\spawnTime + SPAWN_PROTECT > Timer())
+        // Onko pelaaja aktiivinen ja onko hengiss‰
+        If player\active = True And player\health > 0 And protected = False Then
+            obj = player\obj
+            px = ObjectX(obj)
+            py = ObjectY(obj)
+            dist# = Distance(_x, _y, px, py)
+            checkRange = True
+            If _weapon = WPN_CHAINSAW Then
+                If _shooter = player\playerId Then checkRange = False
+            EndIf
+            // Onko et‰isyys pienempi kuin r‰j‰hdyksen vaikutusalue
+            If dist <= dr And checkRange = True Then
+                // Osutulle palaajalle tieto ampujasta
+                player\shootedBy = _shooter
+                // Damage riippuu et‰isyydest‰
+                damage# = (Float(dr) - dist) / Float(dr)
+                damage = damage * Float(wDamage)
+                player\health = Max(-127, player\health - damage)
+            
+                If player\health <= 0 Then
+                    player\death = True
+                    player\timeToDeath = Timer()
+                    player\deaths = player\deaths + 1
+                    // L‰hetet‰‰n tappoviesti
+                    For mplr.PLAYERS = Each PLAYERS
+                        // L‰hetet‰‰n viesti kaikille muille paitsi boteille
+                        If mplr\active = True And mplr\zombie = False Then
+                            nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                            nmsg\toPlayer   = mplr\playerId     // Kenelle viesti l‰hetet‰‰n
+                            nmsg\msgType    = NET_KILLMESSAGE   // Mik‰ viesti
+                            nmsg\weapon     = _weapon           // Mill‰ aseella tapettiin
+                            nmsg\playerId   = _shooter          // Tappaja
+                            nmsg\playerId2  = player\playerId   // Uhri
+                        EndIf
+                    Next mplr
+                    
+                    // Hoidetaan pisteet pois alta.
+                    plr.PLAYERS = ConvertToType(gPlayers(_shooter))
+                    // Onko ampuja viel‰ peliss‰
+                    If plr\active = True Then
+                        If player\team = plr\team And gPlayMode > DM Then
+                            // Perkeleen teamkilleri! V‰hennet‰‰n tappo.
+                            plr\kills = plr\kills - 1
+                        ElseIf _shooter = player\playerId Then
+                            // Jos ammuttiin itse‰‰n, myˆs silloin miinusta.
+                            plr\kills = plr\kills - 1
+                        Else
+                            // Osuttiin vastustajaan, lis‰t‰‰n tappo.
+                            plr\kills = plr\kills + 1
+                        EndIf
+                        UpdatePlayerProt(plr\playerId)
+                        
+                    EndIf
+                EndIf
+                UpdatePlayerProt(player\playerId)
+            EndIf
+        EndIf
+    Next player
+    Return True
+EndFunction
+
+
+//================================================================================
+// R‰j‰hdysanimaatio
+//================================================================================
+Function UpdateExplodeAnimation()
+    If gGameMode <> CLIENT Then Return True
+    DrawToWorld ON, ON, ON
+    For expl.EXPL_ANIMS = Each EXPL_ANIMS
+        If expl\frame >= expl\frames Then
+            Delete expl
+        Else
+            DrawImageBox gImages(expl\img), expl\x - (expl\w / 2), -expl\y - (expl\h / 2), expl\w * expl\frame, 0, expl\w, expl\h
+            If expl\tStamp + 50 < Timer() Then 
+                expl\frame = expl\frame + 1
+                expl\tStamp = Timer()
+            EndIf
+        EndIf
+    Next expl
+    DrawToWorld OFF, OFF, OFF
+EndFunction
+
+
+Function GetBotWeapon()
+    count = CountWords(gBotWeapons, ",")
+    ix = Rand(1, count)
+    wpn = Int(GetWord2(gBotWeapons, ix, ","))
+    If wpn < 1 Or wpn > WPN_COUNT Then wpn = 1
+    Return wpn
+EndFunction
