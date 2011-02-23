@@ -540,7 +540,11 @@ Function GameUpdate()
             gPlayerNames = lPlayerNames
             //lCounters = Str(lPlayerCount)
 //            GSSUpdate(gPlayerCount + "," + gMapNames(gGameMap, 1) + "," + gMapMaxPlayers + "," + gPlayerNames, forceUpdate)
-            SetWindow "NetMatch " + gGSSVersion + " Client - " + lCounters + " players online"
+            If NM_DEVBUILD = False Then
+                SetWindow "NetMatch " + gGSSVersion + " Client - " + lCounters + " players online"
+            Else
+                SetWindow "NetMatch " + gGSSVersion + "-dev Client - " + lCounters + " players online"
+            EndIf
         EndIf
     EndIf
     If mapChanged Then forceUpdate = True
@@ -555,7 +559,11 @@ Function GameUpdate()
             regText$ = "(not registered)"
             If gGSSRegistered Then regText = "(registered)"
             If forceUpdate Then
-                SetWindow "NetMatch " + gGSSVersion + " Server - " + lCounters + " players online " + regText
+                If NM_DEVBUILD = False Then
+                    SetWindow "NetMatch " + gGSSVersion + " Server - " + lCounters + " players online " + regText
+                Else
+                    SetWindow "NetMatch " + gGSSVersion + "-dev Server - " + lCounters + " players online " + regText
+                EndIf
             EndIf
             CheckBots()
         EndIf
