@@ -163,7 +163,9 @@ Const SND_COUNT         = 27    // ƒ‰nien lukum‰‰r‰
 // Ladataan kuvat
 //--------------------------------------------------------------------------------
 Dim gImages(IMG_COUNT)
-gImages(IMG_BACKGROUND) = LoadResourceImage("background.png") : ShowLoading()
+If gDirectServer = False Then 
+    gImages(IMG_BACKGROUND) = LoadResourceImage("background.png") : ShowLoading()
+EndIf
 CheckUpdates()
 // Jos menn‰‰n suoraan servuun, niin ei ladata mediaa _OlLENKAAN_ ;)
 If gDirectServer = False Then
@@ -440,7 +442,9 @@ EndFunction
 
 
 Function CheckUpdates()
-    DrawImage gImages(IMG_BACKGROUND), 0, 0
+    If gDirectServer = False Then
+        DrawImage gImages(IMG_BACKGROUND), 0, 0
+    EndIf
     MsgBox(GetText("update_check"), "NetMatch", MSG_INFO_NOWAIT)
     url$ = "http://netmatch.vesq.org/cbee/download/version.txt"
     t = Timer()
