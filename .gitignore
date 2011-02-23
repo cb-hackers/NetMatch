@@ -1,6 +1,10 @@
 # Ei valmista exeä repoon
 *.exe
 
+# ...paitsi CBRC.exe ja Rar.exe, jotka vaaditaan mediaa varten.
+!media/CBRC.exe
+!media/Rar.exe
+
 # Pikakuvakkeet pois
 *.lnk
 
