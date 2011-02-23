@@ -25,7 +25,7 @@ EndIf
 SAFEEXIT OFF
 
 Const NM_VERSION$   = "2.2"
-Const NM_REVISION$  = "a"
+Const NM_REVISION$  = "a-epatch"
 Const NM_PATCH      = 1
 
 //--------------------------------------------------------------------------------
