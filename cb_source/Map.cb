@@ -102,7 +102,7 @@ While True
             mapAuthors = mapAuthors + Replace(author, "|", ";")
             MAP_COUNT + 1
         Else
-            DrawImage gImages(IMG_BACKGROUND), 0, 0
+            If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
             Error(GetText("incorrect_map") + " (" + file + ")")
         EndIf
         If mVersionData <> 0 Then
