@@ -314,6 +314,19 @@ Function ReadDataFromClient()
             
                 PositionObject player\obj, player\x, player\y
                 RotateObject player\obj, player\angle
+                If Timer()-gTimer=>1000 Then 
+                    If player\spawnTime < Timer()+100 And Distance(player\prevx, player\prevy, player\x, player\y)>305 And player\health>0 Then
+                         nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                         nmsg\toPlayer   = player\playerId     // Kenelle viesti lähetetään
+                         nmsg\msgType    = NET_SPEEDHACK   // Mikä viesti
+                    EndIf
+                    'Print Distance(player\prevx, player\prevy, player\x, player\y)
+  
+                  
+                    player\prevx = player\x
+                    player\prevy = player\y
+                    gTimer = Timer()
+                EndIf
                 If shoot = 1 Then CreateServerBullet(gCurrentPlayerId)
                 // Poimittiinko jotain
                 If picked > 0 Then
@@ -516,6 +529,9 @@ Function ReadDataFromClient()
                 plr.PLAYERS = ConvertToType(gPlayers(nmsg\playerId2))
                 _Net_PutShort(plr\kills)        // Uhrin tapot
                 _Net_PutShort(plr\deaths)       // Uhrin kuolemat
+            EndIf
+            If nmsg\msgType = NET_SPEEDHACK Then 
+                _Net_PutByte(nmsg\msgType)
             EndIf
             Delete nmsg
         EndIf

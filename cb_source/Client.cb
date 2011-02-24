@@ -829,7 +829,9 @@ Function ReadDataFromServer()
 
                 gServerMap = mapName
             EndIf
-        
+        ElseIf  netmsg = NET_SPEEDHACK Then 
+            Error(GetText("speedhack"))
+            Return False
         Else
             // Tuntematon viesti tai viestit loppui
             Exit
