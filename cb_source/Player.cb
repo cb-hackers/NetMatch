@@ -13,7 +13,7 @@ Const MAX_INACTIVE_TIME = 10000 // Aika jonka j‰lkeen haamuiksi j‰‰neet pelaajat
 //Const BOT_COUNT         = 5     // Bottien lukum‰‰r‰
 Const DEATH_DELAY       = 3000  // Kun pelaaja kuolee niin koska her‰tet‰‰n henkiin
 
-Const FORWARD_SPEED#    = 650   // Nopeus eteen (pikseli‰ sekunnissa)
+Const FORWARD_SPEED#    = 250   // Nopeus eteen (pikseli‰ sekunnissa)
 Const BACKWARD_SPEED#   = 150   // Nopeus taakse (pikseli‰ sekunnissa)
 Const SIDESTEP_SPEED#   = 160   // Nopeus sivulle (pikseli‰ sekunnissa)
 Const TURN_SPEED#       = 180   // K‰‰ntymisnopeus jos k‰‰nnet‰‰n n‰pp‰imill‰
@@ -107,8 +107,8 @@ Type PLAYERS
     Field outOfMap      As Integer      // Kuinka monta p‰ivityskierrosta pelaaja on ollut poissa kartalta
     Field spawnTime     As Integer      // Syntym‰aika
     Field visible       As Integer      // Ukon vilkuttaminen syntym‰n j‰lkeen
-    Field prevx         As Integer
-    Field prevy         As Integer
+    Field prevx         As Integer      // Pelaajan x-paikka viimeisimm‰ss‰ tarkistuksessa
+    Field prevy         As Integer      // Pelaajan y-paikka viimeisimm‰ss‰ tarkistuksessa
 EndType
 
 //--------------------------------------------------------------------------------
