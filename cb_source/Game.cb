@@ -39,8 +39,6 @@ Global gNameTitle$, gKillsTitle$, gDeathsTitle$, gTimeTitle$
 
 Global gDirection#, gDistance#
 
-Global gTimer
-gTimer = Timer()
 //================================================================================
 // Pelitilanteen päivitys
 //================================================================================
@@ -282,8 +280,8 @@ Function GameUpdate()
                         player\health = 100
                         player\lastValidX = player\x
                         player\lastValidY = player\y
-                        player\prevx = player\x
-                        player\prevy = player\y
+                        player\hackTestX = player\x
+                        player\hackTestY = player\y
                         player\spawnTime  = Timer()
                         // Jos tämä on botti niin arvotaan ase
                         If player\zombie = True Then
@@ -304,8 +302,6 @@ Function GameUpdate()
                     // Pelaaja ei jostain syystä ole kartalla.
                     // Palautetaan viimeiseen paikkaa jossa oli.
                     PositionObject player\obj, player\lastValidX, player\lastValidY
-                    player\prevx = player\lastValidX
-                    player\prevy = player\lastValidY
                     player\outOfMap = player\outOfMap + 1
                     // Jos ei ole ollut kartalla pitkään aikaan niin spawnataan uudelleen
                     If player\outOfMap > 10 Then
@@ -313,10 +309,9 @@ Function GameUpdate()
                         player\outOfMap = 0
                     EndIf
                 EndIf
-              
 
-              
-                 'Print "x:"+ObjectX(player\obj)+ "y:"+ObjectY(player\obj) 
+
+
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // BOTTIEN TEKOÄLY >>>
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -730,11 +725,13 @@ Function Login(_in, _playerId = 0)
                     // Tyhjä paikka löytyi
                     player\clientId = NET_ClientId
                     player\active   = True
-                    player\loggedIn = False
+                    player\loggedIn = True
                     player\name     = profile
                     SpawnObject(player\obj)
                     player\x        = ObjectX(player\obj)
                     player\y        = ObjectY(player\obj)
+                    player\hackTestX = player\x
+                    player\hackTestY = player\y
                     player\angle    = ObjectAngle(player\obj)
                     player\zombie   = False
                     player\health   = 100
@@ -747,7 +744,7 @@ Function Login(_in, _playerId = 0)
                         player\team = Rand(1,2)
                     EndIf
                     UpdatePlayerProt(player\playerId)
-                    
+               
                     // Lähetetään vastaus clientille
                     _Net_InitMemBlock()
                     _Net_PutByte(NET_LOGIN)
@@ -788,6 +785,7 @@ Function Login(_in, _playerId = 0)
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // SERVER LOGOUT >>>
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 
             player.PLAYERS  = ConvertToType(gPlayers(_playerId))
             player\active   = False
 //COM1            If player\loggedIn = True Then gPlayerCount - 1

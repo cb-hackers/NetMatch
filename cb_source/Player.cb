@@ -107,8 +107,8 @@ Type PLAYERS
     Field outOfMap      As Integer      // Kuinka monta päivityskierrosta pelaaja on ollut poissa kartalta
     Field spawnTime     As Integer      // Syntymäaika
     Field visible       As Integer      // Ukon vilkuttaminen syntymän jälkeen
-    Field prevx         As Integer      // Pelaajan x-paikka viimeisimmässä tarkistuksessa
-    Field prevy         As Integer      // Pelaajan y-paikka viimeisimmässä tarkistuksessa
+    Field hackTestX     As Integer      // Pelaajan x-paikka viimeisimmässä nopeuden tarkistuksessa
+    Field hackTestY     As Integer      // Pelaajan y-paikka viimeisimmässä nopeuden tarkistuksessa
 EndType
 
 //--------------------------------------------------------------------------------

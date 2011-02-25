@@ -95,3 +95,6 @@ update_check = Finding updates...
 new_version = New version found!|Load new version from http://netmatch.vesq.org/download.php|Press Enter to open download page or press any other key to continue.|
 you_are_banned = Access denied!
 speedhack = Speedhacker!
+map_not_in_server = Map %1 Not found from mapserver
+map_download = Downloading map %1...
+map_download_failed = Map download failed!

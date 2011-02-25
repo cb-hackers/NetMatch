@@ -25,7 +25,7 @@ Const NET_KILLMESSAGE       = 15    // Tappoviesti
 Const NET_SESSIONTIME       = 16    // Pelisession aikatiedot
 Const NET_BANNED            = 17    // Client on bannattu
 Const NET_MAPCHANGE         = 18    // Kartan vaihto
-Const NET_SPEEDHACK         = 19    // Speedhaxi havaittu
+Const NET_SPEEDHACK         = 19    // Nopeuden huijaus havaittu
 Const NET_END               = 255   // Viestin loppu
 
 

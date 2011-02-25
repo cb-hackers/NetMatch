@@ -4,6 +4,8 @@
 // Palvelimen toiminnot
 //********************************************************************************
 
+Global gSpeedHackTimer
+gSpeedHackTimer = Timer()
 
 //================================================================================
 // Luodaan palvelin.
@@ -314,18 +316,17 @@ Function ReadDataFromClient()
             
                 PositionObject player\obj, player\x, player\y
                 RotateObject player\obj, player\angle
-                If Timer()-gTimer=>1000 Then 
-                    If player\spawnTime < Timer()+100 And Distance(player\prevx, player\prevy, player\x, player\y)>305 And player\health>0 Then
+                
+                // Tarkistetaan pelaajan nopeus per sekunti
+                If Timer()-gSpeedHackTimer=>1000 Then 
+                    If player\spawnTime < Timer()+100 And Distance(player\x, player\y, player\hackTestX, player\hackTestY)>305 And player\LoggedIn = True Then
                          nmsg.NET_MESSAGES = New(NET_MESSAGES)
-                         nmsg\toPlayer   = player\playerId     // Kenelle viesti l‰hetet‰‰n
+                         nmsg\toPlayer   = player\playerId  // Kenelle viesti l‰hetet‰‰n
                          nmsg\msgType    = NET_SPEEDHACK   // Mik‰ viesti
                     EndIf
-                    'Print Distance(player\prevx, player\prevy, player\x, player\y)
-  
-                  
-                    player\prevx = player\x
-                    player\prevy = player\y
-                    gTimer = Timer()
+                    player\hackTestX = player\x  // Asetetaan pelaajan x-paikka seuraavaa tarkistusta varten
+                    player\hackTestY = player\y  // Asetetaan pelaajan y-paikka seuraavaa tarkistusta varten
+                    gSpeedHackTimer = Timer()
                 EndIf
                 If shoot = 1 Then CreateServerBullet(gCurrentPlayerId)
                 // Poimittiinko jotain
@@ -532,6 +533,7 @@ Function ReadDataFromClient()
             EndIf
             If nmsg\msgType = NET_SPEEDHACK Then 
                 _Net_PutByte(nmsg\msgType)
+                Login( False, gCurrentPlayerId )
             EndIf
             Delete nmsg
         EndIf
