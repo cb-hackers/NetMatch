@@ -31,3 +31,4 @@ Coding conventions
 * <strong>The constant NM_DEVBUILD in the main source file (NetMatch_TheEnd.cb) MUST be set to 1
   when the version is not an official release!</strong>
 * Before pushing always check whether your code actually compiles.
+* Please do not use colons ":" to put more code in one line. Just put the code to separate lines.
