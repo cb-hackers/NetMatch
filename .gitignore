@@ -39,9 +39,9 @@ Thumbs.db
 ######
 
 # Ei laiteta downloadsia tai mapseja mukaan repoon.
-netmatch.vesq.org/downloads
-netmatch.vesq.org/maps
+www/downloads
+www/maps
 
 # Ei laiteta myöskään info.txt tiedostoja mukaan.
-netmatch.vesq.org/cbee/info.txt
-netmatch.vesq.org/cbee/oldinfos
+www/cbee/info.txt
+www/cbee/oldinfos
