@@ -93,7 +93,6 @@ incorrect_map = Yhteensopimaton karttaversio
 author = Tekijä:
 update_check = Etsitään päivityksiä...
 new_version = Löydettiin uusi ohjelmaversio!|Lataa ohjelma osoitteesta http://netmatch.vesq.org/download.php|Avaa lataussivu painamalla Enter tai jatka painamalla jotain muuta näppäintä.|
-you_are_banned = Pääsy palvelimelle on evätty!
 speedhack = Nopeushuijari!
 map_not_in_server = Karttaa %1 ei löydetty serveriltä
 map_download = Ladataan karttaa %1...
