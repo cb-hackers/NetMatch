@@ -32,3 +32,4 @@ Coding conventions
   when the version is not an official release!</strong>
 * Before pushing always check whether your code actually compiles.
 * Please do not use colons ":" to put more code in one line. Just put the code to separate lines.
+* Do <strong>NOT</strong> use Goto's or GoSub's, they're awful coding practice. Commits that use them won't get applied.
