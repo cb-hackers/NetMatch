@@ -37,6 +37,28 @@ mapAuthors$ = ""
 Global gMapNum
 gMapNum = 0
 
+// Tyyppikokoelma karttoja varten, t‰h‰n tallennetan kaikki kartan tiedot ja resurssit.
+Type MAPLIST
+    Field filePath As String    // Tiedostopolku
+    Field name As String        // Nimi
+    Field author As String      // Tekij‰
+    Field CRC                   // CRC32-sormenj‰lki client-server tarkistusta varten
+    Field animDelay             // Kuinka tiuhaan karttaa animoidaan
+    Field thumbnail             // Esikatselukuva
+    Field maxPlayers            // Pelaajien maksimim‰‰r‰
+    Field teamPlayers           // Yhdess‰ joukkueessa olevien pelaajien maksimim‰‰r‰
+    Field maxBots               // Bottien maksimim‰‰r‰
+    Field botDelete             // Mink‰ pelaajam‰‰r‰n j‰lkeen poistetaan botti pelist‰
+    Field botWeapons As String  // Mit‰ aseita botit voivat k‰ytt‰‰. Pilkuin eroteltu merkkijono (esim. 1,2,5)
+    Field botNames As String    // Bottien nimet
+    Field amountHealth          // Health-pakettien m‰‰r‰
+    Field amountAmmo            // Konekiv‰‰rin ammusten m‰‰r‰
+    Field amountRocket          // Raketinheittimen ammusten m‰‰r‰
+    Field amountFuel            // Moottorisahan ammusten m‰‰r‰
+    Field amountShotgun         // Haulikon ammusten m‰‰r‰
+    Field amountLauncher        // Kranaatinheittimen ammusten m‰‰r‰
+EndType
+
 StartSearch
 While True
     file$ = FindFile()
