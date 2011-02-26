@@ -352,7 +352,7 @@ Function ReadDataFromClient()
         
         ElseIf netmsg = NET_MAPCHANGE Then
         
-            // Pelaaja lähetti tekstiviestin
+            // Pelaaja lähetti kartan nimen
             player\mapName = Trim(_Net_GetString())
         
         Else
