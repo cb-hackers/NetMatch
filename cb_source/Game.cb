@@ -725,7 +725,7 @@ Function Login(_in, _playerId = 0)
                     // Tyhjä paikka löytyi
                     player\clientId = NET_ClientId
                     player\active   = True
-                    player\loggedIn = True
+                    player\loggedIn = False
                     player\name     = profile
                     SpawnObject(player\obj)
                     player\x        = ObjectX(player\obj)
