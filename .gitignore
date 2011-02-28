@@ -43,5 +43,5 @@ www/downloads
 www/maps
 
 # Ei laiteta myöskään info.txt tiedostoja mukaan.
-www/cbee/info.txt
-www/cbee/oldinfos
+www/reg/info.txt
+www/reg/oldinfos
