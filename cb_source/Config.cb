@@ -42,7 +42,7 @@ Global gFXVolume
 gFXVolume = 50
 
 Global gGameMap, gGameMapName$
-gGameMap = 1
+gGameMap = 0
 
 Global gPeriodLength
 gPeriodLength = 5

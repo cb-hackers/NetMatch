@@ -368,8 +368,8 @@ Function DrawMenu(_menu)
                         loopMaps = Int(CountWords(gMapNames(gGameMap, 1), ":")) - 1
                         If loopMaps >= 1 Then
                             mapName$ = GetWord2(gMapNames(gGameMap, 1), loopMapNum + 1, ":")
-                            gMapImages(gGameMap, 1) = GetMapThumbnail(mapName)
-                            gMapNames(gGameMap, 2) = GetMapAuthor(mapName)
+//MPR                            gMapImages(gGameMap, 1) = GetMapThumbnail(mapName)
+//MPR                            gMapNames(gGameMap, 2) = GetMapAuthor(mapName)
                             If loopMapTime + loopMapDelay < Timer() Then
                                 loopMapTime = Timer()
                                 loopMapNum + 1
