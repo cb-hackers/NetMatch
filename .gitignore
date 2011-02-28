@@ -31,6 +31,9 @@ cbrs.reg
 # Jätetään bannilistat pois
 ipban.txt
 
+# Ei oteta myöskään debug-loggeja mukaan.
+debug.txt
+
 # Perhanan Windows
 Thumbs.db
 
