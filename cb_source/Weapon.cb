@@ -287,7 +287,7 @@ Function CreateServerBullet(_playerId, _doubleBullet = 0)
     If player\weapon = WPN_SHOTGUN Then
         MoveObject bullet\obj, Rand(0, 20)
     EndIf
-Debug("Check bullet BEGIN")
+
     i = 0
     While True
         If InMap(ObjectX(bullet\obj), ObjectY(bullet\obj)) = True Then Exit
@@ -299,7 +299,7 @@ Debug("Check bullet BEGIN")
             Return False
         EndIf
     Wend
-Debug("Check bullet END")
+
     UpdateGame2()
     SetupCollision bullet\obj, gMap, 2, 4, 1
 
