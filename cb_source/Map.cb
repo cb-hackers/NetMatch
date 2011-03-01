@@ -38,7 +38,7 @@ EndType
 //--------------------------------------------------------------------------------
 Type MAPLISTS
     Field listName As String    // Listan nimi, pit‰‰ olla uniikki
-    Field mapsPtr               // Osoitin MAPS-kokoelman j‰seneen
+    Field mapPtr                // Osoitin MAPS-kokoelman j‰seneen
 EndType
 
 //--------------------------------------------------------------------------------
@@ -62,19 +62,32 @@ gMapAnimDelay   = 0
 gMapCRC         = 0
 gBotWeapons = "1,2,3"
 
-//--------------------------------------------------------------------------------
-// Karttojen m‰‰r‰ yhteens‰. T‰m‰n globaali ehk‰ poistetaan tulevaisuudessa, jos
+// Kartan yhden laatan leveys ja korkeus
+Global gTileW#, gTileH#
+gTileW  = 48
+gTileH  = 48
+
+// Karttojen m‰‰r‰ yhteens‰. T‰m‰ globaali ehk‰ poistetaan tulevaisuudessa, jos
 // sille ei lˆydet‰ tarvetta.
-//--------------------------------------------------------------------------------
 Global gMapCount
 gMapCount = 0
 
-//--------------------------------------------------------------------------------
-// Miss‰ kartassa ollaan menossa t‰ll‰ hetkell‰. T‰m‰kin globaali saattaa
-// poistua tarpeettomana.
-//--------------------------------------------------------------------------------
-Global gMapNum
-gMapNum = 0
+// N‰iss‰ globaaleissa sijaitsevat muistiin ladattu kartta ja kaikkialle
+// levitt‰ytyv‰ taustakuva, lattia.
+Global gMap, gFloor
+gMap = 0
+gFloor = 0
+
+// Nykyisen palvelimella olevan kartan nimi
+Global gServerMap$
+gServerMap = ""
+
+// N‰ist‰ globaaleista ei ole suurta varmuutta, mit‰ ne tekev‰t :D
+Global gServerMapLoop, gServerMapLoopNum
+gServerMapLoop = 1
+gServerMapLoopNum = 1
+
+
 
 //================================================================================
 // T‰m‰ funktio etsii map-kansiosta kaikki kartat ja lataa niiden tiedot
@@ -109,29 +122,11 @@ Function SearchMaps()
                     EndIf
                 Wend
             CloseFile f
-//MPR            loopMaps$ = ""
-//MPR            For i = 1 To CountWords(maps, ",")
-//MPR                mapFile$ = GetWord2(maps, i, ",") + ".mpc"
-//MPR                If FileExists(mapFile) Then
-//MPR                    mapVersion# = 0
-//MPR                    mVersionData = ExtractData(mapfile, "versioninfo.txt")
-//MPR                    If mVersionData <> 0 Then
-//MPR                        mapVersion# = PeekFloat(mVersionData, 0)
-//MPR                        If mapVersion = MAP_VERSION Then
-//MPR                            If loopMaps = "" Then loopMaps = GetWord2(file, 1, ".")
-//MPR                            loopMaps = loopMaps + ":" + GetWord2(mapFile, 1, ".")
-//MPR                        EndIf
-//MPR                    EndIf
-//MPR                EndIf
-//MPR            Next i
-//MPR            If Len(loopMaps) > 0 Then
-//MPR                If Len(mapFiles) > 0 Then 
-//MPR                    mapFiles = mapFiles + ","
-//MPR                    mapAuthors = mapAuthors + "|"
-//MPR                EndIf
-//MPR                mapFiles = mapFiles + loopMaps
-//MPR                gMapCount = gMapCount + 1
-//MPR            EndIf
+
+            For i = 1 To CountWords(mprMaps, ",")
+                mapFile$ = GetWord2(mprMaps, i, ",") + ".mpc"
+                AddMapToList( mapFile$, Left( file$, Len( file$ ) - 4 ) )
+            Next i
         EndIf
         
         If ext = "mpc" Then
@@ -184,7 +179,7 @@ EndFunction
 
 // Muutetaan taulukko salakavalasti funktioksi
 //Dim gMapImages(Int(Max(1, gMapCount)), 2)
-Function gMapImages( _mapID, _uselessParam )
+Function gMapImages( _mapID, _uselessParam = 1337 )
     For iMap.MAPS = Each MAPS
         If iMap\ID = _mapID Then
             // Lˆydettiin oikea kartta, palautetaan esikatselukuvake.
@@ -195,24 +190,6 @@ Function gMapImages( _mapID, _uselessParam )
     // Jos mit‰‰n ei ole viel‰ palautettu, palautetaan nolla.
     Return 0
 EndFunction
-
-Global gMap, gFloor
-gMap = 0
-gFloor = 0
-
-Global gServerMap$
-gServerMap = ""
-
-Global gServerMapLoop, gServerMapLoopNum
-gServerMapLoop = 1
-gServerMapLoopNum = 1
-
-Global gTileW#, gTileH#
-gTileW  = 48
-gTileH  = 48
-//gTileW = ObjectSizeX(gMap) / MapWidth()
-//gTileH = ObjectSizeY(gMap) / MapHeight()
-
 
 //================================================================================
 // Lis‰t‰‰n/siirret‰‰n objekti satunnaiseen kohtaan kartalle
@@ -426,7 +403,7 @@ EndFunction
 //================================================================================
 // Palauttaa kartan tekij‰n nimen perusteella.
 //================================================================================
-Function GetMapAuthor(_mapName$)
+Function GetMapAuthor$(_mapName$)
     For iMap.MAPS = Each MAPS
         If iMap\name = _mapName Then
             Return iMap\author
@@ -438,7 +415,7 @@ EndFunction
 //================================================================================
 // Palauttaa nykyisen kartan nimen.
 //================================================================================
-Function GetCurrentMapName()
+Function GetCurrentMapName$()
     mapName$ = gMapNames(gGameMap, 1)
     Return GetWord2(mapName, gServerMapLoop + 1, ":")
 EndFunction
@@ -447,7 +424,7 @@ EndFunction
 // Lis‰‰ uuden kartan muistiin. Parametriksi annetaan kartan tiedostonimi,
 // esimerkiksi AddMap( "Luna.mpc" ). Funktio palauttaa False jos jotain
 // meni mˆnk‰‰n ja heitt‰‰ mahdollisesti erroria Error-funktiolla. Jos kaikki
-// meni putkeen, palautetaan True.
+// meni putkeen, palautetaan luodun kokoelman j‰senen osoitin.
 //================================================================================
 Function AddMap( _filePath$ )
     
@@ -480,6 +457,9 @@ Function AddMap( _filePath$ )
             Return False
         EndIf
     Next iMap
+    
+    // Palautusarvo sijoitetaan t‰h‰n muuttujaan
+    ret = 0
     
     mapVersion# = 0
     mVersionData = ExtractData( absolutePath$, "versioninfo.txt" )
@@ -514,14 +494,41 @@ Function AddMap( _filePath$ )
         EndIf
         
         gMapCount = gMapCount + 1
+        
+        ret = ConvertToInteger( newMap )
     Else
         If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
         Error( GetText("incorrect_map") + " (" + _filePath + ")" )
-        Return False
+        ret = False
     EndIf
     If mVersionData <> 0 Then
         DeleteMEMBlock mVersionData
     EndIf
 
+    Return ret
+EndFunction
+
+//================================================================================
+// Lis‰‰ kartan karrtalistaan looppausta varten.
+//   - 1. parametri on kartan tiedostopolku
+//   - 2. parametri on karttalistan nimi
+//================================================================================
+Function AddMapToList( _filePath$, _listName$ )
+    intPtr = AddMap( _filePath$ )
+    
+    If intPtr = 0 Then Return False
+    
+    iList.MAPLISTS = New( MAPLISTS )
+    iList\listName = _listName$
+    iList\mapPtr   = intPtr
+    
     Return True
+EndFunction
+
+//================================================================================
+// Palauttaa seuraavan vuorossa olevan kartan nimen. Jos ollaan viimeisess‰
+// listan kartassa, palautetaan ensimm‰inen.
+//================================================================================
+Function GetNextMapName$()
+    // Toteutus uupuu tosin viel‰...
 EndFunction
