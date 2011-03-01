@@ -136,3 +136,48 @@ Function GetTime()
     t = s + (m * 60) + (h * 3600)
     Return t
 EndFunction
+
+//================================================================================
+// Palauttaa tiedoston nimen absoluuttisesta tai relativiisesta polusta.
+//================================================================================
+Function GetFileName( _path$ )
+
+    searchParam$ = Replace( _path$, "/", "\" )
+    
+    fileNameTmp = 1
+    searchLen = Len( searchParam$ )
+    While InStr( searchParam$, "\", fileNameTmp ) > 0
+        fileNameTmp = fileNameTmp + 1
+        If fileNameTmp > searchLen Then
+            Exit
+        EndIf
+    Wend 
+    
+    ret$ = Mid( searchParam$, fileNameTmp )
+    
+    Return ret$
+EndFunction
+
+//================================================================================
+// Palauttaa kansion, jossa parametrina annettu tiedosto sijaitsee.
+// Palautusarvo riippuu siitä, annettiinko relatiivinen vai absoluuttinen polku - 
+// relatiivinen palauttaa relatiivisen polun kansioon ja absoluuttinen vastaavasti
+// absoluuttisen polun.
+//================================================================================
+Function GetDirectoryPath( _filePath$ )
+
+    If IsDirectory( _filePath$ ) Then Return _filePath$
+    
+    searchParam$ = Replace( _filePath$, "/", "\" )
+    dirTmp = Len( GetEXEName() ) - 1
+    While InStr( _filePath$, "\", dirTmp ) = 0
+        dirTmp = dirTmp - 1
+        If dirTmp < 1 Then Exit
+    Wend 
+    
+    If dirTmp < 1 Then Return _filePath$
+    
+    ret$ = Left( searchParam$, dirTmp )
+    
+    Return ret$
+EndFunction 

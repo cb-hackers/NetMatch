@@ -11,7 +11,7 @@ Const MAP_VERSION#  = 1.1
 // Tyyppikokoelma karttoja varten, t‰h‰n tallennetan kaikki kartan tiedot ja 
 // pikkukuvat. Kartta ladataan kokonaisuutena muistiin vasta peliss‰.
 //--------------------------------------------------------------------------------
-Type MAPLIST
+Type MAPS
     Field ID                    // Ykkˆsest‰ alkava uniikki numero
     Field filePath As String    // Tiedostopolku
     Field name As String        // Nimi
@@ -31,6 +31,14 @@ Type MAPLIST
     Field amountFuel            // Moottorisahan ammusten m‰‰r‰
     Field amountShotgun         // Haulikon ammusten m‰‰r‰
     Field amountLauncher        // Kranaatinheittimen ammusten m‰‰r‰
+EndType
+
+//--------------------------------------------------------------------------------
+// Tyyppikokoelma karttalistoja varten.
+//--------------------------------------------------------------------------------
+Type MAPLISTS
+    Field listName As String    // Listan nimi, pit‰‰ olla uniikki
+    Field mapsPtr               // Osoitin MAPS-kokoelman j‰seneen
 EndType
 
 //--------------------------------------------------------------------------------
@@ -69,12 +77,12 @@ Global gMapNum
 gMapNum = 0
 
 //================================================================================
-// T‰m‰ funktio etsii maps-kansiosta kaikki kartat ja lataa niiden tiedot
-// muistiin kokoelmaan MAPLIST.
+// T‰m‰ funktio etsii map-kansiosta kaikki kartat ja lataa niiden tiedot
+// muistiin kokoelmaan MAPS.
 //================================================================================
 SearchMaps()
 Function SearchMaps()
-    // Siirryt‰‰n maps-kansioon.
+    // Siirryt‰‰n map-kansioon.
     ChDir "map"
     mapFiles$ = ""
     mapAuthors$ = ""
@@ -90,19 +98,17 @@ Function SearchMaps()
         If ext = "mpr" Then
             //--------------------------------------------------------------------
             // mpr-tiedostop‰‰tteen omaavat tiedostot kertovat karttalistasta.
-            // Ei huomioida nyt niit‰, koska niille t‰ytyy keksi‰ parempi
-            // totetutus.
             //--------------------------------------------------------------------
-//MPR            maps$ = ""
-//MPR            f = OpenToRead(file)
-//MPR                While Not EOF(f)
-//MPR                    txt$ = ReadLine(f)
-//MPR                    If Upper(GetWord2(txt, 1, "=")) = "MAPS" Then
-//MPR                        maps = Trim(GetWord2(txt, 2, "="))
-//MPR                        Exit
-//MPR                    EndIf
-//MPR                Wend
-//MPR            CloseFile f
+            mprMaps$ = ""
+            f = OpenToRead(file)
+                While Not EOF(f)
+                    txt$ = ReadLine(f)
+                    If Upper(GetWord2(txt, 1, "=")) = "MAPS" Then
+                        mprMaps = Trim(GetWord2(txt, 2, "="))
+                        Exit
+                    EndIf
+                Wend
+            CloseFile f
 //MPR            loopMaps$ = ""
 //MPR            For i = 1 To CountWords(maps, ",")
 //MPR                mapFile$ = GetWord2(maps, i, ",") + ".mpc"
@@ -129,71 +135,34 @@ Function SearchMaps()
         EndIf
         
         If ext = "mpc" Then
-            //--------------------------------------------------------------------
-            // mpc-tiedostop‰‰tteen omaavat tiedostot ovat karttoja
-            //--------------------------------------------------------------------
-            mapVersion# = 0
-            mVersionData = ExtractData(file, "versioninfo.txt")
-            If mVersionData <> 0 Then
-                mapVersion# = PeekFloat(mVersionData, 0)
-            EndIf
-            If mapVersion = MAP_VERSION Then
-                offset = 4
-                strLen = PeekInt(mVersionData, offset) : offset + 4
-                author$ = ""
-                For i = 1 To strLen
-                    c = PeekByte(mVersionData, offset) : offset + 1
-                    author = author$ + Chr(c)
-                Next i
-                
-                // Lis‰t‰‰n t‰m‰ kartta kokoelmaan.
-                newMap.MAPLIST = New( MAPLIST )
-                newMap\filePath = CurrentDir() + file$
-                newMap\name = Left( file$, Len( file$ ) - 4 )
-                newMap\author = author$
-                
-                gMapCount = gMapCount + 1
-            Else
-                If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
-                Error(GetText("incorrect_map") + " (" + file + ")")
-            EndIf
-            If mVersionData <> 0 Then
-                DeleteMEMBlock mVersionData
-            EndIf
+            // mpc-tiedostop‰‰tteen omaavat tiedostot ovat karttoja.
+            // Lis‰t‰‰n kartta muistiin.
+            AddMap( file$ )
+            
         EndIf
     Wend
     EndSearch
     
     ChDir ".."
     
-    // Asetetaan jokaiselle kartalle oma ID, alkaen ykkˆsest‰.
-    mapID = 1
-    For iMap.MAPLIST = Each MAPLIST
-        // Asetetaan ID
-        iMap\ID = mapID
-        mapID = mapID + 1
-        
-        // Ladataan esikatselukuvat muistiin.
-        iMap\thumbnail = LoadResourceImage( iMap\name + "_thb.pxi", iMap\filePath )
-        
+    For iMap.MAPS = Each MAPS
         // Katsotaan josko t‰m‰ kartta on sama kuin NetMatch.cfg tiedostossa
         // m‰‰r‰tty kartta. Jos on niin laitetaan globaaliin gGameMap t‰m‰n kartan ID.
         If Lower( iMap\name ) = Lower( gGameMapName ) Then gGameMap = iMap\ID
     Next iMap
     
-    
 EndFunction
 
 // gMapNames-taulukon rakenne:
 // (i, 0) = Ei mik‰‰n
-// (i, 1) = Kartan nimi, MAPLIST\name
-// (i, 2) = Kartan tekij‰, MAPLIST\author
-// (i, 3) = Kommenttien perusteella ollut joskus esikatselukuva, MAPLIST\thumbnail
+// (i, 1) = Kartan nimi, MAPS\name
+// (i, 2) = Kartan tekij‰, MAPS\author
+// (i, 3) = Kommenttien perusteella ollut joskus esikatselukuva, MAPS\thumbnail
 
 // Muutetaan taulukko salakavalasti funktioksi
 //Dim gMapNames$(Int(Max(1, gMapCount)), 3)
 Function gMapNames$( _mapID, _field )
-    For iMap.MAPLIST = Each MAPLIST
+    For iMap.MAPS = Each MAPS
         If iMap\ID = _mapID Then
             // T‰st‰ kartasta haluttiin tietoja
             If _field = 1 Then
@@ -216,7 +185,7 @@ EndFunction
 // Muutetaan taulukko salakavalasti funktioksi
 //Dim gMapImages(Int(Max(1, gMapCount)), 2)
 Function gMapImages( _mapID, _uselessParam )
-    For iMap.MAPLIST = Each MAPLIST
+    For iMap.MAPS = Each MAPS
         If iMap\ID = _mapID Then
             // Lˆydettiin oikea kartta, palautetaan esikatselukuvake.
             Return iMap\thumbnail
@@ -302,7 +271,7 @@ Function LoadGameMap(_mapName$, _loopNum = 0)
 //MPR    If CountWords(_mapName, ":") > 1 Then cfgName = GetWord2(_mapName, 1, ":") + ".mpr"
 //MPR    _mapName = GetWord2(_mapName, _loopNum + 1, ":")
     found = False
-    For iMap.MAPLIST = Each MAPLIST
+    For iMap.MAPS = Each MAPS
         If Lower( iMap\name ) = Lower( _mapName$ ) Then found = True
     Next iMap
     
@@ -446,7 +415,7 @@ EndFunction
 // Palauttaa kartan esikatselukuvakkeen nimen perusteella.
 //================================================================================
 Function GetMapThumbnail(_mapName$)
-    For iMap.MAPLIST = Each MAPLIST
+    For iMap.MAPS = Each MAPS
         If iMap\name = _mapName Then
             Return iMap\thumbnail
         EndIf
@@ -458,7 +427,7 @@ EndFunction
 // Palauttaa kartan tekij‰n nimen perusteella.
 //================================================================================
 Function GetMapAuthor(_mapName$)
-    For iMap.MAPLIST = Each MAPLIST
+    For iMap.MAPS = Each MAPS
         If iMap\name = _mapName Then
             Return iMap\author
         EndIf
@@ -475,28 +444,37 @@ Function GetCurrentMapName()
 EndFunction
 
 //================================================================================
-// Lis‰‰ uuden kartan listaan. Parametriksi annetaan kartan tiedostonimi,
-// esimerkiksi AddMapToList( "Luna.mpc" ). Funktio palauttaa False jos jotain
+// Lis‰‰ uuden kartan muistiin. Parametriksi annetaan kartan tiedostonimi,
+// esimerkiksi AddMap( "Luna.mpc" ). Funktio palauttaa False jos jotain
 // meni mˆnk‰‰n ja heitt‰‰ mahdollisesti erroria Error-funktiolla. Jos kaikki
 // meni putkeen, palautetaan True.
 //================================================================================
-Function AddMapToList( _filePath$ )
+Function AddMap( _filePath$ )
+    
+    // Poistetaan mahdolliset kansiopolut merkkijonosta ja k‰ytet‰‰n vain
+    // tiedostonime‰.
+    _filePath$ = GetFileName( _filePath$ )
+    
+    // Tiedoston absoluuttinen sijainti ohjelman p‰‰kansiosta tarkistettuna
+    absolutePath$ = GetDirectoryPath( GetEXEName() )
+    absolutePath$ = absolutePath$ + "map\"
+    absolutePath$ = absolutePath$ + _filePath$
     
     If Right( _filePath$, 4 ) <> ".mpc" Then
         If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
         Error(GetText("incorrect_map") + " (" + _filePath + ")")
         Return False
-    ElseIf Not FileExists( "map/" + _filePath$ ) Then
+    ElseIf Not FileExists( absolutePath$ ) Then
         If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
         Error(Replace(GetText("map_not_found"), "%1", _filePath))
         Return False
-    ElseIf IsDirectory( "map/" + _filePath$ ) Then
+    ElseIf IsDirectory( absolutePath$ ) Then
         If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
         Error(GetText("incorrect_map") + " (" + _filePath + ")")
         Return False
     EndIf
     
-    For iMap.MAPLIST = Each MAPLIST
+    For iMap.MAPS = Each MAPS
         If Lower( iMap\name ) = Lower( Left( _filePath$, Len( _filePath$ ) - 4 ) ) Then
             // Kartta on jo olemassa
             Return False
@@ -504,7 +482,7 @@ Function AddMapToList( _filePath$ )
     Next iMap
     
     mapVersion# = 0
-    mVersionData = ExtractData("map/" + _filePath$, "versioninfo.txt")
+    mVersionData = ExtractData( absolutePath$, "versioninfo.txt" )
     If mVersionData <> 0 Then
         mapVersion# = PeekFloat(mVersionData, 0)
     EndIf
@@ -518,8 +496,8 @@ Function AddMapToList( _filePath$ )
         Next i
         
         // Lis‰t‰‰n t‰m‰ kartta kokoelmaan.
-        newMap.MAPLIST = New( MAPLIST )
-        newMap\filePath = CurrentDir() + "map/" + _filePath$
+        newMap.MAPS = New( MAPS )
+        newMap\filePath = absolutePath$
         newMap\name = Left( _filePath$, Len( _filePath$ ) - 4 )
         newMap\author = author$
         
@@ -527,7 +505,7 @@ Function AddMapToList( _filePath$ )
         newMap\thumbnail = LoadResourceImage( newMap\name + "_thb.pxi", newMap\filePath )
         
         // Laitetaan kartan ID:ksi edellisen kartan ID:st‰ yksi suurempi.
-        befMap.MAPLIST = Before( newMap )
+        befMap.MAPS = Before( newMap )
         If befMap <> NULL Then
             newMap\ID = befMap\ID + 1
         Else
@@ -538,7 +516,7 @@ Function AddMapToList( _filePath$ )
         gMapCount = gMapCount + 1
     Else
         If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
-        Error(GetText("incorrect_map") + " (" + _filePath + ")")
+        Error( GetText("incorrect_map") + " (" + _filePath + ")" )
         Return False
     EndIf
     If mVersionData <> 0 Then
