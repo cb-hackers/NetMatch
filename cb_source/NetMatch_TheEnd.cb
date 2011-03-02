@@ -30,7 +30,7 @@ Const NM_PATCH      = 1
 
 // Tämä pitää AINA laitta 1, jos kyseessä ei ole virallinen julkaisu.
 // Tällöin palvelin näkyy vain muille NM_DEVBUILD = 1 omaaville clienteille.
-Const NM_DEVBUILD   = 0
+Const NM_DEVBUILD   = 1
 
 //--------------------------------------------------------------------------------
 // Includet
