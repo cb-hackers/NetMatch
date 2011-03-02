@@ -865,6 +865,10 @@ Function DrawGameStatus()
             Text tx + 130 + (gSessionComplete * 140), ty, gDeathsTitle
             //Text tx + 200, ty, "%"
             ty = ty + th * 1.5
+            redTeamKills = 0
+            redTeamDeaths = 0
+            greenTeamKills = 0
+            greenTeamDeaths = 0
             For i = 1 To MAX_PLAYERS
                 If gRanking(i, 1) > 0 Then
                     player.PLAYERS = ConvertToType(gPlayers(Int(gRanking(i, 1))))
@@ -873,8 +877,12 @@ Function DrawGameStatus()
                     Else
                         If player\team = 1 Then
                             Color 0, 255, 0
+                            greenTeamKills = greenTeamKills + player\kills
+                            greenTeamDeaths = greenTeamDeaths + player\deaths
                         Else
                             Color 255, 0, 0
+                            redTeamKills = redTeamKills + player\kills
+                            redTeamDeaths = redTeamDeaths + player\deaths
                         EndIf
                     EndIf
                     
@@ -895,9 +903,34 @@ Function DrawGameStatus()
                     Text tx + 130 + (gSessionComplete * 140), ty, player\deaths
                     Color 255, 255, 0
                     Text tx + 200 + (gSessionComplete * 180), ty, player\killRatio
-                    ty + th
+                    ty = ty + th
                 EndIf
             Next i
+            
+            If gSessionComplete = False Then
+                // Piirret‰‰n joukkueiden keskiarvot
+                SetFont gFonts(FNT_MSGBOLD)
+                ty = ty + th
+                Color 0, 255, 0
+                Text tx, ty, "GREEN TEAM"
+                Color 0, 255, 0
+                Text tx + 80, ty, greenTeamKills
+                Color 255, 0, 0
+                Text tx + 130, ty, greenTeamDeaths
+                Color 255, 255, 0
+                If greenTeamDeaths <0.001 Then greenTeamDeaths = 1 // Estet‰‰n nollalla jako
+                Text tx + 200, ty, Int(Float(greenTeamKills) / Float(greenTeamDeaths) * 100.0) / 100.0
+                ty = ty + th
+                Color 255, 0, 0
+                Text tx, ty, "RED TEAM"
+                Color 0, 255, 0
+                Text tx + 80, ty, redTeamKills
+                Color 255, 0, 0
+                Text tx + 130, ty, redTeamDeaths
+                Color 255, 255, 0
+                If redTeamDeaths <0.001 Then redTeamDeaths = 1 // Estet‰‰n nollalla jako
+                Text tx + 200, ty, Int(Float(redTeamKills) / Float(redTeamDeaths) * 100.0) / 100.0
+            EndIf
         EndIf
         
         For player.PLAYERS = Each PLAYERS
