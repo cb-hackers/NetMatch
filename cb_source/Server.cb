@@ -386,13 +386,11 @@ Function ReadDataFromClient()
             // L‰hetet‰‰n kaikille muille paitsi boteille
             toTeam = player\team
             If plr\active = True And plr\zombie = False Then
-                If plr\team = toTeam Or gPlayMode = DM Or Mid(txtMessage, 1, 1) = "*" Then
-                    nmsg.NET_MESSAGES = New(NET_MESSAGES)
-                    nmsg\toPlayer   = plr\playerId      // Kenelle l‰hetet‰‰n
-                    nmsg\msgType    = NET_TEXTMESSAGE   // Mik‰ viesti
-                    nmsg\playerId   = gCurrentPlayerId  // Kuka l‰hetti
-                    nmsg\msgText    = txtMessage        // Viesti
-                EndIf
+                nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                nmsg\toPlayer   = plr\playerId      // Kenelle l‰hetet‰‰n
+                nmsg\msgType    = NET_TEXTMESSAGE   // Mik‰ viesti
+                nmsg\playerId   = gCurrentPlayerId  // Kuka l‰hetti
+                nmsg\msgText    = txtMessage        // Viesti
             EndIf
         EndIf
         
