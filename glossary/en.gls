@@ -94,3 +94,4 @@ author = Author:
 update_check = Finding updates...
 new_version = New version found!|Load new version from http://netmatch.vesq.org/download.php|Press Enter to open download page or press any other key to continue.|
 you_are_banned = Access denied!
+update_failed = Updating NetMatch has failed!

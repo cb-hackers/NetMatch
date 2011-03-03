@@ -5,6 +5,8 @@
 //********************************************************************************
 
 Const RESOURCE_ARCHIVE$ = "NetMatch.dat"
+Const AUTOUPDATER_URL$ = 
+Const VERSIONCHECK_URL$ = "http://netmatch.vesq.org/reg/download/version.txt"
 
 Global gLoadedItems#
 gLoadedItems = 0
@@ -446,10 +448,10 @@ Function CheckUpdates()
         DrawImage gImages(IMG_BACKGROUND), 0, 0
     EndIf
     MsgBox(GetText("update_check"), "NetMatch", MSG_INFO_NOWAIT)
-    url$ = "http://netmatch.vesq.org/cbee/download/version.txt"
+    url$ = VERSIONCHECK_URL
     t = Timer()
     result = HTTPGet(url)
-    Wait 100 - Abs((Timer() - t))
+    Wait 100 - Int(Abs(Timer() - t))
     If result = 200 Then
         HTTPLoadContent()
         ret$ = ""
@@ -476,13 +478,6 @@ Function CheckUpdates()
         ElseIf latestPatch > NM_PATCH Then
             newVersion = True
         EndIf
-        
-        
-        
-        DoUpdate() //TEST
-        
-        
-        
         If newVersion Then
             If MsgBox(GetText("new_version"), "NetMatch", MSG_INFO) = 13 Then
                 //Execute("http://netmatch.vesq.org/download.php")
@@ -498,33 +493,51 @@ Function DoUpdate()
     If gDirectServer = False Then
         DrawImage gImages(IMG_BACKGROUND), 0, 0
     EndIf
-    url$ = "http://netmatch.vesq.org/updater/checkfiles.php"
+    url$ = AUTOUPDATER_URL
     result = HTTPGet(url)
     If result = 200 Then
         //Ladataan listaus tiedostoista, jotta n‰hd‰‰n, mitk‰ ovat p‰ivittyneet
         HTTPLoadContent()
         t$ = ""
+        restart = False //Do we need to restart the game?
         For i = 1 To HTTP_ContentLength
             t = t + Chr(_Net_GetByte())
         Next i
-        lines = CountWords(t,";")
-        For i=1 To lines-1
+        For i = 1 To CountWords(t,";") - 1
             l$ = GetWord2(t,i,";")
-            If FileExists(GetWord2(l,1,"|")) Then
-                //Print "Testing file: "+GetWord2(l,1,"|")+": "+Hex(Crc32(GetWord2(l,1,"|")))+" vs. "+GetWord2(l,2,"|")
-                If Hex(Crc32(GetWord2(l,1,"|")))<>GetWord2(l,2,"|") Then
-                    Print "New file! "+GetWord2(l,3,"|")
-                Else
-                    Print "Skipping "+GetWord2(l,3,"|")
+            file$ = GetWord2(l,1,"|")
+            furl$ = GetWord2(l,3,"|")
+            update=False
+            If FileExists(file) Then
+                If Hex(Crc32(file))<>GetWord2(l,2,"|") Then //Do the hashes match? Do they NetMatch? Heh.
+                    If GetFileName(file) <> GetFileName(GetEXEName()) Then DeleteFile file //Poistetaan wanha tiedosto, jos se ei ole t‰m‰ exe, tuolloin batti hoitaa sen.
+                    update = True
                 EndIf 
             Else
-                Print "File Not found: "+GetWord2(l,1,"|")
+                update = True //Myˆskin ladataan tiedosto jos sit‰ ei meill‰ ole.
+            EndIf
+            If update = True Then //Ladataan uusi tiedosto
+                Print "Updating " + furl + "..."
+                If HTTPGet(furl) = 200 Then
+                    If GetFileName(file) <> GetFileName(GetEXEName()) Then
+                        HTTPSaveContent(file)
+                    Else //Itse pelin exe ja seh‰n on k‰ynniss‰! Pit‰‰p‰ v‰h‰n h‰ksi‰. :o
+                        HTTPSaveContent(file + ".updated")
+                        restart = True //Peli t‰ytyy tietenkin k‰ynnist‰‰ uudestaan, kunhan p‰ivitys on valmis.
+                    EndIf
+                Else
+                    Error(GetText("update_failed"))
+                    End
+                EndIf
             EndIf
         Next i
-        WaitKey
+        If restart = True Then
+            Execute "UpdateNetMatch.bat"
+            End        
+        EndIf
     Else
         Error(GetText("update_failed"))
-        Return False
+        End
     EndIf
     Return True
 EndFunction
