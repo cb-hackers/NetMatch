@@ -92,6 +92,7 @@ control2 = W = Up|S = Down|A = Left|D = Right|
 incorrect_map = Incorrect map version
 author = Author:
 update_check = Finding updates...
-new_version = New version found!|Load new version from http://netmatch.vesq.org/download.php|Press Enter to open download page or press any other key to continue.|
+new_version = New version found!|Download updates by pressing Enter or press any other key to continue.|
 you_are_banned = Access denied!
-update_failed = Updating NetMatch has failed!
+update_failed = Update failed!
+doing_update = Updating NetMatch...
