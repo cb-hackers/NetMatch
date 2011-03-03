@@ -656,6 +656,7 @@ Function Login(_in, _playerId = 0)
             If netmsg = NET_LOGINOK Then
                 // Kirjautuminen onnistui
                 gCurrentPlayerId = _Net_GetByte()
+                gPlayMode = _Net_GetByte()
                 gServerMap = _Net_GetString()
                 gMapCRC = _Net_GetInt()
                 Return True
@@ -750,6 +751,7 @@ Function Login(_in, _playerId = 0)
                     _Net_PutByte(NET_LOGIN)
                     _Net_PutByte(NET_LOGINOK)
                     _Net_PutByte(player\playerId)
+                    _Net_PutByte(gPlayMode)
                     _Net_PutString(GetWord2(gMapNames(gGameMap, 1), gServerMapLoop + 1, ":"))
                     _Net_PutInt(gMapCRC)
                     ServerSend()

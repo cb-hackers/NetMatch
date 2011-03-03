@@ -50,8 +50,9 @@ gPeriodLength = 5
 Global gControlMode
 gControlMode = 1
 
-Global gPlayMode
+Global gPlayMode, gConfigPlayMode
 gPlayMode = 1
+gConfigPlayMode = 1
 
 Global gDisableBots
 gDisableBots = 0
@@ -79,7 +80,7 @@ Function ReadConfig()
             If key = "FXVOLUME" Then gFXVolume = Int(value)
             If key = "MAP" Then gGameMapName = value
             If key = "PERIODLENGTH" Then gPeriodLength = Int(value)
-            If key = "GAMEMODE" Then gPlayMode = Int(value)
+            If key = "GAMEMODE" Then gConfigPlayMode = Int(value) : gPlayMode = gConfigPlayMode
             If key = "CONTROLMODE" Then gControlMode = Min(2, Max(1, Int(value)))
             If key = "DISABLEBOTS" Then gDisableBots = (value = "1")
         Wend
