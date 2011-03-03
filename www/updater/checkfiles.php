@@ -4,7 +4,7 @@ define( "SCRIPT_DIR", "http://netmatch.vesq.org/updater/" );
 
 gohash();
 
-function gohash( $dir = "files/" )
+function gohash( $dir = "." )
 {
 
     $fileArray = scandir( $dir );
@@ -22,7 +22,7 @@ function gohash( $dir = "files/" )
             echo $file . "|";
             echo strtoupper(hash_file('crc32b', $file)) . "|";
             echo SCRIPT_DIR;
-            echo "$file\n";
+            echo "$file" . ';';
         }
     }
 }
