@@ -15,6 +15,9 @@
 *.bak
 nppBackup
 
+# Ei oteta repoon mukaan valmista crc32output.txt tiedostoa
+crc32output.txt
+
 # Ei tartte servulogeja pistää repoon myöskää testailujen jäljilt :p
 serverlog.txt
 
