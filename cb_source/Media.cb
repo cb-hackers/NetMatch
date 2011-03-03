@@ -449,7 +449,7 @@ Function CheckUpdates()
     url$ = "http://netmatch.vesq.org/cbee/download/version.txt"
     t = Timer()
     result = HTTPGet(url)
-    Wait 1000 - (Timer() - t)
+    Wait 100 - Abs((Timer() - t))
     If result = 200 Then
         HTTPLoadContent()
         ret$ = ""
@@ -476,12 +476,55 @@ Function CheckUpdates()
         ElseIf latestPatch > NM_PATCH Then
             newVersion = True
         EndIf
+        
+        
+        
+        DoUpdate() //TEST
+        
+        
+        
         If newVersion Then
             If MsgBox(GetText("new_version"), "NetMatch", MSG_INFO) = 13 Then
-                Execute("http://netmatch.vesq.org/download.php")
-                End
+                //Execute("http://netmatch.vesq.org/download.php")
+                //End
+                DoUpdate()
             EndIf
         EndIf
     EndIf
     Return False
+EndFunction
+
+Function DoUpdate()
+    If gDirectServer = False Then
+        DrawImage gImages(IMG_BACKGROUND), 0, 0
+    EndIf
+    url$ = "http://netmatch.vesq.org/updater/checkfiles.php"
+    result = HTTPGet(url)
+    If result = 200 Then
+        //Ladataan listaus tiedostoista, jotta n‰hd‰‰n, mitk‰ ovat p‰ivittyneet
+        HTTPLoadContent()
+        t$ = ""
+        For i = 1 To HTTP_ContentLength
+            t = t + Chr(_Net_GetByte())
+        Next i
+        lines = CountWords(t,";")
+        For i=1 To lines-1
+            l$ = GetWord2(t,i,";")
+            If FileExists(GetWord2(l,1,"|")) Then
+                //Print "Testing file: "+GetWord2(l,1,"|")+": "+Hex(Crc32(GetWord2(l,1,"|")))+" vs. "+GetWord2(l,2,"|")
+                If Hex(Crc32(GetWord2(l,1,"|")))<>GetWord2(l,2,"|") Then
+                    Print "New file! "+GetWord2(l,3,"|")
+                Else
+                    Print "Skipping "+GetWord2(l,3,"|")
+                EndIf 
+            Else
+                Print "File Not found: "+GetWord2(l,1,"|")
+            EndIf
+        Next i
+        WaitKey
+    Else
+        Error(GetText("update_failed"))
+        Return False
+    EndIf
+    Return True
 EndFunction
