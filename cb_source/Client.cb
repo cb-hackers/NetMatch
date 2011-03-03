@@ -145,6 +145,10 @@ Function JoinGame(_host$, _port)
         DeleteObject item\obj
         Delete item
     Next item
+    
+    // Asetetaan oma, configeista luettu playmode takaisin.
+    gPlayMode = gConfigPlayMode
+    
     If NM_DEVBUILD = False Then
         SetWindow "NetMatch " + gGSSVersion
     Else
