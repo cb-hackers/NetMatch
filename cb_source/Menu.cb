@@ -508,7 +508,7 @@ Function DrawMenu(_menu)
             // Vaihdetaan karttaa
             ElseIf miSelected = MI_MAP Then
                 gGameMap + 1
-                If gGameMap > MAP_COUNT Then gGameMap = 1
+                If gGameMap > gMapCount Then gGameMap = 1
                 SaveConfig()
                 
             // Vaihdetaan pelimoodia

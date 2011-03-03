@@ -31,6 +31,9 @@ cbrs.reg
 # Jätetään bannilistat pois
 ipban.txt
 
+# Ei oteta myöskään debug-loggeja mukaan.
+debug.txt
+
 # Perhanan Windows
 Thumbs.db
 
@@ -43,5 +46,5 @@ www/downloads
 www/maps
 
 # Ei laiteta myöskään info.txt tiedostoja mukaan.
-www/cbee/info.txt
-www/cbee/oldinfos
+www/reg/info.txt
+www/reg/oldinfos

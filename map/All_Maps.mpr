@@ -18,8 +18,8 @@ BotNames=Bot_1,Bot_2,Bot_3,Bot_4,Bot_5,Bot_6,Bot_7,Bot_8,Bot_9,Bot_10
 # 2 = Konepitooli
 # 3 = Sinko
 # 4 = Haulikko
-# 5 = Moottorisaha
-# 6 = Kranaatinlaukaisin
+# 5 = Kranaatinlaukaisin
+# 6 = Moottorisaha
 BotWeapons=1,2,3,4,5,6
 
 

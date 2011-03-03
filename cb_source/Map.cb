@@ -27,8 +27,8 @@ gBotWeapons = "1,2,3"
 Global gMapCRC
 gMapCRC         = 0
 
-Global MAP_COUNT
-MAP_COUNT = 0
+Global gMapCount
+gMapCount = 0
 ChDir "map"
 mapFiles$ = ""
 mapAuthors$ = ""
@@ -75,7 +75,7 @@ While True
                 mapAuthors = mapAuthors + "|"
             EndIf
             mapFiles = mapFiles + loopMaps
-            MAP_COUNT + 1
+            gMapCount + 1
         EndIf
     EndIf
     
@@ -100,7 +100,7 @@ While True
             EndIf
             mapFiles = mapFiles + GetWord2(file, 1, ".")
             mapAuthors = mapAuthors + Replace(author, "|", ";")
-            MAP_COUNT + 1
+            gMapCount + 1
         Else
             If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
             Error(GetText("incorrect_map") + " (" + file + ")")
@@ -112,11 +112,11 @@ While True
 Wend
 EndSearch
 
-Dim gMapNames$(Int(Max(1, MAP_COUNT)), 3)
-Dim gMapImages(Int(Max(1, MAP_COUNT)), 2)
+Dim gMapNames$(Int(Max(1, gMapCount)), 3)
+Dim gMapImages(Int(Max(1, gMapCount)), 2)
 gGameMap = 0
-If MAP_COUNT > 0 Then
-    For i = 1 To MAP_COUNT
+If gMapCount > 0 Then
+    For i = 1 To gMapCount
         file$ = GetWord2(mapFiles, i, ",")
         //gMapNames(i, 1) = GetWord2(file, 1, ".")
         gMapNames(i, 1) = file
@@ -141,14 +141,14 @@ If MAP_COUNT > 0 Then
 //    EndSearch
 EndIf
 ChDir ".."
-For i = 1 To MAP_COUNT
+For i = 1 To gMapCount
     If CountWords(gMapNames(i, 1), ":") = 1 Then
         gMapImages(i, 1) = LoadResourceImage(gMapNames(i, 1) + "_thb.pxi", "map/" + gMapNames(i, 1) + ".mpc")
     EndIf
     //gMapImages(i, 2) = LoadResourceImage(gMapNames(i) + ".pxi", "map/" + gMapNames(i) + ".mpc")
 Next i
 
-//Dim gMaps$(MAP_COUNT, 3)
+//Dim gMaps$(gMapCount, 3)
 //gMaps(1, 1) = "Warehouse"
 //gMaps(1, 2) = "warehouse.map"
 //gMaps(1, 3) = IMG_THUMBNAIL1 + ""
@@ -229,7 +229,7 @@ Function LoadGameMap(_mapName$, _loopNum = 0)
     If CountWords(_mapName, ":") > 1 Then cfgName = GetWord2(_mapName, 1, ":") + ".mpr"
     _mapName = GetWord2(_mapName, _loopNum + 1, ":")
     found = False
-    For i = 1 To MAP_COUNT
+    For i = 1 To gMapCount
         If Lower(gMapNames(i, 1)) = Lower(_mapName) Then found = True
     Next i
     If found = False Then
@@ -418,7 +418,7 @@ EndFunction
 
 
 Function GetMapThumbnail(_mapName$)
-    For i = 1 To MAP_COUNT
+    For i = 1 To gMapCount
         If gMapNames(i, 1) = _mapName Then
             Return gMapImages(i, 1)
         EndIf
@@ -427,7 +427,7 @@ Function GetMapThumbnail(_mapName$)
 EndFunction
 
 Function GetMapAuthor(_mapName$)
-    For i = 1 To MAP_COUNT
+    For i = 1 To gMapCount
         If gMapNames(i, 1) = _mapName Then
             Return gMapNames(i, 2)
         EndIf
