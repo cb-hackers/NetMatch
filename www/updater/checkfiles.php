@@ -2,7 +2,9 @@
 header( "Content-type: text\plain;" );
 define( "SCRIPT_DIR", "http://netmatch.vesq.org/updater/" );
 
+ob_start();
 gohash();
+ob_end_flush();
 
 function gohash( $dir = "." )
 {
