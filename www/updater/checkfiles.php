@@ -12,7 +12,7 @@ function gohash( $dir = "." )
     $fileArray = scandir( $dir );
     foreach( $fileArray as $file )
     {
-        if( $file != "." && $file != ".." )
+        if( $file != "." && $file != ".." && $file != basename( __FILE__ ) )
         {
             if( $dir != "." )
                 $file = $dir . "/" . $file;
