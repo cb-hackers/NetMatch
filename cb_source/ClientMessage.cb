@@ -69,6 +69,9 @@ For m = 1 To 2
         Else
             msg\timeStamp = Timer()
         EndIf
+        If msg\msgType = NET_SERVERMSG Then
+            delay = 5000
+        EndIf
         delay = delay * gMessageDelay(m)
         msg\y = msg\y - lift
         Color 255, 255, 0
@@ -86,6 +89,14 @@ For m = 1 To 2
                     SetFont gFonts(FNT_MSG)
                     Text 10 + w, msg\y, msg\message
                 EndIf
+            ElseIf msg\msgType = NET_SERVERMSG Then
+                SetFont gFonts(FNT_MSGBOLD)
+                Color 0, 0, 255
+                Text 10, msg\y, "[Server] "
+                w = TextWidth("[Server] ")
+                SetFont gFonts(FNT_MSG)
+                Color 255, 255, 0
+                Text 10 + w, msg\y, msg\message
             ElseIf msg\msgType = NET_KILLMESSAGE Then
                 If gPlayMode > DM Then
                     If msg\team1 = 2 Then

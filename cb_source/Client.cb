@@ -4,6 +4,13 @@
 // Clienttiin liittyv‰t toiminnot
 //********************************************************************************
 
+// Ollaanko minut potkittu palvelimelta.
+Global gKickedOut
+gKickedOut = False
+
+// Syy potkimiseen.
+Global gKickReason$
+gKickReason$ = ""
 
 //================================================================================
 // Liityt‰‰n peliin
@@ -190,6 +197,8 @@ Function ClientLoop()
     gBbs                = 0
     gBbsTimer           = 0
     gBbsTimer           = Timer()
+    gKickedOut          = False
+    gKickReason         = ""
     //bEsc                = False
     ClearKeys2()
     gShowFloor          = True
@@ -425,6 +434,7 @@ Function ClientLoop()
             Error(GetText("hack"))
             Exit
         EndIf
+        If gKickedOut Then Exit
 
         If player\loggedIn Then DrawScreen
         UpdateGame2()
@@ -622,6 +632,7 @@ Function ReadDataFromServer()
             player\kills    = 0
             player\deaths   = 0
             player\zombie   = 0
+            player\admin    = 0
             player\statName = CheckPlayerName(player\name)
             AddClientMessage(Replace(GetText("player_login"), "%1", name), netmsg)
 //COM1            gPlayerCount + 1
@@ -692,6 +703,12 @@ Function ReadDataFromServer()
             msgText$ = _Net_GetString()
             player.PLAYERS  = ConvertToType(gPlayers(playerId))
             AddClientMessage(msgText, netmsg, player\name)
+        
+        ElseIf netmsg = NET_SERVERMSG Then
+            
+            // Palvelimelta tulee jotain infoa tekstin‰
+            msgText$ = _Net_GetString()
+            AddClientMessage(msgText$, netmsg)
             
         ElseIf netmsg = NET_BULLETHIT Then
         
@@ -838,6 +855,25 @@ Function ReadDataFromServer()
                 gServerMap = mapName
             EndIf
         
+        ElseIf netmsg = NET_KICKED Then
+            // Joku pelaaja potkittiin palvelimelta
+            playerId = _Net_GetByte()
+            reason$ = _Net_GetString()
+            If reason$ = "" Then reason$ = GetText("default_kickreason")
+            plr.PLAYERS  = ConvertToType(gPlayers(gCurrentPlayerId))
+            player.PLAYERS = ConvertToType(gPlayers(playerId))
+            If player\playerId = plr\playerId Then
+                // Minut potkittiin pihalle! :'(
+                gKickedOut = True
+                gKickReason = reason$
+                plr\active = False
+                plr\loggedin = False
+                Return False
+            Else
+                player\active = False
+                player\loggedin = False
+                AddClientMessage(Replace( Replace(GetText("player_kicked"), "%1", player\name), "%2", reason$), netmsg)
+            EndIf
         Else
             // Tuntematon viesti tai viestit loppui
             Exit

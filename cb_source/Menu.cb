@@ -71,6 +71,7 @@ Const MI_PLAYERCOUNT    = 23    // Ei käytössä
 Const MI_BOTCOUNT       = 24    // Ei käytössä
 Const MI_BOTWEAPONS     = 25    // Ei käytössä
 Const MI_GAMEMODE       = 26
+Const MI_ADMINPASSWORD  = 27
 
 
 //--------------------------------------------------------------------------------
@@ -100,11 +101,12 @@ AddMenuItem(MNU_SERVER,     MI_START,       "start_server")
 AddMenuItem(MNU_SERVER,     MI_BACK,        "back")
 
 // Palvelinasetukset
-AddMenuItem(MNU_SERVERCFG,  MI_DESCRIPTION, "servername")
-AddMenuItem(MNU_SERVERCFG,  MI_PORT,        "port")
-AddMenuItem(MNU_SERVERCFG,  MI_PERIODLEN,   "session_length")
-AddMenuItem(MNU_SERVERCFG,  MI_GAMEMODE,    "gamemode")
-AddMenuItem(MNU_SERVERCFG,  MI_BACK,        "back")
+AddMenuItem(MNU_SERVERCFG,  MI_DESCRIPTION,   "servername")
+AddMenuItem(MNU_SERVERCFG,  MI_PORT,          "port")
+AddMenuItem(MNU_SERVERCFG,  MI_PERIODLEN,     "session_length")
+AddMenuItem(MNU_SERVERCFG,  MI_GAMEMODE,      "gamemode")
+AddMenuItem(MNU_SERVERCFG,  MI_ADMINPASSWORD, "adminpassword")
+AddMenuItem(MNU_SERVERCFG,  MI_BACK,          "back")
 
 // Kartta-asetukset
 //AddMenuItem(MNU_MAPSETUP,   MI_MAP,         "map")
@@ -348,6 +350,14 @@ Function DrawMenu(_menu)
                 // Pelimoodi
                 If mi\itemId = MI_GAMEMODE Then
                     Text cfgX, sy, GetWord2(aGameModeNames(gPlayMode), 2, ",")
+                EndIf
+                // Admin-salasana
+                If mi\itemId = MI_ADMINPASSWORD Then
+                    Text cfgX, sy, gServerAdminPassword
+                    If selection = miIndex Then
+                        Color 255, 255, 0
+                        gServerAdminPassword = InputText(cfgX, sy, cfgW, cfgH, gServerAdminPassword)
+                    EndIf
                 EndIf
                 // Palvelinasetukset
                 If mi\itemId = MI_SERVERCFG Then

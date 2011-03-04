@@ -57,6 +57,10 @@ gConfigPlayMode = 1
 Global gDisableBots
 gDisableBots = 0
 
+// Admin-salasana
+Global gServerAdminPassword$
+gServerAdminPassword$ = ""
+
 ReadConfig()
 //--------------------------------------------------------------------------------
 // Luetaan asetukset jos tiedosto on olemassa
@@ -83,6 +87,7 @@ Function ReadConfig()
             If key = "GAMEMODE" Then gConfigPlayMode = Int(value) : gPlayMode = gConfigPlayMode
             If key = "CONTROLMODE" Then gControlMode = Min(2, Max(1, Int(value)))
             If key = "DISABLEBOTS" Then gDisableBots = (value = "1")
+            If key = "ADMINPASSWORD" Then gServerAdminPassword = value
         Wend
         CloseFile f
     EndIf
@@ -107,5 +112,6 @@ Function SaveConfig()
     WriteLine f, "GameMode=" + gPlayMode
     WriteLine f, "ControlMode=" + gControlMode
     WriteLine f, "DisableBots=" + gDisableBots
+    WriteLine f, "AdminPassword=" + gServerAdminPassword
     CloseFile f
 EndFunction
