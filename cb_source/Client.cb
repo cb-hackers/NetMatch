@@ -480,7 +480,7 @@ Function ReadDataFromServer()
     // Lukemisessa tuli joku virhe
     If nRet <> 0 Then 
         If nRet = 10060 Then 
-            If gReadDataTimestamp > 0 And gReadDataTimestamp + MAX_INACTIVE_TIME < Timer() Then
+            If gReadDataTimestamp > 0 And ( gReadDataTimestamp + MAX_INACTIVE_TIME ) < Timer() Then
                 Error( GetText("server_timeout") )
                 Return False // Timeout
             Else
@@ -490,6 +490,12 @@ Function ReadDataFromServer()
         msg$ = "(" + nRet + ") " + GetNetErrorString(nRet)
         Error(msg)
         Return False
+    EndIf
+    
+    // Tullookos timeouttia siltikin
+    If gReadDataTimestamp > 0 And ( gReadDataTimestamp + MAX_INACTIVE_TIME ) < Timer() Then
+        Error( GetText("server_timeout") )
+        Return False // Timeout
     EndIf
     
     // Dataa on tullut, päivitetäänpäs ping-tarkistus.
@@ -899,7 +905,7 @@ Function ReadDataFromServer()
         ElseIf netmsg = NET_SERVERCLOSING Then
             // Palvelin sammutetaan
             MsgBox( GetText("server_closing") )
-            Wait 1000
+            // Wait 1000
             Return False
         
         Else

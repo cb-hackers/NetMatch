@@ -566,13 +566,6 @@ Function ReadDataFromClient()
                 _Net_PutByte(nmsg\playerId)     // Potkaisija
                 _Net_PutByte(nmsg\playerId2)    // Kuka potkittiin
                 _Net_PutString(nmsg\msgText)    // Potkujen syy
-                If nmsg\playerId2 = gPlayerId Then
-                    // Nyt pelaajalle on l‰hetetty jo tieto potkuista,
-                    // joten asetetaan pelaajan kicked-field ep‰todeksi.
-                    player\kicked = False
-                    player\kickReason = ""
-                    player\kickerId = 0
-                EndIf
             EndIf
             Delete nmsg
         EndIf
@@ -610,6 +603,9 @@ Function KickPlayer( _playerId, _kickerId, _reason$ = "" )
     player\kicked = True
     player\kickReason = _reason$
     player\kickerId = _kickerId
+    player\loggedIn = False
+    player\active = False
+    player\admin = False
     // L‰hetet‰‰n viesti kaikille muille paitsi boteille
     For plr.PLAYERS = Each PLAYERS
         If plr\active = True And plr\zombie = False Then
@@ -621,9 +617,6 @@ Function KickPlayer( _playerId, _kickerId, _reason$ = "" )
             nmsg\msgText        =_reason$
         EndIf
     Next plr
-    player\loggedIn = False
-    player\active = False
-    player\admin = False
 EndFunction
 
 //================================================================================
