@@ -297,6 +297,7 @@ Function ReadDataFromClient()
     If player\kicked And player\clientId = NET_ClientId Then
         _Net_InitMemBlock()
         _Net_PutByte(NET_KICKED)
+        _Net_PutByte( player\kickerId )
         _Net_PutByte(gCurrentPlayerId)
         _Net_PutString( player\kickReason )
         ServerSend()
@@ -570,6 +571,7 @@ Function ReadDataFromClient()
                     // joten asetetaan pelaajan kicked-field ep‰todeksi.
                     player\kicked = False
                     player\kickReason = ""
+                    player\kickerId = 0
                 EndIf
             EndIf
             Delete nmsg
@@ -607,6 +609,7 @@ Function KickPlayer( _playerId, _kickerId, _reason$ = "" )
     player.PLAYERS  = ConvertToType(gPlayers(_playerId))
     player\kicked = True
     player\kickReason = _reason$
+    player\kickerId = _kickerId
     // L‰hetet‰‰n viesti kaikille muille paitsi boteille
     For plr.PLAYERS = Each PLAYERS
         If plr\active = True And plr\zombie = False Then

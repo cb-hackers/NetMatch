@@ -491,6 +491,9 @@ Function ReadDataFromServer()
         Error(msg)
         Return False
     EndIf
+    
+    // Dataa on tullut, päivitetäänpäs ping-tarkistus.
+    gReadDataTimestamp = Timer()
 
     // Piilotetaan kaikki pelaajat sillä myöhemmin näytetään vain ne joista saadaan tietoja.
     For plr.PLAYERS = Each PLAYERS
