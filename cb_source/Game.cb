@@ -690,16 +690,15 @@ Function Login(_in, _playerId = 0)
                 Until retKey = 13 // Enter
             Else
                 MsgBox(GetText("logout_game"))
-            EndIf
-            // Odotellaan max 2 sekuntia että linja on "vapaa"
-            t = Timer()
-            While ClientState() = 1
-                If t + 2000 < Timer() Then Exit
-            Wend
-            If ClientState() = 2 Then ClientRead()
-            
-            // Lähetetään poistumisviesti jos ei kyseessä ollut potkut
-            If gKickedOut = False Then
+                
+                // Odotellaan max 2 sekuntia että linja on "vapaa"
+                t = Timer()
+                While ClientState() = 1
+                    If t + 2000 < Timer() Then Exit
+                Wend
+                If ClientState() = 2 Then ClientRead()
+                
+                // Lähetetään poistumisviesti jos ei kyseessä ollut potkut
                 _Net_InitMemBlock()
                 _Net_PutByte(NET_LOGOUT)
                 _Net_PutByte(gCurrentPlayerId)
