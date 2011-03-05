@@ -16,6 +16,10 @@ gKickReason = ""
 Global gKickerName$
 gKickerName = ""
 
+// Milloin viimeksi on saatu servulta dataa
+Global gReadDataTimestamp
+gReadDataTimestamp = 0
+
 //================================================================================
 // Liityt‰‰n peliin
 //================================================================================
@@ -475,7 +479,14 @@ Function ReadDataFromServer()
     
     // Lukemisessa tuli joku virhe
     If nRet <> 0 Then 
-        If nRet = 10060 Then Return True
+        If nRet = 10060 Then 
+            If gReadDataTimestamp > 0 And gReadDataTimestamp + MAX_INACTIVE_TIME < Timer() Then
+                Error( GetText("server_timeout") )
+                Return False // Timeout
+            Else
+                Return True
+            EndIf
+        EndIf
         msg$ = "(" + nRet + ") " + GetNetErrorString(nRet)
         Error(msg)
         Return False
@@ -867,9 +878,7 @@ Function ReadDataFromServer()
             If reason$ = "" Then reason$ = GetText("default_kickreason")
             plr.PLAYERS  = ConvertToType(gPlayers(gCurrentPlayerId))
             player.PLAYERS = ConvertToType(gPlayers(playerId))
-            If kickerId > 0 And kickerId <= MAX_PLAYERS Then
-                kicker.PLAYERS = ConvertToType(gPlayers(kickerId))
-            EndIf
+            kicker.PLAYERS = ConvertToType(gPlayers(kickerId))
             If player\playerId = plr\playerId Then
                 // Minut potkittiin pihalle! :'(
                 gKickedOut   = True
@@ -883,6 +892,13 @@ Function ReadDataFromServer()
                 player\loggedin = False
                 AddClientMessage(Replace( Replace(GetText("player_kicked"), "%1", player\name), "%2", reason$), netmsg)
             EndIf
+            
+        ElseIf netmsg = NET_SERVERCLOSING Then
+            // Palvelin sammutetaan
+            MsgBox( GetText("server_closing") )
+            Wait 1000
+            Return False
+        
         Else
             // Tuntematon viesti tai viestit loppui
             Exit
