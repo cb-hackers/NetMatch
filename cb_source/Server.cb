@@ -93,7 +93,7 @@ Function CreateServer(_register = 0)
             _Net_PutByte(NET_END)
             ServerSend()
         EndIf
-    Until rec + 1000 < Timer()
+    Until rec + 2500 < Timer()
     CloseServer()
     WriteLog("SERVER STOPPED")
     

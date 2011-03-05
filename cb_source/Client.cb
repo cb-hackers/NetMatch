@@ -30,6 +30,7 @@ Function JoinGame(_host$, _port)
     EndIf
     MsgBox(GetText("loading_game"))
     gCurrentPlayerId = 0
+    gReadDataTimestamp = 0
     // Alustetaan yhteys
     nRet = InitClient(_host, _port, 1000)
     If nRet <> 0 Then
