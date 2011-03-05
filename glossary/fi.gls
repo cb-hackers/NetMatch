@@ -99,6 +99,6 @@ new_version = Löydettiin uusi versio!|Lataa päivitykset painamalla Enter tai jat
 you_are_banned = Pääsy palvelimelle on evätty!
 update_failed = Päivitys epäonnistui!
 doing_update = Päivitetään NetMatchia...
-you_were_kicked = Sinut potkaistiin palvelimelta!|Syy: %1
+you_were_kicked = %1 potkaisi sinut palvelimelta!|Syy: %2| |Paina Enter jatkaaksesi.
 player_kicked = %1 potkaistiin palvelimelta. (Syy: %2)
 default_kickreason = Ei syytä.

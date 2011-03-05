@@ -682,9 +682,12 @@ Function Login(_in, _playerId = 0)
             If gKickedOut Then
                 DrawGame
                 DrawImage gImages(IMG_BACKGROUND), 0, 0
-                lKickReason$ = GetText( "you_were_kicked" )
-                lKickReason$ = Replace( lKickReason$, "%1", gKickReason )
-                Error( lKickReason$ )
+                kickMsg$ = GetText( "you_were_kicked" )
+                kickMsg$ = Replace( kickMsg, "%1", gKickerName )
+                kickMsg$ = Replace( kickMsg$, "%2", gKickReason )
+                Repeat
+                    retKey = MsgBox( kickMsg$, MSG_INFO )
+                Until retKey = 13 // Enter
             Else
                 MsgBox(GetText("logout_game"))
             EndIf
@@ -828,6 +831,7 @@ Function Login(_in, _playerId = 0)
             player\active   = False
 //COM1            If player\loggedIn = True Then gPlayerCount - 1
             player\loggedIn = False
+            player\admin = False
             WriteLog(player\name + " logged out")
             // L‰hetet‰‰n viesti kaikille muille paitsi boteille
             For plr.PLAYERS = Each PLAYERS
@@ -946,7 +950,7 @@ Function DrawGameStatus()
                 EndIf
             Next i
             
-            If gSessionComplete = False Then
+            If gSessionComplete = False And gPlayMode = TDM Then
                 // Piirret‰‰n joukkueiden keskiarvot
                 SetFont gFonts(FNT_MSGBOLD)
                 ty = ty + th

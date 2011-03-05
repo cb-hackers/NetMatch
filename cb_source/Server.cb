@@ -72,6 +72,9 @@ Function CreateServer(_register = 0)
         player\shootingAngle = 4.0 + (player\playerId * 1.5)
         player\fov           = 100 + (skill * 3.5)
         player\hasAmmos = False
+        player\admin = False
+        player\kicked = False
+        player\kickReason = ""
         UpdatePlayerProt(player\playerId)
     Next player
 
@@ -548,7 +551,8 @@ Function ReadDataFromClient()
             If nmsg\msgType = NET_KICKED Then
                 // Pelaaja potkittiin
                 _Net_PutByte(nmsg\msgType)      // Viestin tunnus
-                _Net_PutByte(nmsg\playerId)     // Kuka potkittiin
+                _Net_PutByte(nmsg\playerId)     // Potkaisija
+                _Net_PutByte(nmsg\playerId2)    // Kuka potkittiin
                 _Net_PutString(nmsg\msgText)    // Potkujen syy
             EndIf
             Delete nmsg
@@ -582,22 +586,29 @@ EndFunction
 //================================================================================
 // Palvelimelta potkaiseminen.
 //================================================================================
-Function KickPlayer( _playerId, _reason$ = "" )
+Function KickPlayer( _playerId, _kickerId, _reason$ = "" )
     player.PLAYERS  = ConvertToType(gPlayers(_playerId))
     player\kicked = True
     player\kickReason = _reason$
-    player\loggedIn = False
-    player\active = False
     // L‰hetet‰‰n viesti kaikille muille paitsi boteille
     For plr.PLAYERS = Each PLAYERS
         If plr\active = True And plr\zombie = False Then
             nmsg.NET_MESSAGES   = New(NET_MESSAGES)
             nmsg\toPlayer       = plr\playerId
             nmsg\msgType        = NET_KICKED
-            nmsg\playerId       = _playerId
+            If plr\playerId = _playerId Then
+                // L‰hetet‰‰n kicker-id vain sille joka potkittiinkin
+                nmsg\playerId   = _kickerId
+            Else
+                nmsg\playerId   = 0
+            EndIf
+            nmsg\playerId2      = _playerId
             nmsg\msgText        =_reason$
         EndIf
     Next plr
+    player\loggedIn = False
+    player\active = False
+    player\admin = False
 EndFunction
 
 //================================================================================
@@ -636,7 +647,7 @@ Function ParseCommand$( _command$, _playerId )
                 For plr.PLAYERS = Each PLAYERS
                     If Lower(plr\name) = Lower( playerName ) Then
                         If plr\zombie = False Then
-                            KickPlayer( plr\playerId, kickReason$ )
+                            KickPlayer( plr\playerId, _playerId, kickReason$ )
                             kicked = True
                             ret$ = "Kicked player " + plr\name + " with reason " + kickReason
                         Else

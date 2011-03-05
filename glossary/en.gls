@@ -99,6 +99,6 @@ new_version = New version found!|Download updates by pressing Enter or press any
 you_are_banned = Access denied!
 update_failed = Update failed!
 doing_update = Updating NetMatch...
-you_were_kicked = You were kicked from the server!|Reason: %1
+you_were_kicked = You were kicked from the server by %1!|Reason: %2| |Press Enter to continue.
 player_kicked = %1 was kicked out. (Reason: %2)
 default_kickreason = No reason.

@@ -10,7 +10,11 @@ gKickedOut = False
 
 // Syy potkimiseen.
 Global gKickReason$
-gKickReason$ = ""
+gKickReason = ""
+
+// Kuka potkaisi
+Global gKickerName$
+gKickerName = ""
 
 //================================================================================
 // Liitytään peliin
@@ -857,16 +861,21 @@ Function ReadDataFromServer()
         
         ElseIf netmsg = NET_KICKED Then
             // Joku pelaaja potkittiin palvelimelta
+            kickerId = _Net_GetByte()
             playerId = _Net_GetByte()
             reason$ = _Net_GetString()
             If reason$ = "" Then reason$ = GetText("default_kickreason")
             plr.PLAYERS  = ConvertToType(gPlayers(gCurrentPlayerId))
             player.PLAYERS = ConvertToType(gPlayers(playerId))
+            If kickerId > 0 And kickerId <= MAX_PLAYERS Then
+                kicker.PLAYERS = ConvertToType(gPlayers(kickerId))
+            EndIf
             If player\playerId = plr\playerId Then
                 // Minut potkittiin pihalle! :'(
-                gKickedOut = True
-                gKickReason = reason$
-                plr\active = False
+                gKickedOut   = True
+                gKickerName  = kicker\name
+                gKickReason  = reason$
+                plr\active   = False
                 plr\loggedin = False
                 Return False
             Else
