@@ -4,7 +4,7 @@
 // Game Server Service
 //********************************************************************************
 
-Const GSSRegUrl$  = "http://netmatch.vesq.org/cbee/gss.php"
+Const GSSRegUrl$  = "http://netmatch.vesq.org/reg/gss.php"
 Const GSSRegUrl2$ = "http://www.tuhoojabotti.com/nm/reg/gss.php"
 
 Const GSS_MAX_SERVERS       = 100

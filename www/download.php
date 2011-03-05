@@ -1,1 +1,1 @@
-<?php header("Location: downloads/"); ?>
+<?php header("Location: downloads/nm_v2.2c.rar"); ?>

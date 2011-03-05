@@ -156,7 +156,7 @@ Function GameUpdate()
             EndIf
         EndIf
         If player\active = True Then
-            lPlayerCount + 1
+            lPlayerCount = lPlayerCount + 1
             If player\zombie = True Then lBotCount + 1
             If Len(lPlayerNames) > 0 Then lPlayerNames = lPlayerNames + "|" 
             lPlayerNames = lPlayerNames + Replace(Replace(player\name, "|", ";"), ",", "&#44;")
@@ -581,7 +581,6 @@ Function GameUpdate()
 //        SetWindow "NetMatch " + gGSSVersion + " Server - " + gPlayerCount + " players online"
 //    EndIf
     
-    If NM_DEVBUILD Then DevelopmentTests() // DEVBUILD
     MoveBullets()
     If gGameMode = CLIENT Then AnimatePlayers()
 EndFunction
@@ -649,6 +648,12 @@ Function Login(_in, _playerId = 0)
                     Error(errmsg)
                     Return False
                 EndIf
+                If reason = NET_NICKNAMEINUSE Then
+                    // Nimimerkki on jo k‰ytˆss‰
+                    errmsg$ = GetText("nickname_in_use")
+                    Error(errmsg)
+                    Return False
+                EndIf
                 // Tuntematon syykoodi
                 Error(GetText("unexpected_error"))
                 Return False
@@ -656,6 +661,7 @@ Function Login(_in, _playerId = 0)
             If netmsg = NET_LOGINOK Then
                 // Kirjautuminen onnistui
                 gCurrentPlayerId = _Net_GetByte()
+                gPlayMode = _Net_GetByte()
                 gServerMap = _Net_GetString()
                 gMapCRC = _Net_GetInt()
                 Return True
@@ -671,21 +677,34 @@ Function Login(_in, _playerId = 0)
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // CLIENT LOGOUT >>>
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
             // N‰ytet‰‰n poistumisilmoitus
-            MsgBox(GetText("logout_game"))
+            If gKickedOut Then
+                DrawGame
+                DrawImage gImages(IMG_BACKGROUND), 0, 0
+                lKickReason$ = GetText( "you_were_kicked" )
+                lKickReason$ = Replace( lKickReason$, "%1", gKickReason )
+                Error( lKickReason$ )
+            Else
+                MsgBox(GetText("logout_game"))
+            EndIf
             // Odotellaan max 2 sekuntia ett‰ linja on "vapaa"
             t = Timer()
             While ClientState() = 1
                 If t + 2000 < Timer() Then Exit
             Wend
             If ClientState() = 2 Then ClientRead()
-            // L‰hetet‰‰n poistumisviesti
-            _Net_InitMemBlock()
-            _Net_PutByte(NET_LOGOUT)
-            _Net_PutByte(gCurrentPlayerId)
-            ClientSend()
-            // Odotellaan viel‰ puoli sekuntia
-            Wait 500 - (Timer() - t)
+            
+            // L‰hetet‰‰n poistumisviesti jos ei kyseess‰ ollut potkut
+            If gKickedOut = False Then
+                _Net_InitMemBlock()
+                _Net_PutByte(NET_LOGOUT)
+                _Net_PutByte(gCurrentPlayerId)
+                ClientSend()
+                
+                // Odotellaan viel‰ puoli sekuntia
+                Wait 500 - (Timer() - t)
+            EndIf
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // CLIENT LOGOUT <<<
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -720,7 +739,23 @@ Function Login(_in, _playerId = 0)
             EndIf
             // Versio on ok. Luetaan pelaajan nimi
             profile$ = _Net_GetString()
-
+            
+            // K‰yd‰‰n kaikki nimet l‰pi, ettei vain samanlaista ole jo olemassa.
+            For player.PLAYERS = Each PLAYERS
+                If Lower( player\name ) = Lower( profile ) Then
+                    If player\kicked = True Or player\active = False Then
+                        player\name = ""
+                    Else
+                        // Nimimerkki oli jo k‰ytˆss‰.
+                        _Net_InitMemBlock()
+                        _Net_PutByte(NET_LOGIN)
+                        _Net_PutByte(NET_LOGINFAILED)
+                        _Net_PutByte(NET_NICKNAMEINUSE)
+                        ServerSend()
+                        Return False
+                    EndIf
+                EndIf
+            Next player
             // Etsit‰‰n vapaa "pelipaikka"
             For player.PLAYERS = Each PLAYERS
                 If gPlayerCount < gMapMaxPlayers And player\active = False Then
@@ -743,6 +778,9 @@ Function Login(_in, _playerId = 0)
                     If gPlayMode > DM Then
                         player\team = Rand(1,2)
                     EndIf
+                    player\admin    = False
+                    player\kicked   = False
+                    player\kickReason = ""
                     UpdatePlayerProt(player\playerId)
                     
                     // L‰hetet‰‰n vastaus clientille
@@ -750,6 +788,7 @@ Function Login(_in, _playerId = 0)
                     _Net_PutByte(NET_LOGIN)
                     _Net_PutByte(NET_LOGINOK)
                     _Net_PutByte(player\playerId)
+                    _Net_PutByte(gPlayMode)
                     _Net_PutString(GetWord2(gMapNames(gGameMap, 1), gServerMapLoop + 1, ":"))
                     _Net_PutInt(gMapCRC)
                     ServerSend()
@@ -865,6 +904,10 @@ Function DrawGameStatus()
             Text tx + 130 + (gSessionComplete * 140), ty, gDeathsTitle
             //Text tx + 200, ty, "%"
             ty = ty + th * 1.5
+            redTeamKills = 0
+            redTeamDeaths = 0
+            greenTeamKills = 0
+            greenTeamDeaths = 0
             For i = 1 To MAX_PLAYERS
                 If gRanking(i, 1) > 0 Then
                     player.PLAYERS = ConvertToType(gPlayers(Int(gRanking(i, 1))))
@@ -873,8 +916,12 @@ Function DrawGameStatus()
                     Else
                         If player\team = 1 Then
                             Color 0, 255, 0
+                            greenTeamKills = greenTeamKills + player\kills
+                            greenTeamDeaths = greenTeamDeaths + player\deaths
                         Else
                             Color 255, 0, 0
+                            redTeamKills = redTeamKills + player\kills
+                            redTeamDeaths = redTeamDeaths + player\deaths
                         EndIf
                     EndIf
                     
@@ -895,9 +942,34 @@ Function DrawGameStatus()
                     Text tx + 130 + (gSessionComplete * 140), ty, player\deaths
                     Color 255, 255, 0
                     Text tx + 200 + (gSessionComplete * 180), ty, player\killRatio
-                    ty + th
+                    ty = ty + th
                 EndIf
             Next i
+            
+            If gSessionComplete = False Then
+                // Piirret‰‰n joukkueiden keskiarvot
+                SetFont gFonts(FNT_MSGBOLD)
+                ty = ty + th
+                Color 0, 255, 0
+                Text tx, ty, "GREEN TEAM"
+                Color 0, 255, 0
+                Text tx + 80, ty, greenTeamKills
+                Color 255, 0, 0
+                Text tx + 130, ty, greenTeamDeaths
+                Color 255, 255, 0
+                If greenTeamDeaths <0.001 Then greenTeamDeaths = 1 // Estet‰‰n nollalla jako
+                Text tx + 200, ty, Int(Float(greenTeamKills) / Float(greenTeamDeaths) * 100.0) / 100.0
+                ty = ty + th
+                Color 255, 0, 0
+                Text tx, ty, "RED TEAM"
+                Color 0, 255, 0
+                Text tx + 80, ty, redTeamKills
+                Color 255, 0, 0
+                Text tx + 130, ty, redTeamDeaths
+                Color 255, 255, 0
+                If redTeamDeaths <0.001 Then redTeamDeaths = 1 // Estet‰‰n nollalla jako
+                Text tx + 200, ty, Int(Float(redTeamKills) / Float(redTeamDeaths) * 100.0) / 100.0
+            EndIf
         EndIf
         
         For player.PLAYERS = Each PLAYERS
@@ -1208,23 +1280,3 @@ Function ClearKeys2()
     gMouseHit3  = False
     gMouseRoll  = 0
 EndFunction
-
-//================================================================================
-// DEVBUILDiin voi lis‰t‰ t‰ll‰ funktiolla j‰nni‰ omia testailuja.
-//================================================================================
-Global gDevBuildCamX, gDevBuildCamY, gDevBuildCamTest
-gDevBuildCamTest = False
-Function DevelopmentTests()
-    If KeyHit( cbKeyO ) Then 
-        gDevBuildCamTest = Not gDevBuildCamTest
-        gDevBuildCamX = CameraX()
-        gDevBuildCamY = CameraY()
-    EndIf
-    
-    If gDevBuildCamTest Then
-        gDevBuildCamX = gDevBuildCamX + ( KeyDown( cbKeyL ) - KeyDown( cbKeyJ ) ) * 8
-        gDevBuildCamY = gDevBuildCamY + ( KeyDown( cbKeyI ) - KeyDown( cbKeyK ) ) * 8
-        PositionCamera gDevBuildCamX, gDevBuildCamY
-    EndIf
-    Return True
-EndFunction 
