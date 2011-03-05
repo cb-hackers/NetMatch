@@ -13,8 +13,8 @@ In addition to human players, computer controlled AI-characters are found on the
 
 How to compile
 --------------
-To build this you need to get [CoolBasic](http://www.coolbasic.com) and change the compiler to the one coming withing this repository.
-<strong>If the modded CBCompiler.exe destroys your computer, too bad. The software is provided "as-is", without any express or implied warranty.</strong>
+To build this you need to get [CoolBasic](http://www.coolbasic.com) and change the compiler to the one in this repository.
+<strong>If the modded CBCompiler destroys your computer, too bad. The software is provided "as-is", without any express or implied warranty.</strong>
 
 Error: "Resource image background.png.pxi not found!"
 -----------------------------------------------------

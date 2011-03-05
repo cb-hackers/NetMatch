@@ -6,7 +6,7 @@
 !media/Rar.exe
 
 # ...sekä modattu CBCompiler.exe, jota tarvitaan koodin kääntöön.
-!/CBCompiler.exe
+!/CBCompiler-modded.exe
 
 # Pikakuvakkeet pois
 *.lnk
