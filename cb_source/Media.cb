@@ -5,7 +5,7 @@
 //********************************************************************************
 
 Const RESOURCE_ARCHIVE$ = "NetMatch.dat"
-Const AUTOUPDATER_URL$ = "http://netmatch.vesq.org/updater/crc32output.txt"
+Const AUTOUPDATER_URL$ = "http://netmatch.vesq.org/updater/crclist.php"
 Const VERSIONCHECK_URL$ = "http://netmatch.vesq.org/reg/download/version.txt"
 
 Global gLoadedItems#
@@ -444,13 +444,14 @@ EndFunction
 
 
 Function CheckUpdates()
+    If gForceUpdate Then DoUpdate(): Return False //Pakotetaan päivitys
     If gDirectServer = False Then
         DrawImage gImages(IMG_BACKGROUND), 0, 0
     EndIf
     MsgBox(GetText("update_check"), "NetMatch", MSG_INFO_NOWAIT)
     t = Timer()
     result = HTTPGet(VERSIONCHECK_URL)
-    Wait 100 - Int(Abs(Timer() - t))
+    Wait 200 - Int(Abs(Timer() - t))
     If result = 200 Then
         HTTPLoadContent()
         ret$ = ""
@@ -507,18 +508,18 @@ Function DoUpdate()
             update=False
             If FileExists(file) Then
                 If Hex(Crc32(file))<>GetWord2(l,2,"|") Then //Do the hashes match? Do they NetMatch? Heh.
-                    If GetFileName(file) <> GetFileName(GetEXEName()) Then DeleteFile file //Poistetaan wanha tiedosto, jos se ei ole tämä exe, tuolloin batti hoitaa sen.
+                    If GetFileName(file) <> GetFileName(GetEXEName()) Then DeleteFile file //Poistetaan wanha tiedosto, jos se ei ole tämä exe.
                     update = True
-                EndIf 
+                EndIf
             Else
                 update = True //Myöskin ladataan tiedosto jos sitä ei meillä ole.
             EndIf
             If update = True Then //Ladataan uusi tiedosto
-                Print "Updating " + furl + "..."
+                Print ">>> " + furl + "..."
                 If HTTPGet(furl) = 200 Then
                     If GetFileName(file) <> GetFileName(GetEXEName()) Then
                         HTTPSaveContent(file)
-                    Else //Itse pelin exe ja sehän on käynnissä! Pitääpä vähän häksiä. :o
+                    Else //Itse pelin exe ja sehän on käynnissä!
                         HTTPSaveContent(file + ".updated")
                         restart = True //Peli täytyy tietenkin käynnistää uudestaan, kunhan päivitys on valmis.
                     EndIf
@@ -529,8 +530,9 @@ Function DoUpdate()
             EndIf
         Next i
         If restart = True Then
-            Execute "UpdateNetMatch.bat"
-            End        
+            e$ = GetFileName(GetEXEName())
+            Execute "CMD /C ECHO "+GetText("update_restart")+" & PING 1.1.1.1 -n 1 -w 1500 >NUL & DEL "+e+" & RENAME "+e+".updated "+e+" & START "+e
+            End
         EndIf
     Else
         Error(GetText("update_failed"))
