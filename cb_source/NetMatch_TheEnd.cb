@@ -25,8 +25,13 @@ EndIf
 SAFEEXIT OFF
 
 Const NM_VERSION$   = "2.2"
+<<<<<<< HEAD
 Const NM_REVISION$  = "a-epatch"
 Const NM_PATCH      = 1
+=======
+Const NM_REVISION$  = "c"
+Const NM_PATCH      = 0
+>>>>>>> f85f4f41a53e53a19b5b3b935143ae92e217e807
 
 // Tämä pitää AINA laitta 1, jos kyseessä ei ole virallinen julkaisu.
 // Tällöin palvelin näkyy vain muille NM_DEVBUILD = 1 omaaville clienteille.

@@ -1,0 +1,2 @@
+# Käytetään ISO-8859-1 standardia merkistössä, koska CB ei osaa muita.
+AddDefaultCharset ISO-8859-1

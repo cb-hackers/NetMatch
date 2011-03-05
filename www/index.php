@@ -9,7 +9,7 @@
 </head>
 <body>
     <h1>NetMatch servers</h1>
-    <?php echo ListServersHTML(); ?>
+    <?php echo utf8_encode( ListServersHTML() ); ?>
 
 </body>
 
@@ -19,27 +19,27 @@
 <?php
 function ListServersHTML()
 {
-    // Yhdistet‰‰n MySQL-tietokantaan. 1 tarkoittaa, ett‰ k‰ytet‰‰n Object Oriented-tyyli‰, eik‰ proseduraalista tyyli‰.
+    // Yhdistet√§√§n MySQL-tietokantaan. 1 tarkoittaa, ett√§ k√§ytet√§√§n Object Oriented-tyyli√§, eik√§ proseduraalista tyyli√§.
     $mysqli = connectToDatabase(1);
     
     if( $mysqli->connect_error )
     {
-        // Tietokantaan yhdist‰minen ei onnistunut. Kaadetaan homma t‰h‰n.
+        // Tietokantaan yhdist√§minen ei onnistunut. Kaadetaan homma t√§h√§n.
         return "Unable to connect to MySQL server!";
     }
     
-    // Tehd‰‰n MySQL:iin haku.
+    // Tehd√§√§n MySQL:iin haku.
     $result = $mysqli->query("SELECT * FROM `netmatch`");
     if( !$result )
     {
-        // query ei onnistunut. Kaadetaan homma t‰h‰n.
+        // query ei onnistunut. Kaadetaan homma t√§h√§n.
         $mysqli->close();
         return "MySQL query failed!";
     }
     
     
     
-    // T‰h‰n muuttujaan tallennetaan palautettava merkkijono
+    // T√§h√§n muuttujaan tallennetaan palautettava merkkijono
     $liststring = '<table><tr>'.
                   '<th>Server name</th>'.
                   '<th>IP-address</th>'.
@@ -56,14 +56,14 @@ function ListServersHTML()
         // Tarkistetaan, onko palvelin aktiivinen
         if( $row['active'] )
         {
-            // Tarkistetaan, onko palvelinta p‰ivitetty 90sek sis‰‰n.
+            // Tarkistetaan, onko palvelinta p√§ivitetty 90sek sis√§√§n.
             if( strtotime( $row['updated'] ) < ( time() - 90 ) )
             {
-                // Palvelin on viimeksi p‰ivitetty yli 90sek sitten. Asetetaan se ei-aktiiviseksi.
+                // Palvelin on viimeksi p√§ivitetty yli 90sek sitten. Asetetaan se ei-aktiiviseksi.
                 $ret = $mysqli->query("UPDATE `netmatch` SET `active` = '0' WHERE `ID` = '$id'");
                 if( !$ret )
                 {
-                    // query ei onnistunut. Kaadetaan homma t‰h‰n.
+                    // query ei onnistunut. Kaadetaan homma t√§h√§n.
                     $result->close();
                     $mysqli->close();
                     return "MySQL query failed!";
@@ -87,7 +87,7 @@ function ListServersHTML()
             
             if( $row['devbuild'] == 0 )
             {
-                // Lis‰t‰‰n palvelimen tiedot taulukkoon
+                // Lis√§t√§√§n palvelimen tiedot taulukkoon
                 $liststring .= "\n<tr>".
                                "<td>{$row['desc']}</td>".
                                "<td>{$row['ip']}</td>".
@@ -97,18 +97,31 @@ function ListServersHTML()
                                "<td>$playernames</td>".
                                "<td>{$row['version']}</td>".
                                "</tr>";
+            } else {
+                // Listataan my√∂s devbuildin servut listaan, mutta laitetaan niille
+                // mahdollista tyylityst√§ varten eri class-tag. Lis√§t√§√§n my√∂s
+                // version per√§√§n "-dev".
+                $liststring .= "\n<tr class=\"devbuild\">".
+                               "<td>{$row['desc']}</td>".
+                               "<td>{$row['ip']}</td>".
+                               "<td>{$row['port']}</td>".
+                               "<td>$players ($humanplayers) / $maxplayers</td>".
+                               "<td>$map</td>".
+                               "<td>$playernames</td>".
+                               "<td>{$row['version']}-dev</td>".
+                               "</tr>";
             }
         }
         else
         {
-            // Tarkistetaan, onko palvelinta p‰ivitetty 10min sis‰‰n
+            // Tarkistetaan, onko palvelinta p√§ivitetty 10min sis√§√§n
             if( strtotime( $row['updated'] ) < ( time() - 600 ) )
             {
-                // Ei ole p‰ivitetty. Poistetaan se listalta.
+                // Ei ole p√§ivitetty. Poistetaan se listalta.
                 $ret = $mysqli->query("DELETE FROM `netmatch` WHERE ID = '$id'");
                 if( !$ret )
                 {
-                    // query ei onnistunut. Kaadetaan homma t‰h‰n.
+                    // query ei onnistunut. Kaadetaan homma t√§h√§n.
                     $result->close();
                     $mysqli->close();
                     return "MySQL query failed!";
@@ -117,7 +130,7 @@ function ListServersHTML()
         }
     }
     
-    // Viimeistell‰‰n taulukko
+    // Viimeistell√§√§n taulukko
     $liststring .= '</table>';
     
     // Vapautetaan muistia

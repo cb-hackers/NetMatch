@@ -25,6 +25,10 @@ Const NET_KILLMESSAGE       = 15    // Tappoviesti
 Const NET_SESSIONTIME       = 16    // Pelisession aikatiedot
 Const NET_BANNED            = 17    // Client on bannattu
 Const NET_MAPCHANGE         = 18    // Kartan vaihto
+Const NET_KICKED            = 19    // Pelaajan potkiminen servulta
+Const NET_SERVERMSG         = 20    // Palvelimen generoima viesti
+Const NET_NICKNAMEINUSE     = 21    // Liittyessä ei saa olla sama nimimerkki jo käytössä
+Const NET_SERVERCLOSING     = 22    // Lähetetään kaikille tieto että palvelin sammutetaan.
 Const NET_END               = 255   // Viestin loppu
 
 

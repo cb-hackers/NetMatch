@@ -13,12 +13,13 @@ In addition to human players, computer controlled AI-characters are found on the
 
 How to compile
 --------------
-To build this you need to get [CoolBasic](http://www.coolbasic.com) and change the compiler to the one coming withing this repository.
-<strong>If the modded CBCompiler.exe destroys your computer, too bad. The software is provided "as-is", without any express or implied warranty.</strong>
+To build this you need to get [CoolBasic](http://www.coolbasic.com) and change the compiler to the one in this repository.
+<strong>If the modded CBCompiler destroys your computer, too bad. The software is provided "as-is", without any express or implied warranty.</strong>
 
-How to compile a NetMatch.dat
------------------------------
-See here: [media/README.md](https://github.com/VesQ/NetMatch/blob/master/media/README.md)
+Error: "Resource image background.png.pxi not found!"
+-----------------------------------------------------
+You need to build yourself a <em>NetMatch.dat</em> from the media-files.
+Instructions are found in here: [media/README.md](https://github.com/VesQ/NetMatch/blob/master/media/README.md)
 
 Coding conventions
 ------------------
@@ -31,3 +32,5 @@ Coding conventions
 * <strong>The constant NM_DEVBUILD in the main source file (NetMatch_TheEnd.cb) MUST be set to 1
   when the version is not an official release!</strong>
 * Before pushing always check whether your code actually compiles.
+* Please do not use colons ":" to put more code in one line. Just put the code to separate lines.
+* Do <strong>NOT</strong> use Goto's or GoSub's, they're awful coding practice. Commits that use them won't get applied.

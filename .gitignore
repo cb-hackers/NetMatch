@@ -6,7 +6,7 @@
 !media/Rar.exe
 
 # ...sekä modattu CBCompiler.exe, jota tarvitaan koodin kääntöön.
-!/CBCompiler.exe
+!/CBCompiler-modded.exe
 
 # Pikakuvakkeet pois
 *.lnk
@@ -14,6 +14,9 @@
 # Notepad++:n varmuuskopiotiedostoja ei repoon
 *.bak
 nppBackup
+
+# Ei oteta repoon mukaan valmista crc32output.txt tiedostoa
+crc32output.txt
 
 # Ei tartte servulogeja pistää repoon myöskää testailujen jäljilt :p
 serverlog.txt
@@ -31,6 +34,9 @@ cbrs.reg
 # Jätetään bannilistat pois
 ipban.txt
 
+# Ei oteta myöskään debug-loggeja mukaan.
+debug.txt
+
 # Perhanan Windows
 Thumbs.db
 
@@ -39,9 +45,9 @@ Thumbs.db
 ######
 
 # Ei laiteta downloadsia tai mapseja mukaan repoon.
-netmatch.vesq.org/downloads
-netmatch.vesq.org/maps
+www/downloads
+www/maps
 
 # Ei laiteta myöskään info.txt tiedostoja mukaan.
-netmatch.vesq.org/cbee/info.txt
-netmatch.vesq.org/cbee/oldinfos
+www/reg/info.txt
+www/reg/oldinfos

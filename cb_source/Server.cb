@@ -72,6 +72,9 @@ Function CreateServer(_register = 0)
         player\shootingAngle = 4.0 + (player\playerId * 1.5)
         player\fov           = 100 + (skill * 3.5)
         player\hasAmmos = False
+        player\admin = False
+        player\kicked = False
+        player\kickReason = ""
         UpdatePlayerProt(player\playerId)
     Next player
 
@@ -80,6 +83,17 @@ Function CreateServer(_register = 0)
     SetMap gMap, OFF, OFF
     gGameMode = MENU
     GSSUnregister()
+    // L‰hetet‰‰n kaikille clienteille lopetustavu, varataan t‰h‰n aikaa yksi sekunti.
+    rec = Timer()
+    Repeat
+        nret = ServerRead()
+        If nret <> 0 Then
+            _Net_InitMemBlock()
+            _Net_PutByte(NET_SERVERCLOSING)
+            _Net_PutByte(NET_END)
+            ServerSend()
+        EndIf
+    Until rec + 2500 < Timer()
     CloseServer()
     WriteLog("SERVER STOPPED")
     
@@ -278,6 +292,18 @@ Function ReadDataFromClient()
     
     // Tarkistetaan ett‰ pelaaja on kirjautunut oikein.
     player.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerid))
+    
+    // Tarkistetaan onko pelaaja potkittu
+    If player\kicked And player\clientId = NET_ClientId Then
+        _Net_InitMemBlock()
+        _Net_PutByte(NET_KICKED)
+        _Net_PutByte( player\kickerId )
+        _Net_PutByte(gCurrentPlayerId)
+        _Net_PutString( player\kickReason )
+        ServerSend()
+        Return True
+    EndIf
+    
     If player\clientId <> NET_ClientId Or player\active = False Then
         _Net_InitMemBlock()
         _Net_PutByte(NET_NOLOGIN)
@@ -349,10 +375,19 @@ Function ReadDataFromClient()
         
             // Pelaaja l‰hetti tekstiviestin
             txtMessage$ = Trim(_Net_GetString())
+            If Left( txtMessage$, 1 ) = "/" Then 
+                parseRet$ = ParseCommand( txtMessage$, gCurrentPlayerId )
+                newMsg.NET_MESSAGES = New( NET_MESSAGES )
+                newMsg\msgType = NET_SERVERMSG
+                newMsg\toPlayer = gCurrentPlayerId
+                newMsg\msgText = parseRet$
+                txtMessage$ = ""
+            EndIf
+                
         
         ElseIf netmsg = NET_MAPCHANGE Then
         
-            // Pelaaja l‰hetti tekstiviestin
+            // Pelaaja l‰hetti kartan nimen
             player\mapName = Trim(_Net_GetString())
         
         Else
@@ -386,13 +421,11 @@ Function ReadDataFromClient()
             // L‰hetet‰‰n kaikille muille paitsi boteille
             toTeam = player\team
             If plr\active = True And plr\zombie = False Then
-                If plr\team = toTeam Or gPlayMode = DM Or Mid(txtMessage, 1, 1) = "*" Then
-                    nmsg.NET_MESSAGES = New(NET_MESSAGES)
-                    nmsg\toPlayer   = plr\playerId      // Kenelle l‰hetet‰‰n
-                    nmsg\msgType    = NET_TEXTMESSAGE   // Mik‰ viesti
-                    nmsg\playerId   = gCurrentPlayerId  // Kuka l‰hetti
-                    nmsg\msgText    = txtMessage        // Viesti
-                EndIf
+                nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                nmsg\toPlayer   = plr\playerId      // Kenelle l‰hetet‰‰n
+                nmsg\msgType    = NET_TEXTMESSAGE   // Mik‰ viesti
+                nmsg\playerId   = gCurrentPlayerId  // Kuka l‰hetti
+                nmsg\msgText    = txtMessage        // Viesti
             EndIf
         EndIf
         
@@ -492,6 +525,11 @@ Function ReadDataFromClient()
                 _Net_PutByte(nmsg\playerId)
                 _Net_PutString(nmsg\msgText)
             EndIf
+            If nmsg\msgType = NET_SERVERMSG Then
+                // Palvelimen generoima viesti
+                _Net_PutByte(nmsg\msgType)
+                _Net_PutString(nmsg\msgText)
+            EndIf
             If nmsg\msgType = NET_BULLETHIT Then
                 // Osumaviesti
                 _Net_PutByte(nmsg\msgType)      // Vistin tunnus
@@ -522,6 +560,13 @@ Function ReadDataFromClient()
                 _Net_PutShort(plr\kills)        // Uhrin tapot
                 _Net_PutShort(plr\deaths)       // Uhrin kuolemat
             EndIf
+            If nmsg\msgType = NET_KICKED Then
+                // Pelaaja potkittiin
+                _Net_PutByte(nmsg\msgType)      // Viestin tunnus
+                _Net_PutByte(nmsg\playerId)     // Potkaisija
+                _Net_PutByte(nmsg\playerId2)    // Kuka potkittiin
+                _Net_PutString(nmsg\msgText)    // Potkujen syy
+            EndIf
             Delete nmsg
         EndIf
     Next nmsg
@@ -550,3 +595,81 @@ Function ReadDataFromClient()
     ServerSend()
 EndFunction
 
+//================================================================================
+// Palvelimelta potkaiseminen.
+//================================================================================
+Function KickPlayer( _playerId, _kickerId, _reason$ = "" )
+    player.PLAYERS  = ConvertToType(gPlayers(_playerId))
+    player\kicked = True
+    player\kickReason = _reason$
+    player\kickerId = _kickerId
+    player\loggedIn = False
+    player\active = False
+    player\admin = False
+    // L‰hetet‰‰n viesti kaikille muille paitsi boteille
+    For plr.PLAYERS = Each PLAYERS
+        If plr\active = True And plr\zombie = False Then
+            nmsg.NET_MESSAGES   = New(NET_MESSAGES)
+            nmsg\toPlayer       = plr\playerId
+            nmsg\msgType        = NET_KICKED
+            nmsg\playerId       = _kickerId
+            nmsg\playerId2      = _playerId
+            nmsg\msgText        =_reason$
+        EndIf
+    Next plr
+EndFunction
+
+//================================================================================
+// Komentojen parsiminen. Palauttaa merkkijonossa tiedon miten meni.
+//================================================================================
+Function ParseCommand$( _command$, _playerId )
+    If Left( _command$, 1 ) <> "/" Then Return False
+    
+    check$ = GetWord2( Mid( _command$, 2 ), 1 )
+    params$ = Trim( Mid( _command$, Len( check$ ) + 3 ) )
+    
+    // Kutsuja
+    player.PLAYERS = ConvertToType( gPlayers( _playerId ) )
+    
+    ret$ = "Unknown command"
+    
+    If check$ = "admin" Then
+        If player\admin = False Then
+            If params$ = gServerAdminPassword And gServerAdminPassword <> "" Then
+                player\admin = True
+                ret$ = "You're now an admin"
+            Else
+                ret$ = "Wrong password"
+            EndIf
+        Else
+            ret$ = "You're already an admin!"
+        EndIf
+    ElseIf check$ = "kick" Then
+        If player\admin = True Then
+            playerName$ = GetWord2( params$, 1 )
+            If Len( Trim( playerName$ ) )=0 Then
+                ret$ = "You didn't in"+"put a name!"
+            Else
+                kickReason$ = Trim( Mid( params$, Len( playerName$ ) + 1 ) )
+                kicked = False
+                For plr.PLAYERS = Each PLAYERS
+                    If Lower(plr\name) = Lower( playerName ) Then
+                        If plr\zombie = False Then
+                            KickPlayer( plr\playerId, _playerId, kickReason$ )
+                            kicked = True
+                            ret$ = "Kicked player " + plr\name + " with reason " + kickReason
+                        Else
+                            ret$ = "You can't kick a bot"
+                        EndIf
+                    EndIf
+                Next plr
+                If Not kicked Then ret$ = "Couldn't find player " + playerName$
+            EndIf
+        Else
+            ret$ = "You're not an admin"
+        EndIf
+    EndIf
+    
+    WriteLog( player\name + " - " + ret + " [" + _command + "]")
+    Return ret$
+EndFunction

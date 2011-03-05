@@ -1,5 +1,7 @@
 Function WriteLog(_text$)
     fs = FileSize("serverlog.txt")
+    // Alkeellinen suoja. Jos logi kasvaa yli 50 megatavun kokoiseksi, ei kirjoiteta.
+    If fs > 52428800 Then Return False
     f = OpenToEdit("serverlog.txt")
     SeekFile f, fs
     WriteLine f, LSet(Date() + " " + Time(), 22) + _text

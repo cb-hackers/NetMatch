@@ -1,0 +1,123 @@
+Const UPDATER_URL$ = "http://netmatch.vesq.org/updater/"
+
+// Tyyppikokoelma kaikkien kansioiden rekursiivista läpikäymistä varten.
+Type FILELIST
+    Field isDir As Byte      // Onko tämä kokoelman jäsen kansio.
+    Field searched As Byte   // Ollaanko tämä kansio jo selattu läpi.
+    Field filePath As String // Tiedostopolku
+EndType
+
+SCREEN 1024, 800
+
+// Otetaan muistiin alkuperäinen työhakemisto
+Global gStartDir$
+gStartDir = CurrentDir()
+
+F.FILELIST = New( FILELIST )
+F\filePath = path$
+F\searched = False
+F\isDir = True
+
+For F.FILELIST = Each FILELIST
+    If Not F\searched Then
+        ChDir F\filePath
+        StartSearch
+            Repeat
+                file$ = FindFile()
+                If file$ = "" Then Exit
+                If file$ <> "." And file$ <> ".." And SkipFile( file$ )=0 Then
+                    FF.FILELIST = New( FILELIST )
+                    FF\filePath = CurrentDir() + file$
+                    If IsDirectory( FF\filePath ) Then
+                        FF\searched = False
+                        FF\isDir = True
+                        Print "FOLDER: " + FF\filePath
+                    Else
+                        FF\searched = True
+                        FF\isDir = False
+                        Print "FILE: " + FF\filePath
+                    EndIf
+                EndIf
+            Forever
+        EndSearch
+        F\searched = True
+    EndIf
+    Wait 10
+Next F
+
+// Vaihdetaan takaisin alkuperäiseen työkansioon.
+ChDir gStartDir
+
+Print ""
+Print "Writing down to 'crc32output.txt'"
+
+writeStr$ = ""
+delimiter$ = ";"
+nextFile$ = Chr(13) + Chr(10)
+For F.FILELIST = Each FILELIST
+    If F\isDir = False Then
+        relativePath$ = Replace( F\filePath, gStartDir, "" )
+        relativePath$ = Replace( relativePath$, "\", "/" )
+        writeStr$ = writeStr$ + relativePath$
+        writeStr$ = writeStr$ + delimiter$ + Hex( Crc32( F\filePath ) )
+        writeStr$ = writeStr$ + delimiter$ + UPDATER_URL + relativePath$ + nextFile$
+    EndIf
+Next F
+
+If FileExists( "crc32output.txt" ) Then DeleteFile "crc32output.txt"
+fileHandle = OpenToWrite("crc32output.txt")
+    For i=1 To Len( writeStr$ )
+        WriteByte fileHandle, Asc( Mid( writeStr$, i, 1 ) )
+    Next i
+CloseFile fileHandle
+
+Print ""
+Print "Written to file 'crc32output.txt'"
+
+rec = Timer()
+Repeat
+    Wait 5
+Until Timer()>rec+2000
+
+End
+
+// Skipattavat tiedostot
+Function SkipFile( file$ )
+    If CurrentDir() = gStartDir Then
+        If file$ = "www" Then
+            Return True
+        ElseIf file$ = "media" Then
+            Return True
+        ElseIf file$ = "cb_source" Then
+            Return True
+        ElseIf file$ = "NetMatch.cfg" Then
+            Return True
+        ElseIf file$ = "NetMatch_TheEnd.ico" Then
+            Return True
+        ElseIf file$ = "README.md" Then
+            Return True
+        ElseIf file$ = "CBCompiler-modded.exe" Then
+            Return True
+        ElseIf file$ = ".gitignore" Then
+            Return True
+        ElseIf file$ = "crc32creator.cb" Then
+            Return True
+        ElseIf file$ = "crc32creator.exe" Then
+            Return True
+        ElseIf file$ = "serverlog.txt"
+            Return True
+        ElseIf file$ = "updateNetMatch.dat"
+            Return True
+        ElseIf file$ = "crc32output.txt" Then
+            Return True
+        EndIf
+    EndIf
+    
+    If file$ = "Thumbs.db" Then
+        Return True
+    ElseIf file$ = ".git" Then
+        Return True
+    EndIf
+    
+    Return False
+EndFunction

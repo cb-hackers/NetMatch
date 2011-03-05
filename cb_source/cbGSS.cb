@@ -4,7 +4,8 @@
 // Game Server Service
 //********************************************************************************
 
-Const GSSRegUrl$ = "http://netmatch.vesq.org/cbee/gss.php"
+Const GSSRegUrl$  = "http://netmatch.vesq.org/reg/gss.php"
+Const GSSRegUrl2$ = "http://www.tuhoojabotti.com/nm/reg/gss.php"
 
 Const GSS_MAX_SERVERS       = 100
 Const GSS_SERVER_NAME       = 1
@@ -17,11 +18,12 @@ Dim aGSSServerData$(GSS_MAX_SERVERS, 5)
 Global gGSSServerCount
 gGSSServerCount = 0
 
-Global gGSSProfile$, gGSSVersion$, gGSSServerPort, gGSSRegistered
+Global gGSSProfile$, gGSSVersion$, gGSSServerPort, gGSSRegistered, gGSSUsingBackup
 gGSSProfile     = ""
 gGSSVersion     = ""
 gGSSServerPort  = 0
 gGSSRegistered  = False
+gGSSUsingBackup = False
 
 
 //================================================================================
@@ -42,12 +44,17 @@ Function GSSRegister(_port, _description$)
     url = url + "&mode=reg"
     url = url + "&desc=" + URLEncode(_description)
     url = url + "&port=" + gGSSServerPort
-    If NM_DEVBUILD Then
-        url = url + "&devbuild=1"
-    EndIf
+    If NM_DEVBUILD Then url = url + "&devbuild=1"
     // Lähetetään rekisteröintipyyntö
     ret = HTTPGet(url)
-    If ret <> 200 Then Return False
+    If ret <> 200 Then // Ei toimannut, kokeillaan backupilla...
+        url2$ = Replace(url,GSSRegUrl,GSSRegUrl2)
+        ret2 = HTTPGet(url2)
+        If ret2 <> 200 Then
+            Return False
+        EndIf
+        gGSSUsingBackup = True //Turvaudutaan backup-servulistaukseen, koska aito feilasi
+    EndIf
     start = Timer()
     cid$ = ""
     Repeat
@@ -66,7 +73,6 @@ Function GSSRegister(_port, _description$)
         EndIf
     Until start + 5000 < Timer()
     // Vastausta ei tullut määräaikaan joten rekisteröinti ei onnistunut
-    
     Return False
 EndFunction
 
@@ -76,7 +82,11 @@ EndFunction
 //================================================================================
 Function GSSUnregister()
     If gGSSRegistered = False Then Return False
-    url$ = GSSRegUrl + "?profile=" + URLEncode(gGSSProfile) + "&port=" + gGSSServerPort
+    If Not(gGSSUsingBackup) Then
+        url$ = GSSRegUrl + "?profile=" + URLEncode(gGSSProfile) + "&port=" + gGSSServerPort
+    Else //Käytettiin backup-servua
+        url$ = GSSRegUrl2 + "?profile=" + URLEncode(gGSSProfile) + "&port=" + gGSSServerPort
+    EndIf
     url = url + "&mode=unreg"
     HTTPGet(url, True)
     gGSSRegistered = False
@@ -95,8 +105,11 @@ Function GSSUpdate(_data$, _forceUpdate = 0)
         If _forceUpdate = False Then Return False
     EndIf
     gGSSLastUpdate = Timer()
-    
-    url$ = GSSRegUrl + "?profile=" + URLEncode(gGSSProfile) + "&port=" + gGSSServerPort
+    If Not(gGSSUsingBackup) Then
+        url$ = GSSRegUrl + "?profile=" + URLEncode(gGSSProfile) + "&port=" + gGSSServerPort
+    Else
+        url$ = GSSRegUrl2 + "?profile=" + URLEncode(gGSSProfile) + "&port=" + gGSSServerPort
+    EndIf
     url = url + "&mode=update"
     url = url + "&data=" + URLEncode(_data)
     If HTTPGet(url, True) = 200 Then Return True
@@ -114,12 +127,11 @@ Function GSSFindServers()
             aGSSServerData(i, j) = ""
         Next j
     Next i
-    
+    ret$ = ""
     url$ = GSSRegUrl + "?mode=list&profile=" + URLEncode(gGSSProfile) + "&ver=" + URLEncode(gGSSVersion)
     If NM_DEVBUILD Then url$ = url$ + "&devbuild=1"
     If HTTPGet(url) = 200 Then
         HTTPLoadContent()
-        ret$ = ""
         If HTTP_ContentLength < 4 Then Return 0
         For i = 1 To 4
             ret = ret + Chr(_Net_GetByte())
@@ -136,6 +148,28 @@ Function GSSFindServers()
             EndIf
         Next i
     EndIf
+    //Katsotaan myös backup servulta. ;-)
+    ret = ""
+    url = GSSRegUrl2 + "?mode=list&profile=" + URLEncode(gGSSProfile) + "&ver=" + URLEncode(gGSSVersion)
+    If NM_DEVBUILD Then url$ = url$ + "&devbuild=1"
+    If HTTPGet(url) = 200 Then
+        HTTPLoadContent()
+        If HTTP_ContentLength < 4 Then Return 0
+        For i = 1 To 4
+            ret = ret + Chr(_Net_GetByte())
+        Next i
+        If ret <> "GSS:" Then Return 0
+        ret = ""
+        For i = 1 To HTTP_ContentLength
+            b = _Net_GetByte()
+            If b = 10 Then
+                _GSSParseServer(ret)
+                ret = ""
+            Else
+                ret = ret + Chr(b)
+            EndIf
+        Next i
+    EndIf    
     Return gGSSServerCount
 EndFunction
 
