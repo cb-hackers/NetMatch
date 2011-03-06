@@ -140,7 +140,7 @@ EndFunction
 //================================================================================
 // Palauttaa tiedoston nimen absoluuttisesta tai relativiisesta polusta.
 //================================================================================
-Function GetFileName( _path$ )
+Function GetFileName$( _path$ )
 
     searchParam$ = Replace( _path$, "/", "\" )
     
@@ -164,7 +164,7 @@ EndFunction
 // relatiivinen palauttaa relatiivisen polun kansioon ja absoluuttinen vastaavasti
 // absoluuttisen polun.
 //================================================================================
-Function GetDirectoryPath( _filePath$ )
+Function GetDirectoryPath$( _filePath$ )
 
     If IsDirectory( _filePath$ ) Then Return _filePath$
     
@@ -181,3 +181,18 @@ Function GetDirectoryPath( _filePath$ )
     
     Return ret$
 EndFunction 
+
+//================================================================================
+// Luo koko polun kansiot, mikäli niitä ei ole valmiina
+//================================================================================
+Function MakeDirs( _path$ )
+    searchParam$ = Replace( _path, "/", "\" )
+    //Check if the folder exists
+    currentPath$ = GetWord2(searchParam,1,"\")
+    If IsDirectory(currentPath) = False Then MakeDir currentPath
+    //And it's subfolders
+    For i = 2 To Int(CountWords(searchParam,"\")) - 1
+        currentPath = currentPath + "\" + GetWord2(searchParam,i,"\")
+        If IsDirectory(currentPath) = False Then MakeDir currentPath
+    Next i
+EndFunction

@@ -5,8 +5,7 @@
 //********************************************************************************
 
 Const RESOURCE_ARCHIVE$ = "NetMatch.dat"
-Const AUTOUPDATER_URL$ = "http://netmatch.vesq.org/updater/crc32output.txt"
-Const VERSIONCHECK_URL$ = "http://netmatch.vesq.org/reg/download/version.txt"
+Const UPDATE_URL$ = "http://netmatch.vesq.org/updater/updater.php"
 
 Global gLoadedItems#
 gLoadedItems = 0
@@ -165,7 +164,7 @@ Const SND_COUNT         = 27    // ƒ‰nien lukum‰‰r‰
 // Ladataan kuvat
 //--------------------------------------------------------------------------------
 Dim gImages(IMG_COUNT)
-If gDirectServer = False Then 
+If gDirectServer = False And gForceUpdate = False Then 
     gImages(IMG_BACKGROUND) = LoadResourceImage("background.png") : ShowLoading()
 EndIf
 CheckUpdates()
@@ -315,7 +314,7 @@ EndFunction
 
 
 Function LoadResourceImage(_fileName$, _archive$ = "", _makeError = 1)
-    If gDirectServer = True And _fileName <> "background.png" And _archive = "" Then Return 0
+    If (gForceUpdate Or gDirectServer) And _fileName <> "background.png" And _archive = "" Then Return 0
 //SetWindow "IMAGE " + _fileName
 
 //    If _archive = "media" Then
@@ -444,13 +443,14 @@ EndFunction
 
 
 Function CheckUpdates()
+    If gForceUpdate Then DoUpdate(): Return False //Pakotetaan p‰ivitys
     If gDirectServer = False Then
         DrawImage gImages(IMG_BACKGROUND), 0, 0
     EndIf
     MsgBox(GetText("update_check"), "NetMatch", MSG_INFO_NOWAIT)
     t = Timer()
-    result = HTTPGet(VERSIONCHECK_URL)
-    Wait 100 - Int(Abs(Timer() - t))
+    result = HTTPGet(UPDATE_URL + "?version")
+    Wait 400 - Int(Abs(Timer() - t))
     If result = 200 Then
         HTTPLoadContent()
         ret$ = ""
@@ -487,15 +487,16 @@ Function CheckUpdates()
 EndFunction
 
 Function DoUpdate()
-    If gDirectServer = False Then
+    If gForceUpdate = False And gDirectServer = False Then
         DrawImage gImages(IMG_BACKGROUND), 0, 0
     EndIf
     MsgBox(GetText("doing_update"), "NetMatch", MSG_INFO_NOWAIT)
-    result = HTTPGet(AUTOUPDATER_URL)
+    result = HTTPGet(UPDATE_URL + "?list")
     If result = 200 Then
         //Ladataan listaus tiedostoista, jotta n‰hd‰‰n, mitk‰ ovat p‰ivittyneet
         HTTPLoadContent()
         t$ = ""
+        y = 0
         restart = False //Do we need to restart the game?
         For i = 1 To HTTP_ContentLength
             t = t + Chr(_Net_GetByte())
@@ -503,34 +504,44 @@ Function DoUpdate()
         For i = 1 To Int(CountWords(t,";")) - 1
             l$ = GetWord2(t,i,";")
             file$ = GetWord2(l,1,"|")
-            furl$ = GetWord2(l,3,"|")
+            filename$ = GetFileName(file)
+            furl$ = Replace(GetWord2(l,3,"|"),filename,URLEncode(filename))
             update=False
             If FileExists(file) Then
-                If Hex(Crc32(file))<>GetWord2(l,2,"|") Then //Do the hashes match? Do they NetMatch? Heh.
-                    If GetFileName(file) <> GetFileName(GetEXEName()) Then DeleteFile file //Poistetaan wanha tiedosto, jos se ei ole t‰m‰ exe, tuolloin batti hoitaa sen.
+                If Hex(Crc32(file)) <> GetWord2(l,2,"|") Then //Do the hashes match? Do they NetMatch? Heh.
+                    If filename <> GetFileName(GetEXEName()) Then DeleteFile file //Poistetaan wanha tiedosto, jos se ei ole t‰m‰ exe.
                     update = True
-                EndIf 
+                EndIf
             Else
+                If IsDirectory(GetDirectoryPath(file))=False Then MakeDirs(GetDirectoryPath(file)) //Luodaan sille kansiot, jos ne uupuvat
                 update = True //Myˆskin ladataan tiedosto jos sit‰ ei meill‰ ole.
             EndIf
             If update = True Then //Ladataan uusi tiedosto
-                Print "Updating " + furl + "..."
+                txt$ = ">>> " + filename + "... "
+                Text 10, 10 + y, txt: DrawScreen OFF
                 If HTTPGet(furl) = 200 Then
-                    If GetFileName(file) <> GetFileName(GetEXEName()) Then
+                    Text 10 + TextWidth(txt), 10 + y, "Ok!": DrawScreen OFF
+                    If filename <> GetFileName(GetEXEName()) Then
                         HTTPSaveContent(file)
-                    Else //Itse pelin exe ja seh‰n on k‰ynniss‰! Pit‰‰p‰ v‰h‰n h‰ksi‰. :o
+                    Else //Itse pelin exe ja seh‰n on k‰ynniss‰!
                         HTTPSaveContent(file + ".updated")
                         restart = True //Peli t‰ytyy tietenkin k‰ynnist‰‰ uudestaan, kunhan p‰ivitys on valmis.
                     EndIf
                 Else
+                    Text 10 + TextWidth(txt), 10 + y, "Err!": DrawScreen OFF
+                    Wait 1500
                     Error(GetText("update_failed"))
                     End
                 EndIf
+                y = y + 20
             EndIf
         Next i
-        If restart = True Then
-            Execute "UpdateNetMatch.bat"
-            End        
+        Text 10, 10 + y, GetText("update_restart"): DrawScreen OFF
+        Wait 400
+        If restart = True Or gForceUpdate = True Then
+            e$ = GetFileName(GetEXEName())
+            Execute "CMD /C ECHO "+GetText("update_restart")+" & PING 1.1.1.1 -n 1 -w 1500 >NUL & IF EXIST "+e+".updated DEL "+e+" & RENAME "+e+".updated "+e+" & START "+e
+            End
         EndIf
     Else
         Error(GetText("update_failed"))

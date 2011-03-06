@@ -676,7 +676,7 @@ Function ParseCommand$( _command$, _playerId )
                 ret$ = "Correct syntax is /bot <action>"
             Else
                 If action$ = "limit" Then
-                    newBotLimit=Min(Int(GetWord2(params$,2)), MAX_PLAYERS)
+					newBotLimit = Min(Int(GetWord2(params$,2)), MAX_PLAYERS)
                     SetBotLimit(newBotLimit)
                     ret$ = "Bot limit set t"+"o "+newBotLimit
                 ElseIf action$ = "freeze" Then
@@ -706,5 +706,7 @@ EndFunction
 
 Function SetBotLimit(newBotLimit)
     gMapMaxBots   = newBotLimit
-    gMapBotDelete = newBotLimit
+    gMapBotDelete = Min(newBotLimit, gMapMaxPlayers-1)
+	CheckBots()
+	CalcPlayers()
 End Function

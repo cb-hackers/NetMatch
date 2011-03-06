@@ -105,3 +105,4 @@ player_kicked = %1 was kicked out. (Reason: %2)
 default_kickreason = No reason.
 server_closing = Server is shutting down.
 server_timeout = Server timed out!
+update_restart = Restarting NetMatch

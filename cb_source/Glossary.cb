@@ -22,62 +22,76 @@ gLanguages = ""
 // Luetaan sanasto tiedostosta
 //--------------------------------------------------------------------------------
 
-If IsDirectory("glossary")=0 Then MakeError "Couldn't find the glossary!"
-ChDir "glossary"
-
-// K‰yd‰‰n l‰pi kaikki tiedostot kansiossa
-StartSearch
-    Repeat
-        file$ = FindFile()
-        If file$ = "" Then Exit // Kaikki k‰yty l‰pi
-        
-        If Right( file$, 4 ) = ".gls" Then
-            lang$ = Left( file$, Len( file$ ) - 4 )
-
-            If lang$ <> "" Then
-                If gLanguages <> "" Then gLanguages = gLanguages + " "
-                gLanguages = gLanguages + Upper( lang )
+If IsDirectory("glossary") = False Then
+    gForceUpdate = True
+Else
+    ChDir "glossary"
+    // K‰yd‰‰n l‰pi kaikki tiedostot kansiossa
+    StartSearch
+        Repeat
+            file$ = FindFile()
+            If file$ = "" Then
+                Exit // Kaikki k‰yty l‰pi
             EndIf
-
-            f=OpenToRead(file$)
-                While Not EOF(f)
-                    row$ = GetWord2( ReadLine(f), 1, "#" )
-                    key$ = Trim(GetWord2( row$, 1, "=" ))
-                    label$ = Trim(Mid( row$, InStr( row$, "=" )+1 ))
-                    
-                    // Lis‰t‰‰n kokoelmaan
-                    If key <> "" And lang <> "" And label <> "" Then
-                        gls.GLOSSARY = New(GLOSSARY)
-                        gls\key = key
-                        gls\lang = lang
-                        gls\label = label
-                    EndIf
-                Wend
-            CloseFile f
-        EndIf
-        
-    Forever
-EndSearch
-
-ChDir ".."
-
-// Tarkistetaan viel‰ ett‰ ainakin yksi kieli on olemassa
-If gLanguages = "" Then MakeError "No glossary found!"
+            
+            If Right( file$, 4 ) = ".gls" Then
+                lang$ = Left( file$, Len( file$ ) - 4 )
+    
+                If lang$ <> "" Then
+                    If gLanguages <> "" Then gLanguages = gLanguages + " "
+                    gLanguages = gLanguages + Upper( lang )
+                EndIf
+    
+                f=OpenToRead(file$)
+                    While Not EOF(f)
+                        row$ = GetWord2( ReadLine(f), 1, "#" )
+                        key$ = Trim(GetWord2( row$, 1, "=" ))
+                        label$ = Trim(Mid( row$, InStr( row$, "=" )+1 ))
+                        
+                        // Lis‰t‰‰n kokoelmaan
+                        If key <> "" And lang <> "" And label <> "" Then
+                            gls.GLOSSARY = New(GLOSSARY)
+                            gls\key = key
+                            gls\lang = lang
+                            gls\label = label
+                        EndIf
+                    Wend
+                CloseFile f
+            EndIf 
+        Forever
+    EndSearch
+    ChDir ".."
+    // Tarkistetaan viel‰ ett‰ ainakin yksi kieli on olemassa
+    If gLanguages = "" Then MakeError "No glossary found!"
+EndIf
 
 // Valittu kieli
 Global gLanguage$
 // Oletuksena englanti. Jos englantia ei ole, valitaan ensimm‰inen
-If InStr( gLanguages, "EN" ) Then gLanguage = "EN" Else gLanguage = GetWord2( gLanguages, 1 )
+If InStr( gLanguages, "EN" ) Then
+    gLanguage = "EN"
+Else
+    gLanguage = GetWord2( gLanguages, 1 )
+EndIf
 
 //================================================================================
 // Palautetaan kielikoodin mukainen sana
 //================================================================================
 Function GetText$(_key$, _lang$ = "")
     _lang = Upper(_lang)
-    If _lang = "" Then _lang = gLanguage
+    If _lang = "" Then
+        _lang = gLanguage
+    EndIf
     For gls.GLOSSARY = Each GLOSSARY
-        If Upper(gls\key) = Upper(_key) And Upper(gls\lang) = Upper(_lang) Then Return gls\label
+        If Upper(gls\key) = Upper(_key) And Upper(gls\lang) = Upper(_lang) Then
+            Return gls\label
+        EndIf
     Next gls
+    If gForceUpdate = True Then //Jos glossaryja ei lˆydy, niin pakotetaan p‰ivitys, jolloin k‰ytet‰‰n n‰it‰.
+        If _key = "update_failed"  Then Return "Update failed!"
+        If _key = "update_restart" Then Return "Restarting NetMatch"
+        If _key = "doing_update"   Then Return "Updating NetMatch..."
+    EndIf
     Return ""
 EndFunction
 

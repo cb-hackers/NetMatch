@@ -1,2 +1,10 @@
 # Käytetään UTF-8 standardia merkistössä, joka näytetään selaimessa.
 AddDefaultCharset UTF-8
+
+# Siirretään kaikki pyynnöt /cbee/ kansiosta /reg/ kansioon
+Options +FollowSymlinks
+RewriteEngine On
+RewriteBase /
+RewriteRule cbee/download/version.txt$ updater/updater.php?version [L]
+RewriteRule reg/download/version.txt$ updater/updater.php?version [L]
+RewriteRule ^cbee/(.*)$ /reg/$1

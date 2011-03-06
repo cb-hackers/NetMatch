@@ -105,3 +105,4 @@ player_kicked = %1 potkaistiin palvelimelta. (Syy: %2)
 default_kickreason = Ei syyt‰.
 server_closing = Palvelin sulkeutuu.
 server_timeout = Yhteys palvelimeen on katkennut!
+update_restart = K‰ynnistet‰‰n NetMatchia
