@@ -9,8 +9,8 @@ if( !$html ) header( "Content-type: text\plain;" );
 define( "SCRIPT_DIR", "http://" . $_SERVER['SERVER_NAME'] . pathinfo( $_SERVER['REQUEST_URI'], PATHINFO_DIRNAME ) . "/" );
 define( "CRC_DELIMITER", "|" );
 define( "CRC_NEXTFILE", ";" );
-define( "NM_VERSION", "2.2" );
-define( "NM_REVISION", "c" );
+define( "NM_VERSION", "2.3" );
+define( "NM_REVISION", "" );
 define( "NM_PATCH", 0 );
 
 if( $versionOnly )
