@@ -10,7 +10,15 @@ gKickedOut = False
 
 // Syy potkimiseen.
 Global gKickReason$
-gKickReason$ = ""
+gKickReason = ""
+
+// Kuka potkaisi
+Global gKickerName$
+gKickerName = ""
+
+// Milloin viimeksi on saatu servulta dataa
+Global gReadDataTimestamp
+gReadDataTimestamp = 0
 
 //================================================================================
 // Liityt‰‰n peliin
@@ -22,6 +30,7 @@ Function JoinGame(_host$, _port)
     EndIf
     MsgBox(GetText("loading_game"))
     gCurrentPlayerId = 0
+    gReadDataTimestamp = 0
     // Alustetaan yhteys
     nRet = InitClient(_host, _port, 1000)
     If nRet <> 0 Then
@@ -471,11 +480,27 @@ Function ReadDataFromServer()
     
     // Lukemisessa tuli joku virhe
     If nRet <> 0 Then 
-        If nRet = 10060 Then Return True
+        If nRet = 10060 Then 
+            If gReadDataTimestamp > 0 And ( gReadDataTimestamp + MAX_INACTIVE_TIME ) < Timer() Then
+                Error( GetText("server_timeout") )
+                Return False // Timeout
+            Else
+                Return True
+            EndIf
+        EndIf
         msg$ = "(" + nRet + ") " + GetNetErrorString(nRet)
         Error(msg)
         Return False
     EndIf
+    
+    // Tullookos timeouttia siltikin
+    If gReadDataTimestamp > 0 And ( gReadDataTimestamp + MAX_INACTIVE_TIME ) < Timer() Then
+        Error( GetText("server_timeout") )
+        Return False // Timeout
+    EndIf
+    
+    // Dataa on tullut, p‰ivitet‰‰np‰s ping-tarkistus.
+    gReadDataTimestamp = Timer()
 
     // Piilotetaan kaikki pelaajat sill‰ myˆhemmin n‰ytet‰‰n vain ne joista saadaan tietoja.
     For plr.PLAYERS = Each PLAYERS
@@ -857,16 +882,19 @@ Function ReadDataFromServer()
         
         ElseIf netmsg = NET_KICKED Then
             // Joku pelaaja potkittiin palvelimelta
+            kickerId = _Net_GetByte()
             playerId = _Net_GetByte()
             reason$ = _Net_GetString()
             If reason$ = "" Then reason$ = GetText("default_kickreason")
             plr.PLAYERS  = ConvertToType(gPlayers(gCurrentPlayerId))
             player.PLAYERS = ConvertToType(gPlayers(playerId))
+            kicker.PLAYERS = ConvertToType(gPlayers(kickerId))
             If player\playerId = plr\playerId Then
                 // Minut potkittiin pihalle! :'(
-                gKickedOut = True
-                gKickReason = reason$
-                plr\active = False
+                gKickedOut   = True
+                gKickerName  = kicker\name
+                gKickReason  = reason$
+                plr\active   = False
                 plr\loggedin = False
                 Return False
             Else
@@ -874,6 +902,13 @@ Function ReadDataFromServer()
                 player\loggedin = False
                 AddClientMessage(Replace( Replace(GetText("player_kicked"), "%1", player\name), "%2", reason$), netmsg)
             EndIf
+            
+        ElseIf netmsg = NET_SERVERCLOSING Then
+            // Palvelin sammutetaan
+            MsgBox( GetText("server_closing") )
+            // Wait 1000
+            Return False
+        
         Else
             // Tuntematon viesti tai viestit loppui
             Exit

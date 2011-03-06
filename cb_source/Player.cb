@@ -110,6 +110,7 @@ Type PLAYERS
     Field admin         As Byte         // Onko pelaaja admin vai ei
     Field kicked        As Byte         // Onko pelaaja potkittu pois
     Field kickReason    As String       // Mikä syy on annettu potkuille
+    Field kickerId      As Byte         // Kuka potkaisi
 EndType
 
 //--------------------------------------------------------------------------------

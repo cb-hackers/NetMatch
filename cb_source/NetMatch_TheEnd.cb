@@ -3,16 +3,18 @@
 //
 // P‰‰ohjelma
 //********************************************************************************
-Global gFullScreen, gDirectServer, gDirectReg
+Global gFullScreen, gDirectServer, gDirectReg, gForceUpdate
 gFullScreen = False
 gDirectServer = False
 gDirectReg = False
+gForceUpdate = False
 
 cmdLine$ = CommandLine()
 For i = 1 To CountWords(cmdLine)
     If Upper(GetWord2(cmdLine, i)) = "-F" Then gFullScreen = True
     If Upper(GetWord2(cmdLine, i)) = "-P" Then gDirectServer = True
     If Upper(GetWord2(cmdLine, i)) = "-S" Then gDirectServer = True : gDirectReg = True
+    If Upper(GetWord2(cmdLine, i)) = "-U" Then gForceUpdate = True
 Next i
 If gDirectServer = True Then gFullScreen = False
 
@@ -24,8 +26,8 @@ Else
 EndIf
 SAFEEXIT OFF
 
-Const NM_VERSION$   = "2.2"
-Const NM_REVISION$  = "c"
+Const NM_VERSION$   = "2.3"
+Const NM_REVISION$  = ""
 Const NM_PATCH      = 0
 
 // T‰m‰ pit‰‰ AINA laitta 1, jos kyseess‰ ei ole virallinen julkaisu.

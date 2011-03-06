@@ -52,13 +52,15 @@ Print ""
 Print "Writing down to 'crc32output.txt'"
 
 writeStr$ = ""
+delimiter$ = ";"
+nextFile$ = Chr(13) + Chr(10)
 For F.FILELIST = Each FILELIST
     If F\isDir = False Then
         relativePath$ = Replace( F\filePath, gStartDir, "" )
         relativePath$ = Replace( relativePath$, "\", "/" )
         writeStr$ = writeStr$ + relativePath$
-        writeStr$ = writeStr$ + "|" + Hex( Crc32( F\filePath ) )
-        writeStr$ = writeStr$ + "|" + UPDATER_URL + relativePath$ + ";"
+        writeStr$ = writeStr$ + delimiter$ + Hex( Crc32( F\filePath ) )
+        writeStr$ = writeStr$ + delimiter$ + UPDATER_URL + relativePath$ + nextFile$
     EndIf
 Next F
 
@@ -94,13 +96,17 @@ Function SkipFile( file$ )
             Return True
         ElseIf file$ = "README.md" Then
             Return True
-        ElseIf file$ = "CBCompiler.exe" Then
+        ElseIf file$ = "CBCompiler-modded.exe" Then
             Return True
         ElseIf file$ = ".gitignore" Then
             Return True
         ElseIf file$ = "crc32creator.cb" Then
             Return True
         ElseIf file$ = "crc32creator.exe" Then
+            Return True
+        ElseIf file$ = "serverlog.txt"
+            Return True
+        ElseIf file$ = "updateNetMatch.dat"
             Return True
         ElseIf file$ = "crc32output.txt" Then
             Return True

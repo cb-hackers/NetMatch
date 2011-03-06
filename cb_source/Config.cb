@@ -48,7 +48,7 @@ Global gPeriodLength
 gPeriodLength = 5
 
 Global gControlMode
-gControlMode = 1
+gControlMode = 2
 
 Global gPlayMode, gConfigPlayMode
 gPlayMode = 1
