@@ -224,7 +224,7 @@ EndFunction
 
 //================================================================================
 //================================================================================
-Function URLEncode(url$)
+Function URLEncode$(url$)
     For i = 1 To Len(url$)
         char = Asc(Mid(url$, i, 1))
         If (char <= 47) Or (char >= 58 And char <= 64) Or (char >= 91 And char <= 96) Or (char >= 123) Then
