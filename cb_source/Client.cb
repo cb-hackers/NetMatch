@@ -656,7 +656,7 @@ Function ReadDataFromServer()
             player\active   = True
             player\kills    = 0
             player\deaths   = 0
-            player\zombie   = 0
+            player\zombie   = zombie
             player\admin    = 0
             player\statName = CheckPlayerName(player\name)
             AddClientMessage(Replace(GetText("player_login"), "%1", name), netmsg)
