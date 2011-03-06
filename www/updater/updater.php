@@ -1,12 +1,20 @@
 <?php
-$html = false;
-if( isset( $_GET['html'] ) )
-    $html = true;
-
+$html = true;
+if( isset( $_GET['list'] ) )
+    $html = false;
+$versionOnly = false;
+if( isset( $_GET['version'] ) )
+    $versionOnly = true;
 if( !$html ) header( "Content-type: text\plain;" );
 define( "SCRIPT_DIR", "http://" . $_SERVER['SERVER_NAME'] . pathinfo( $_SERVER['REQUEST_URI'], PATHINFO_DIRNAME ) . "/" );
 define( "CRC_DELIMITER", "|" );
 define( "CRC_NEXTFILE", ";" );
+define( "NM_VERSION", "2.2" );
+define( "NM_REVISION", "c" );
+define( "NM_PATCH", 0 );
+
+if( $versionOnly )
+    die( "NM:" . NM_VERSION . ":" . NM_REVISION . ":" . NM_PATCH );
 
 if( $html )
 {
@@ -23,8 +31,12 @@ if( $html )
 
 <body>
 <h1>NetMatch updater files</h1>
-<ol>
 <?php
+echo "<h2>Current version: v" . NM_VERSION . NM_REVISION;
+if( NM_PATCH > 0 )
+    echo ( NM_PATCH <= 9 ? "_0" : "_" ) . NM_PATCH;
+echo "</h2>";
+echo "\n<ol>";
 }
 
 gohash();
