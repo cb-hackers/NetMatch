@@ -170,7 +170,7 @@ Function GetDirectoryPath( _filePath$ )
     
     searchParam$ = Replace( _filePath$, "/", "\" )
     dirTmp = Len( GetEXEName() ) - 1
-    While InStr( _filePath$, "\", dirTmp ) = 0
+    While InStr( searchParam$, "\", dirTmp ) = 0
         dirTmp = dirTmp - 1
         If dirTmp < 1 Then Exit
     Wend 
