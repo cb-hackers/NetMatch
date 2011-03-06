@@ -6,6 +6,7 @@
 
 Global gSpeedHackTimer
 gSpeedHackTimer = Timer()
+Global gBotFreeze As Byte
 
 //================================================================================
 // Luodaan palvelin.
@@ -812,6 +813,35 @@ Function ParseCommand$( _command$, _playerId )
         Else
             ret$ = "You're not an admin!"
         EndIf
+    ElseIf check$ = "bot" Then
+        If player\admin = True Then
+            action$ = GetWord2( params$, 1 )
+            If Len( Trim( action$ ) )=0 Then
+                ret$ = "Correct syntax is /bot <action>"
+            Else
+                If action$ = "limit" Then
+                    newBotLimit=Min(Int(GetWord2(params$,2)), MAX_PLAYERS)
+                    SetBotLimit(newBotLimit)
+                    ret$ = "Bot limit set t"+"o "+newBotLimit
+                ElseIf action$ = "freeze" Then
+                    freeze$ = Trim(GetWord2(params$, 2))
+                    If Len(freeze$)=0 Or freeze$=action$ Then
+                        gBotFreeze = Not gBotFreeze
+                    Else
+                        gBotFreeze = (freeze<>0)
+                    EndIf
+                    If gBotFreeze Then
+                        ret$ = "All bots freezed"
+                    Else
+                        ret$ = "All bots released"
+                    EndIf
+                Else
+                    ret$ = "Unknown bot action '" + action$ + "'"
+                EndIf
+            EndIf
+        Else
+            ret$ = "You're not an admin!"
+        EndIf
     EndIf
     
     WriteLog( player\name + " - " + ret + " [" + _command + "]")
@@ -838,3 +868,8 @@ Function SetTeam( _playerId, _team )
     EndIf
     Return False
 EndFunction
+
+Function SetBotLimit(newBotLimit)
+    gMapMaxBots   = newBotLimit
+    gMapBotDelete = newBotLimit
+End Function
