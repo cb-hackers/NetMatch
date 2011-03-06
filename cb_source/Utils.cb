@@ -175,7 +175,7 @@ Function GetDirectoryPath( _filePath$ )
         If dirTmp < 1 Then Exit
     Wend 
     
-    If dirTmp < 1 Then Return _filePath$
+    If dirTmp < 1 Then Return ""
     
     ret$ = Left( searchParam$, dirTmp )
     
