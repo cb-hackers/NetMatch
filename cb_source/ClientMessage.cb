@@ -43,90 +43,90 @@ gMessageDelay(2) = 1
 Function DrawClientMessages()
     SetFont gFonts(FNT_MSG)
     th = TextHeight("x")
-For m = 1 To 2
-    top = 100
-    If m = 2 Then top = 300
-    y = top
-    lastY = y
-    i = 1
-    lift = 0
-    msgCount# = 0
-    For msg.CLIENT_MESSAGES = Each CLIENT_MESSAGES
-        If (m = 1 And msg\msgType = NET_TEXTMESSAGE) Or (m = 2 And msg\msgType <> NET_TEXTMESSAGE) Then
-        msgCount = msgCount + 1
-        If msg\y = 0 Then 
-            msg\y = lastY
-        EndIf
-        lastY = msg\y + th
-        delay = 2000
-        If i = 1 Then 
-            If msg\y > top Then 
-                lift = 1
-            EndIf
-            If msg\msgType = NET_TEXTMESSAGE Then
-                delay = Max(20, Min( 5, Len(msg\message) + Len(msg\from) )) * 200
-            EndIf
-        Else
-            msg\timeStamp = Timer()
-        EndIf
-        If msg\msgType = NET_SERVERMSG Then
-            delay = 5000
-        EndIf
-        delay = delay * gMessageDelay(m)
-        msg\y = msg\y - lift
-        Color 255, 255, 0
-        If msg\msgType = NET_LOGIN Then Color 0, 255, 0
-        If msg\msgType = NET_LOGOUT Then Color 255, 0, 0
-        If msg\timeStamp + delay < Timer() And msg\y <= top Then 
-            Delete msg
-        Else
-            If msg\msgType = NET_TEXTMESSAGE Then
-                If msgCount <= 13 Then
-                    SetFont gFonts(FNT_MSGBOLD)
-                    from$ = msg\from + ": "
-                    Text 10, msg\y, from
-                    w = TextWidth(from)
-                    SetFont gFonts(FNT_MSG)
-                    Text 10 + w, msg\y, msg\message
+    For m = 1 To 2
+        top = 100
+        If m = 2 Then top = 300
+        y = top
+        lastY = y
+        i = 1
+        lift = 0
+        msgCount# = 0
+        For msg.CLIENT_MESSAGES = Each CLIENT_MESSAGES
+            If (m = 1 And msg\msgType = NET_TEXTMESSAGE) Or (m = 2 And msg\msgType <> NET_TEXTMESSAGE) Then
+                msgCount = msgCount + 1
+                If msg\y = 0 Then 
+                    msg\y = lastY
                 EndIf
-            ElseIf msg\msgType = NET_SERVERMSG Then
-                SetFont gFonts(FNT_MSGBOLD)
-                Color 0, 0, 255
-                Text 10, msg\y, "[Server] "
-                w = TextWidth("[Server] ")
-                SetFont gFonts(FNT_MSG)
-                Color 255, 255, 0
-                Text 10 + w, msg\y, msg\message
-            ElseIf msg\msgType = NET_KILLMESSAGE Then
-                If gPlayMode > DM Then
-                    If msg\team1 = 2 Then
-                        Color 255, 0, 0                    
-                    Else
-                        Color 0, 255, 0
+                lastY = msg\y + th
+                delay = 2000
+                If i = 1 Then 
+                    If msg\y > top Then 
+                        lift = 1
+                    EndIf
+                    If msg\msgType = NET_TEXTMESSAGE Then
+                        delay = Max(5, Min(32, Len(msg\message))) * 200
                     EndIf
                 Else
-                    Color 255, 255, 0
+                    msg\timeStamp = Timer()
                 EndIf
-                x = 10
-                Text x, msg\y, msg\name1
-                x = x + TextWidth(msg\name1 + " ")
-                DrawImage gImages(msg\img), x, msg\y + (th - 10) / 2
-                x = x + ImageWidth(gImages(msg\img)) + TextWidth(" ")
-                If msg\team2 = 1 And gPlayMode = TDM Then
-                    Color 0, 255, 0
+                If msg\msgType = NET_SERVERMSG Then
+                    delay = 5000
+                EndIf
+                delay = delay * gMessageDelay(m)
+                msg\y = msg\y - lift
+                Color 255, 255, 0
+                If msg\msgType = NET_LOGIN Then Color 0, 255, 0
+                If msg\msgType = NET_LOGOUT Then Color 255, 0, 0
+                If msg\timeStamp + delay < Timer() And msg\y <= top Then 
+                    Delete msg
                 Else
-                    Color 255, 0, 0
+                    If msg\msgType = NET_TEXTMESSAGE Then
+                        If msgCount <= 13 Then
+                            SetFont gFonts(FNT_MSGBOLD)
+                            from$ = msg\from + ": "
+                            Text 10, msg\y, from
+                            w = TextWidth(from)
+                            SetFont gFonts(FNT_MSG)
+                            Text 10 + w, msg\y, msg\message
+                        EndIf
+                    ElseIf msg\msgType = NET_SERVERMSG Then
+                        SetFont gFonts(FNT_MSGBOLD)
+                        Color 0, 0, 255
+                        Text 10, msg\y, "[Server] "
+                        w = TextWidth("[Server] ")
+                        SetFont gFonts(FNT_MSG)
+                        Color 255, 255, 0
+                        Text 10 + w, msg\y, msg\message
+                    ElseIf msg\msgType = NET_KILLMESSAGE Then
+                        If gPlayMode > DM Then
+                            If msg\team1 = 2 Then
+                                Color 255, 0, 0                    
+                            Else
+                                Color 0, 255, 0
+                            EndIf
+                        Else
+                            Color 255, 255, 0
+                        EndIf
+                        x = 10
+                        Text x, msg\y, msg\name1
+                        x = x + TextWidth(msg\name1 + " ")
+                        DrawImage gImages(msg\img), x, msg\y + (th - 10) / 2
+                        x = x + ImageWidth(gImages(msg\img)) + TextWidth(" ")
+                        If msg\team2 = 1 And gPlayMode = TDM Then
+                            Color 0, 255, 0
+                        Else
+                            Color 255, 0, 0
+                        EndIf
+                        Text x, msg\y, msg\name2
+                    Else
+                        Text 10, msg\y, msg\message
+                    EndIf
+                    y = y + th
                 EndIf
-                Text x, msg\y, msg\name2
-            Else
-                Text 10, msg\y, msg\message
+                i + 1
             EndIf
-            y = y + th
-        EndIf
-        i + 1
-        EndIf
-    Next msg
-    gMessageDelay(m) = 1.0 - Min(1.0, msgCount / 20.0)
-    if m = 2 Then gMessageDelay(m) = 1.0 - Min(1.0, msgCount / 15.0)
-Next m
+        Next msg
+        gMessageDelay(m) = 1.0 - Min(1.0, msgCount / 20.0)
+        if m = 2 Then gMessageDelay(m) = 1.0 - Min(1.0, msgCount / 15.0)
+    Next m
 EndFunction
