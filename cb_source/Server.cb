@@ -323,12 +323,15 @@ Function ReadDataFromClient()
         Return True
     EndIf
     
+    // Lasketaan pelaajan ja serverin v‰linen lagi
+    player\lag = ( Timer() - player\lastActivity )
     // P‰ivitet‰‰n pelaajan olemassaolo
     player\lastActivity = Timer()
     sendNames = False
     txtMessage$ = ""
     
     // Luetaan saapuneita viestej‰
+
     While True
         If netmsg = NET_PLAYER Then
         
@@ -353,9 +356,9 @@ Function ReadDataFromClient()
 
                 // Tarkistetaan pelaajan nopeus per sekunti
                 If Timer()-gSpeedHackTimer=>1000 And player\zombie = False Then
-                    'trueMaxSpeed# = 305.0 * ( Timer() - player\lastActivity + 1000 ) / 1000.0
-                    'print trueMaxSpeed + "<?>" + Distance(player\x, player\y, player\hackTestX, player\hackTestY)
-                    If player\spawnTime < Timer()+1000 And Distance(player\x, player\y, player\hackTestX, player\hackTestY)>305 And player\LoggedIn = True Then
+                    // Lasketaan pelaajan todellinen maksimi nopeus jolla saa liikkua
+                    trueMaxSpeed# = 332.0 * ( player\lag + 1000 ) / 1000.0 
+                    If player\spawnTime < Timer()+1000 And Distance(player\x, player\y, player\hackTestX, player\hackTestY)>trueMaxSpeed And player\LoggedIn = True Then
                          nmsg.NET_MESSAGES = New(NET_MESSAGES)
                          nmsg\toPlayer   = player\playerId  // Kenelle viesti l‰hetet‰‰n
                          nmsg\msgType    = NET_SPEEDHACK   // Mik‰ viesti
