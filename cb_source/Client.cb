@@ -899,7 +899,9 @@ Function ReadDataFromServer()
 
                 gServerMap = mapName
             EndIf
-        
+        ElseIf  netmsg = NET_SPEEDHACK Then 
+            Error(GetText("speedhack"))
+            Return False
         ElseIf netmsg = NET_KICKED Then
             // Joku pelaaja potkittiin palvelimelta
             kickerId = _Net_GetByte()

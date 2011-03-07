@@ -4,6 +4,8 @@
 // Palvelimen toiminnot
 //********************************************************************************
 
+Global gSpeedHackTimer
+gSpeedHackTimer = Timer()
 
 //================================================================================
 // Luodaan palvelin.
@@ -592,6 +594,10 @@ Function ReadDataFromClient()
                 _Net_PutByte(nmsg\playerId)     // Pelaaja
                 plr.PLAYERS = ConvertToType(gPlayers(nmsg\playerId))
                 _Net_PutByte(plr\team)          // Joukkue
+            EndIf
+            If nmsg\msgType = NET_SPEEDHACK Then 
+                _Net_PutByte(nmsg\msgType)
+                Login( False, gCurrentPlayerId )
             EndIf
             Delete nmsg
         EndIf

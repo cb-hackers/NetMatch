@@ -106,3 +106,7 @@ default_kickreason = Ei syytä.
 server_closing = Palvelin sulkeutuu.
 server_timeout = Yhteys palvelimeen on katkennut!
 update_restart = Käynnistetään NetMatchia
+speedhack = Nopeushuijari!
+map_not_in_server = Karttaa %1 ei löydetty serveriltä
+map_download = Ladataan karttaa %1...
+map_download_failed = Kartan lataus epäonnistui!

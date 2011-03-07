@@ -41,19 +41,18 @@ End Function
 // @author Jare
 //================================================================================
 Function GetWord2$(stri$, index, separator$ = " ")
-    countWord = 1
-    wordBegin = 1
-    pos       = 0
-    word$     = ""
+    count_word    = 1
+    word_begin    = 1
+    pos            = 0
     Repeat
-        pos       = InStr(stri$, separator, pos + 1)
-        word$     = Mid(stri$, wordBegin, pos - wordBegin)
-        wordBegin = pos + 1
-        If index = countWord Then Return word$
-        countWord = countWord + 1
+        pos            = InStr(stri, separator, pos+1)
+        word$        = Mid(stri, word_begin, pos-word_begin)
+        word_begin    = pos+1
+        If index = count_word Then Return word
+        count_word + 1
     Until pos = False
-    word$ = Mid(stri$, wordBegin, pos - wordBegin)
-    If index = countWord Then Return word$ Else Return ""
+    word = Mid(stri, word_begin, pos-word_begin)
+    If index = count_word Then Return word Else Return ""
 EndFunction
 
 //================================================================================

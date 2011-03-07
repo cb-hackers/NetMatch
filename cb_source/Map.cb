@@ -102,7 +102,7 @@ While True
             mapAuthors = mapAuthors + Replace(author, "|", ";")
             gMapCount + 1
         Else
-            If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
+            DrawImage gImages(IMG_BACKGROUND), 0, 0
             Error(GetText("incorrect_map") + " (" + file + ")")
         EndIf
         If mVersionData <> 0 Then
@@ -231,8 +231,9 @@ Function LoadGameMap(_mapName$, _loopNum = 0)
         If Lower(gMapNames(i, 1)) = Lower(_mapName) Then found = True
     Next i
     If found = False Then
-        Error(Replace(GetText("map_not_found"), "%1", _mapName))
-        Return False
+        // Ladataan kartta serveriltä
+        If DownloadMap(_mapName) = False Then Error(getText("map_download_failed"))
+        Return False         
     EndIf
     If gGameMode = CLIENT Then
         If gFloor <> 0 Then

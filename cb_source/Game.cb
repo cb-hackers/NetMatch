@@ -42,6 +42,7 @@ Global gDirection#, gDistance#
 //================================================================================
 // Pelitilanteen p‰ivitys
 //================================================================================
+
 Function GameUpdate()
     UpdateFrameTimer() // P‰ivitet‰‰n vakionopeusajastin
 
@@ -54,7 +55,7 @@ Function GameUpdate()
     EndIf
     
     mapChanged = False
-    
+
     If gGameMode = SERVER Then
         // Jos peliss‰ on vain botteja niin kello ei k‰y
         If gPlayerCount <= gBotCount And gPeriodLength > 0 Then
@@ -143,7 +144,7 @@ Function GameUpdate()
     lBotCount = 0
     lPlayerNames$ = ""
     For player.PLAYERS = Each PLAYERS
-    
+
         ratio# = Float(player\kills) * 100.0
         If player\deaths > 0 Then
             ratio = Int(Float(player\kills) / Float(player\deaths) * 100.0)
@@ -225,6 +226,7 @@ Function GameUpdate()
                         // Palautetaan viimeiseen paikkaa jossa oli.
                         PositionObject player\obj, player\lastValidX, player\lastValidY
                     EndIf
+
                 EndIf
 //COM1                If gPlayerCount <> gLastPlayerCount Then
 //COM1                    SetWindow "NetMatch " + gGSSVersion + " Client - " + gPlayerCount + " players online"
@@ -267,7 +269,7 @@ Function GameUpdate()
 
                 
                 If player\zombie = True Then player\hasAmmos = True
-                
+
                 // Onko pelaaja kuollut
                 If player\health <= 0 Then 
                     // Jos kuolemasta on kulunut tarpeeksi aikaa niin her‰tet‰‰n
@@ -308,7 +310,9 @@ Function GameUpdate()
                         player\outOfMap = 0
                     EndIf
                 EndIf
-                
+
+
+
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // BOTTIEN TEKOƒLY >>>
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -789,7 +793,7 @@ Function Login(_in, _playerId = 0)
                     player\kicked   = False
                     player\kickReason = ""
                     UpdatePlayerProt(player\playerId)
-                    
+               
                     // L‰hetet‰‰n vastaus clientille
                     _Net_InitMemBlock()
                     _Net_PutByte(NET_LOGIN)
@@ -831,6 +835,7 @@ Function Login(_in, _playerId = 0)
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // SERVER LOGOUT >>>
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 
             player.PLAYERS  = ConvertToType(gPlayers(_playerId))
             player\active   = False
 //COM1            If player\loggedIn = True Then gPlayerCount - 1
