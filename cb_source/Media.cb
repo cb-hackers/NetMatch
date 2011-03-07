@@ -5,7 +5,6 @@
 //********************************************************************************
 
 Const RESOURCE_ARCHIVE$ = "NetMatch.dat"
-Const UPDATE_URL$ = "http://netmatch.vesq.org/updater/updater.php"
 
 Global gLoadedItems#
 gLoadedItems = 0
@@ -449,7 +448,7 @@ Function CheckUpdates()
     EndIf
     MsgBox(GetText("update_check"), "NetMatch", MSG_INFO_NOWAIT)
     t = Timer()
-    result = HTTPGet(UPDATE_URL + "?version")
+    result = HTTPGet(gUpdateUrl + "?version")
     Wait 400 - Int(Abs(Timer() - t))
     If result = 200 Then
         HTTPLoadContent()
@@ -491,7 +490,7 @@ Function DoUpdate()
         DrawImage gImages(IMG_BACKGROUND), 0, 0
     EndIf
     MsgBox(GetText("doing_update"), "NetMatch", MSG_INFO_NOWAIT)
-    result = HTTPGet(UPDATE_URL + "?list")
+    result = HTTPGet(gUpdateUrl + "?list")
     If result = 200 Then
         //Ladataan listaus tiedostoista, jotta n‰hd‰‰n, mitk‰ ovat p‰ivittyneet
         HTTPLoadContent()
