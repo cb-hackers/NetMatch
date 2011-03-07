@@ -222,7 +222,7 @@ Function ServerLoop()
         ReadDataFromClient()    // Luetaan clientin l‰hett‰m‰‰ dataa
         UpdateGame
         If KeyHit(cbKeyF5) Then ReadBanList()
-        If KeyHit(cbKeyF8) Then
+        If KeyHit(cbKeyF8) And gPlayMode > DM Then
             For player.PLAYERS = Each PLAYERS
                 If player\active = True Then
                     newTeam = Rand(1,2)
@@ -669,12 +669,54 @@ Function ParseCommand$( _command$, _playerId )
                             KickPlayer( plr\playerId, _playerId, kickReason$ )
                             kicked = True
                             ret$ = "Kicked player " + plr\name + " with reason " + kickReason
+                            Exit
                         Else
+                            kicked = True // Ett‰ saadaan oikea virheviesti
                             ret$ = "You can't kick a bot"
+                            Exit
                         EndIf
                     EndIf
                 Next plr
                 If Not kicked Then ret$ = "Couldn't find player " + playerName$
+            EndIf
+        Else
+            ret$ = "You're not an admin"
+        EndIf
+    ElseIf check$ = "team" Then
+        If player\admin = True Then
+            If gPlayMode > DM Then
+                playerName$ = GetWord2( params$, 1 )
+                If Len( Trim( playerName$ ) )=0 Then
+                    ret$ = "You didn't in"+"put a name! Use /team <name> <Gr"+"een|R"+"ed|1|2>"
+                Else
+                    toTeam = 0
+                    toTeamCheck$ = Upper( GetWord2( params$, 2 ) )
+                    If toTeamCheck$ = "GREEN" Or toTeamCheck$ = "1" Then
+                        toTeam = 1
+                    ElseIf toTeamCheck$ = "RED" Or toTeamCheck$ = "2" Then
+                        toTeam = 2
+                    EndIf
+                    
+                    nameCheck$ = Lower( playerName$ )
+                    If toTeam > 0 Then
+                        // Joukkuetta haluttiin vaihtaa, etsit‰‰n pelaaja kokoelmasta.
+                        For plr.PLAYERS = Each PLAYERS
+                            If plr\active = True And Lower( plr\name ) = nameCheck$ Then
+                                switched = SetTeam( plr\playerId, toTeam )
+                                Exit
+                            EndIf
+                        Next plr
+                        If switched Then
+                            ret$ = "Switched player " + playerName$ + " to team " + toTeam
+                        Else
+                            ret$ = "Failed to switch player " + playerName$ + " to team " + toTeam
+                        EndIf
+                    Else
+                        ret$ = "Wrong team ID! Use /team <name> <Gr"+"een|R"+"ed|1|2>"
+                    EndIf
+                EndIf
+            Else
+                ret$ = "This gamemode has no teams!"
             EndIf
         Else
             ret$ = "You're not an admin"
