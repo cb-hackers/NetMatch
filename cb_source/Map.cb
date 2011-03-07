@@ -177,7 +177,6 @@ gTileH  = 48
 // Lis‰t‰‰n/siirret‰‰n objekti satunnaiseen kohtaan kartalle
 //================================================================================
 Function SpawnObject(_obj)
-Debug("SpawnObject BEGIN")
     tileWh = gTileW / 2
     tileHh = gTileH / 2
     While True
@@ -193,7 +192,6 @@ Debug("SpawnObject BEGIN")
             Exit
          EndIf
     Wend
-Debug("SpawnObject END")
 EndFunction
 
 

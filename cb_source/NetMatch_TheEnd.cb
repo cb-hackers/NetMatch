@@ -27,7 +27,7 @@ EndIf
 SAFEEXIT OFF
 
 Const NM_VERSION$   = "2.3"
-Const NM_REVISION$  = ""
+Const NM_REVISION$  = "a"
 Const NM_PATCH      = 0
 
 // T‰m‰ pit‰‰ AINA laitta 1, jos kyseess‰ ei ole virallinen julkaisu.

@@ -236,15 +236,16 @@ Function GameUpdate()
                 // Onko se eri kuin valittu ase
                 If currentWeapon <> player\weapon Then
                     ObjectInteger player\obj, player\weapon
-                    weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER))
-                    If player\team = 2 Then weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER2))
+                    If player\team = 2 Then 
+                        weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER2))
+                    Else
+                        weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER))
+                    EndIf
                     PaintObject player\obj, weaponObj
                     ObjectRange player\obj, OBJECT_RANGE
                     fireObj = gObjects(aWeapon(player\weapon, WPNF_FIRE))
                     PaintObject player\fireObj, fireObj
-                    ShowObject player\fireObj, OFF
                     PaintObject player\fireObj2, fireObj
-                    ShowObject player\fireObj2, OFF
                 EndIf
                 ShowObject player\fireObj, OFF
                 ShowObject player\fireObj2, OFF
