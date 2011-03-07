@@ -102,7 +102,7 @@ Type PLAYERS
     Field idleSound     As Integer      // Esim. moottorisahan tyhjäkäynti
     Field idleTimer     As Integer      // Koska soitettu viimeksi
     Field hasAmmos      As Integer      // Onko pelaajalla ammuksia nykyisessä aseessa
-    Field team          As Integer      // Joukkue
+    Field team          As Byte         // Joukkue
     Field mapName       As String       // Pelaajalla ladattuna oleva kartta
     Field outOfMap      As Integer      // Kuinka monta päivityskierrosta pelaaja on ollut poissa kartalta
     Field spawnTime     As Integer      // Syntymäaika

@@ -4,22 +4,6 @@
 // Clienttiin liittyv‰t toiminnot
 //********************************************************************************
 
-// Ollaanko minut potkittu palvelimelta.
-Global gKickedOut
-gKickedOut = False
-
-// Syy potkimiseen.
-Global gKickReason$
-gKickReason = ""
-
-// Kuka potkaisi
-Global gKickerName$
-gKickerName = ""
-
-// Milloin viimeksi on saatu servulta dataa
-Global gReadDataTimestamp
-gReadDataTimestamp = 0
-
 //================================================================================
 // Liityt‰‰n peliin
 //================================================================================
@@ -30,7 +14,6 @@ Function JoinGame(_host$, _port)
     EndIf
     MsgBox(GetText("loading_game"))
     gCurrentPlayerId = 0
-    gReadDataTimestamp = 0
     // Alustetaan yhteys
     nRet = InitClient(_host, _port, 1000)
     If nRet <> 0 Then
@@ -182,6 +165,18 @@ Global gConsoleMessage$, gConsoleText$, gConsoleMode
 Global gBbs, gBbsCount, gBbsTimer
 Global gShowFloor
 
+// Ollaanko minut potkittu palvelimelta.
+Global gKickedOut
+
+// Syy potkimiseen.
+Global gKickReason$
+
+// Kuka potkaisi
+Global gKickerName$
+
+// Milloin viimeksi on saatu servulta dataa
+Global gReadDataTimestamp
+
 //================================================================================
 // Clientin p‰‰silmukka
 //================================================================================
@@ -208,7 +203,8 @@ Function ClientLoop()
     gBbsTimer           = Timer()
     gKickedOut          = False
     gKickReason         = ""
-    //bEsc                = False
+    gKickerName         = ""
+    gReadDataTimestamp  = 0
     ClearKeys2()
     gShowFloor          = True
 
@@ -551,7 +547,7 @@ Function ReadDataFromServer()
             If player\health > 128 Then player\health = player\health - 256
             player\kills    = _Net_GetShort()  // Tapot
             player\deaths   = _Net_GetShort()  // Kuolemat
-            player\team     = _Net_GetByte()    // Joukkue
+            team            = _Net_GetByte()    // Joukkue
             player\spawnTime= _Net_GetByte()    // Haavoittumaton
             newPlayer       = Not player\loggedIn
             player\loggedIn = True
@@ -631,6 +627,18 @@ Function ReadDataFromServer()
                     Next plr
                 EndIf
             EndIf
+            
+            // Onko joukkue vaihtunut sitten viime kerran
+            If team <> player\team Then
+                // Debug("Teams differ in NET_PLAYER ( " + player\name + " - " + team + " <> " + player\team + ")" )
+                player\team = team
+                If player\team = 2 Then 
+                    weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER2))
+                Else
+                    weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER))
+                EndIf
+                PaintObject player\obj, weaponObj
+            EndIf
             player\passCount = 0
         
         ElseIf netmsg = NET_PLAYERNAME Then 
@@ -640,9 +648,21 @@ Function ReadDataFromServer()
             player.PLAYERS  = ConvertToType(gPlayers(playerId))
             player\name     = _Net_GetString()  // Nimi
             player\zombie   = _Net_GetByte()    // Onko botti
+            team            = _Net_GetByte()    // Mik‰ joukkue
             player\active   = True
             // Listalla n‰ytett‰v‰ nimi
             player\statName = CheckPlayerName(player\name)
+            // Jos joukkue on eri kuin muistissa jo valmiiksi ollut, p‰ivitet‰‰n pelaajan objekti.
+            If team <> player\team Then
+                // Debug("Teams differ in NET_PLAYERNAME ( " + player\name + " - " + team + " <> " + player\team + ")" )
+                player\team = team
+                If player\team = 2 Then 
+                    weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER2))
+                Else
+                    weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER))
+                EndIf
+                PaintObject player\obj, weaponObj
+            EndIf
 //COM1            gPlayerCount + 1
         
         ElseIf netmsg = NET_LOGIN Then
@@ -908,7 +928,22 @@ Function ReadDataFromServer()
             MsgBox( GetText("server_closing") )
             // Wait 1000
             Return False
-        
+            
+        ElseIf netmsg = NET_TEAMINFO Then
+            // Pelaajan joukkueesta tulee infoa
+            playerId = _Net_GetByte()
+            team     = _Net_GetByte()
+            player.PLAYERS = ConvertToType(gPlayers(playerId))
+            If team <> player\team Then
+                // Debug("Teams differ in NET_TEAMINFO ( " + player\name + " - " + team + " <> " + player\team + ")" )
+                player\team = team
+                If player\team = 2 Then 
+                    weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER2))
+                Else
+                    weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER))
+                EndIf
+                PaintObject player\obj, weaponObj
+            EndIf
         Else
             // Tuntematon viesti tai viestit loppui
             Exit

@@ -223,9 +223,12 @@ Function ServerLoop()
         ReadDataFromClient()    // Luetaan clientin l‰hett‰m‰‰ dataa
         UpdateGame
         If KeyHit(cbKeyF5) Then ReadBanList()
-        If KeyHit(cbKeyF8) Then
+        If KeyHit(cbKeyF8) And gPlayMode > DM Then
             For player.PLAYERS = Each PLAYERS
-                player\team = Rand(1,2)
+                If player\active = True Then
+                    newTeam = Rand(1,2)
+                    SetTeam( player\playerId, newTeam )
+                EndIf
             Next player
         EndIf
         If Abs(GetTimeSync()) > 3 Then
@@ -414,6 +417,7 @@ Function ReadDataFromClient()
                 _Net_PutByte(plr\playerId)      // Pelaajan tunnus
                 _Net_PutString(plr\name)        // Nimi
                 _Net_PutByte(plr\zombie)        // Onko botti
+                _Net_PutByte(plr\team)          // Joukkue
             EndIf
         EndIf
         
@@ -485,13 +489,13 @@ Function ReadDataFromClient()
                 _Net_PutByte(nmsg\playerId)
                 _Net_PutString(nmsg\msgText)
                 _Net_PutByte(nmsg\playerId2)
-            EndIf
-            If nmsg\msgType = NET_LOGOUT Then
+            
+            ElseIf nmsg\msgType = NET_LOGOUT Then
                 // Joku on poistunut pelist‰
                 _Net_PutByte(nmsg\msgType)
                 _Net_PutByte(nmsg\playerId)
-            EndIf
-            If nmsg\msgType = NET_NEWBULLET Then
+            
+            ElseIf nmsg\msgType = NET_NEWBULLET Then
                 // Uusi ammus on ammuttu
                 If nmsg\weapon = WPN_CHAINSAW Then
                     _Net_PutByte(nmsg\msgType)
@@ -519,19 +523,19 @@ Function ReadDataFromClient()
                         _Net_PutShort(ObjectAngle(bullet\obj))
                     EndIf
                 EndIf
-            EndIf
-            If nmsg\msgType = NET_TEXTMESSAGE Then
+            
+            ElseIf nmsg\msgType = NET_TEXTMESSAGE Then
                 // Tekstiviesti
                 _Net_PutByte(nmsg\msgType)
                 _Net_PutByte(nmsg\playerId)
                 _Net_PutString(nmsg\msgText)
-            EndIf
-            If nmsg\msgType = NET_SERVERMSG Then
+            
+            ElseIf nmsg\msgType = NET_SERVERMSG Then
                 // Palvelimen generoima viesti
                 _Net_PutByte(nmsg\msgType)
                 _Net_PutString(nmsg\msgText)
-            EndIf
-            If nmsg\msgType = NET_BULLETHIT Then
+            
+            ElseIf nmsg\msgType = NET_BULLETHIT Then
                 // Osumaviesti
                 _Net_PutByte(nmsg\msgType)      // Vistin tunnus
                 _Net_PutInt(nmsg\bulletId)      // Ammuksen tunnus
@@ -539,16 +543,16 @@ Function ReadDataFromClient()
                 _Net_PutShort(nmsg\x)           // Miss‰ osui
                 _Net_PutShort(nmsg\y)           // Miss‰ osui
                 _Net_PutByte(nmsg\weapon)       // Mist‰ aseesta ammus on
-            EndIf
-            If nmsg\msgType = NET_ITEM Then
+            
+            ElseIf nmsg\msgType = NET_ITEM Then
                 // Tavaraviesti
                 _Net_PutByte(nmsg\msgType)      // Vistin tunnus
                 _Net_PutByte(nmsg\itemId)       // Tavaran tunnus
                 _Net_PutByte(nmsg\itemType)     // Tavaran tyyppi
                 _Net_PutShort(nmsg\x)           // Miss‰ osui
                 _Net_PutShort(nmsg\y)           // Miss‰ osui
-            EndIf
-            If nmsg\msgType = NET_KILLMESSAGE Then
+            
+            ElseIf nmsg\msgType = NET_KILLMESSAGE Then
                 // Tappoviesti
                 _Net_PutByte(nmsg\msgType)      // Vistin tunnus
                 _Net_PutByte(nmsg\playerId)     // Tappaja
@@ -560,13 +564,20 @@ Function ReadDataFromClient()
                 plr.PLAYERS = ConvertToType(gPlayers(nmsg\playerId2))
                 _Net_PutShort(plr\kills)        // Uhrin tapot
                 _Net_PutShort(plr\deaths)       // Uhrin kuolemat
-            EndIf
-            If nmsg\msgType = NET_KICKED Then
+            
+            ElseIf nmsg\msgType = NET_KICKED Then
                 // Pelaaja potkittiin
                 _Net_PutByte(nmsg\msgType)      // Viestin tunnus
                 _Net_PutByte(nmsg\playerId)     // Potkaisija
                 _Net_PutByte(nmsg\playerId2)    // Kuka potkittiin
                 _Net_PutString(nmsg\msgText)    // Potkujen syy
+
+            ElseIf nmsg\msgType = NET_TEAMINFO Then
+                // L‰hetet‰‰n pelaajan joukkue
+                _Net_PutByte(nmsg\msgType)      // Viestin tunnus
+                _Net_PutByte(nmsg\playerId)     // Pelaaja
+                plr.PLAYERS = ConvertToType(gPlayers(nmsg\playerId))
+                _Net_PutByte(plr\team)          // Joukkue
             EndIf
             Delete nmsg
         EndIf
@@ -659,12 +670,54 @@ Function ParseCommand$( _command$, _playerId )
                             KickPlayer( plr\playerId, _playerId, kickReason$ )
                             kicked = True
                             ret$ = "Kicked player " + plr\name + " with reason " + kickReason
+                            Exit
                         Else
+                            kicked = True // Ett‰ saadaan oikea virheviesti
                             ret$ = "You can't kick a bot"
+                            Exit
                         EndIf
                     EndIf
                 Next plr
                 If Not kicked Then ret$ = "Couldn't find player " + playerName$
+            EndIf
+        Else
+            ret$ = "You're not an admin"
+        EndIf
+    ElseIf check$ = "team" Then
+        If player\admin = True Then
+            If gPlayMode > DM Then
+                playerName$ = GetWord2( params$, 1 )
+                If Len( Trim( playerName$ ) )=0 Then
+                    ret$ = "You didn't in"+"put a name! Use /team <name> <Gr"+"een|R"+"ed|1|2>"
+                Else
+                    toTeam = 0
+                    toTeamCheck$ = Upper( GetWord2( params$, 2 ) )
+                    If toTeamCheck$ = "GREEN" Or toTeamCheck$ = "1" Then
+                        toTeam = 1
+                    ElseIf toTeamCheck$ = "RED" Or toTeamCheck$ = "2" Then
+                        toTeam = 2
+                    EndIf
+                    
+                    nameCheck$ = Lower( playerName$ )
+                    If toTeam > 0 Then
+                        // Joukkuetta haluttiin vaihtaa, etsit‰‰n pelaaja kokoelmasta.
+                        For plr.PLAYERS = Each PLAYERS
+                            If plr\active = True And Lower( plr\name ) = nameCheck$ Then
+                                switched = SetTeam( plr\playerId, toTeam )
+                                Exit
+                            EndIf
+                        Next plr
+                        If switched Then
+                            ret$ = "Switched player " + playerName$ + " to team " + toTeam
+                        Else
+                            ret$ = "Failed to switch player " + playerName$ + " to team " + toTeam
+                        EndIf
+                    Else
+                        ret$ = "Wrong team ID! Use /team <name> <Gr"+"een|R"+"ed|1|2>"
+                    EndIf
+                EndIf
+            Else
+                ret$ = "This gamemode has no teams!"
             EndIf
         Else
             ret$ = "You're not an admin"
@@ -676,7 +729,7 @@ Function ParseCommand$( _command$, _playerId )
                 ret$ = "Correct syntax is /bot <action>"
             Else
                 If action$ = "limit" Then
-					newBotLimit = Min(Int(GetWord2(params$,2)), MAX_PLAYERS)
+                    newBotLimit = Min(Int(GetWord2(params$,2)), MAX_PLAYERS)
                     SetBotLimit(newBotLimit)
                     ret$ = "Bot limit set t"+"o "+newBotLimit
                 ElseIf action$ = "freeze" Then
@@ -707,6 +760,26 @@ EndFunction
 Function SetBotLimit(newBotLimit)
     gMapMaxBots   = newBotLimit
     gMapBotDelete = Min(newBotLimit, gMapMaxPlayers-1)
-	CheckBots()
-	CalcPlayers()
+    CheckBots()
+    CalcPlayers()
 End Function
+//================================================================================
+// Asettaa pelaajan joukkueen. Palauttaa True jos joukkuetta vaihdettiin,
+// False jos joukkue oli jo parametrina annettu.
+//================================================================================
+Function SetTeam( _playerId, _team )
+    player.PLAYERS = ConvertToType( gPlayers(_playerId) )
+    If _team <> player\team Then
+        player\team = _team
+        For plr.PLAYERS = Each PLAYERS
+            If plr\active = True And plr\zombie = False Then
+                nmsg.NET_MESSAGES   = New(NET_MESSAGES)
+                nmsg\msgType        = NET_TEAMINFO
+                nmsg\toPlayer       = plr\playerId
+                nmsg\playerId       = player\playerId
+            EndIf
+        Next plr
+        Return True
+    EndIf
+    Return False
+EndFunction

@@ -48,7 +48,7 @@ Global gPeriodLength
 gPeriodLength = 5
 
 Global gControlMode
-gControlMode = 1
+gControlMode = 2
 
 Global gPlayMode, gConfigPlayMode
 gPlayMode = 1
@@ -60,6 +60,11 @@ gDisableBots = 0
 // Admin-salasana
 Global gServerAdminPassword$
 gServerAdminPassword$ = ""
+
+// Päivitystä varten oleva url
+Global gUpdateUrl$
+gUpdateUrl = "http://netmatch.vesq.org/updater/updater.php"
+If NM_DEVBUILD Then gUpdateUrl = "http://vesq.viuhka.fi/nm/devbuild/updater.php"
 
 ReadConfig()
 //--------------------------------------------------------------------------------
@@ -88,6 +93,7 @@ Function ReadConfig()
             If key = "CONTROLMODE" Then gControlMode = Min(2, Max(1, Int(value)))
             If key = "DISABLEBOTS" Then gDisableBots = (value = "1")
             If key = "ADMINPASSWORD" Then gServerAdminPassword = value
+            If key = "UPDATEURL" Then gUpdateUrl = value
         Wend
         CloseFile f
     EndIf
@@ -113,5 +119,6 @@ Function SaveConfig()
     WriteLine f, "ControlMode=" + gControlMode
     WriteLine f, "DisableBots=" + gDisableBots
     WriteLine f, "AdminPassword=" + gServerAdminPassword
+    WriteLine f, "UpdateUrl=" + gUpdateUrl
     CloseFile f
 EndFunction
