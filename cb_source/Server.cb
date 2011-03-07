@@ -348,6 +348,21 @@ Function ReadDataFromClient()
             
                 PositionObject player\obj, player\x, player\y
                 RotateObject player\obj, player\angle
+
+                // Tarkistetaan pelaajan nopeus per sekunti
+                If Timer()-gSpeedHackTimer=>1000 And player\zombie = False Then
+                    'trueMaxSpeed# = 305.0 * ( Timer() - player\lastActivity + 1000 ) / 1000.0
+                    'print trueMaxSpeed + "<?>" + Distance(player\x, player\y, player\hackTestX, player\hackTestY)
+                    If player\spawnTime < Timer()+1000 And Distance(player\x, player\y, player\hackTestX, player\hackTestY)>305 And player\LoggedIn = True Then
+                         nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                         nmsg\toPlayer   = player\playerId  // Kenelle viesti lähetetään
+                         nmsg\msgType    = NET_SPEEDHACK   // Mikä viesti
+                    EndIf
+                    player\hackTestX = player\x  // Asetetaan pelaajan x-paikka seuraavaa tarkistusta varten
+                    player\hackTestY = player\y  // Asetetaan pelaajan y-paikka seuraavaa tarkistusta varten
+                    gSpeedHackTimer = Timer()
+                EndIf                
+                
                 If shoot = 1 Then CreateServerBullet(gCurrentPlayerId)
                 // Poimittiinko jotain
                 If picked > 0 Then
