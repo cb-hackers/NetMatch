@@ -1,0 +1,71 @@
+//********************************************************************************
+// Controls.cb
+// 
+// Pelin hallinta näppäimistöllä ja hiirellä.
+//********************************************************************************
+
+//--------------------------------------------------------------------------------
+// Vakiot taulukkoa varten.
+//--------------------------------------------------------------------------------
+Const KEY_SHOOT         = 1
+Const KEY_SWITCHWEAPON  = 2
+Const KEY_WEAPON_UP     = 3
+Const KEY_WEAPON_DOWN   = 4
+Const KEY_MOVE_LEFT     = 5
+Const KEY_MOVE_UP       = 6
+Const KEY_MOVE_RIGHT    = 7
+Const KEY_MOVE_DOWN     = 8
+Const KEY_STRAFE_LEFT   = 9
+Const KEY_STRAFE_RIGHT  = 10
+Const KEY_MOVE_FORWARD  = 11
+Const KEY_MOVE_BACKWARD = 12
+Const KEY_CHAT          = 13
+Const KEY_MUSICVOLUME   = 14
+Const KEY_SFXVOLUME     = 15
+Const KEY_STATS         = 16
+Const KEY_SHOWFPS       = 17
+Const KEY_TOGGLEFLOOR   = 18
+// Näppäinten määrä yhteensä
+Const KEY_AMOUNT        = 18
+
+//--------------------------------------------------------------------------------
+// Mitä tietoa haetaan, taulukon aControls toinen ulottuvuus.
+//--------------------------------------------------------------------------------
+Const KEYF_SCANCODE     = 1
+Const KEYF_MOUSEBUTTON  = 2
+Const KEYF_MOUSESCROLL  = 3
+Const KEYF_PRESSED      = 4
+// Tietosolujen määrä
+Const KEYF_AMOUNT       = 4
+
+//--------------------------------------------------------------------------------
+// Näppäintaulukko ja sen alustus oletusarvoilla.
+//--------------------------------------------------------------------------------
+Dim aControls( KEY_AMOUNT, KEYF_AMOUNT )
+
+// Alustetaan ensin kaikki nollaksi.
+For i=1 To KEY_AMOUNT
+    For j=1 To KEYF_AMOUNT
+        aControls( i, j ) = 0
+    Next j
+Next i
+
+// Oletusarvojen asetus
+aControls( KEY_SHOOT,           KEYF_MOUSEBUTTON ) = 1  // Hiiren ykkösnapikka
+aControls( KEY_SWITCHWEAPON,    KEYF_MOUSEBUTTON ) = 2  // Hiiren kakkosnapikka
+aControls( KEY_WEAPON_UP,       KEYF_MOUSESCROLL ) = 1  // Hiiren rullaus ylöspäin
+aControls( KEY_WEAPON_DOWN,     KEYF_MOUSESCROLL ) = -1 // Hiiren rullaus alaspäin
+aControls( KEY_MOVE_LEFT,       KEYF_SCANCODE )    = cbKeyA
+aControls( KEY_MOVE_UP,         KEYF_SCANCODE )    = cbKeyW
+aControls( KEY_MOVE_RIGHT,      KEYF_SCANCODE )    = cbKeyD
+aControls( KEY_MOVE_DOWN,       KEYF_SCANCODE )    = cbKeyS
+aControls( KEY_STRAFE_LEFT,     KEYF_SCANCODE )    = cbKeyA
+aControls( KEY_STRAFE_RIGHT,    KEYF_SCANCODE )    = cbKeyD
+aControls( KEY_MOVE_FORWARD,    KEYF_SCANCODE )    = cbKeyW
+aControls( KEY_MOVE_BACKWARD,   KEYF_SCANCODE )    = cbKeyS
+aControls( KEY_CHAT,            KEYF_SCANCODE )    = cbKeyC
+aControls( KEY_MUSICVOLUME,     KEYF_SCANCODE )    = cbKeyM
+aControls( KEY_SFXVOLUME,       KEYF_SCANCODE )    = cbKeyV
+aControls( KEY_STATS,           KEYF_SCANCODE )    = cbKeyG
+aControls( KEY_SHOWFPS,         KEYF_SCANCODE )    = cbKeyF
+aControls( KEY_TOGGLEFLOOR,     KEYF_SCANCODE )    = cbKeyB
