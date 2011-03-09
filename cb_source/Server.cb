@@ -11,6 +11,8 @@ gSpeedHackTimer = Timer()
 Global gMapChangeTimer
 gMapChangeTimer = Timer()
 
+Global gCurrentServerMap As String
+
 //================================================================================
 // Luodaan palvelin.
 //================================================================================
@@ -335,8 +337,10 @@ Function ReadDataFromClient()
     sendNames = False
     txtMessage$ = ""
     
-    If GetCurrentMapName() <> player\mapname Then gMapChangeTimer = Timer()
-    
+    If GetCurrentMapName() <> gCurrentServerMap Then 
+        gCurrentServerMap = GetCurrentMapName()
+        gMapChangeTimer = Timer()
+    EndIf
     // Luetaan saapuneita viestejä
     While True
         If netmsg = NET_PLAYER Then
