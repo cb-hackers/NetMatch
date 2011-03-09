@@ -64,7 +64,7 @@ Function DrawClientMessages()
                         lift = 1
                     EndIf
                     If msg\msgType = NET_TEXTMESSAGE Then
-                        delay = Max(5, Min(32, Len(msg\message))) * 200
+                        delay = Max(5, Min(32, Len(msg\message) + Len(msg\from))) * 200
                     EndIf
                 Else
                     msg\timeStamp = Timer()

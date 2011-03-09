@@ -325,6 +325,7 @@ Function ReadDataFromClient()
     
     // Lasketaan pelaajan ja serverin v‰linen lagi
     player\lag = ( Timer() - player\lastActivity )
+    
     // P‰ivitet‰‰n pelaajan olemassaolo
     player\lastActivity = Timer()
     sendNames = False
@@ -357,8 +358,8 @@ Function ReadDataFromClient()
                 // Tarkistetaan pelaajan nopeus per sekunti
                 If Timer()-gSpeedHackTimer=>1000 And player\zombie = False Then
                     // Lasketaan pelaajan todellinen maksimi nopeus jolla saa liikkua
-                    trueMaxSpeed# = 332.0 * ( player\lag + 1000 ) / 1000.0 
-                    If player\spawnTime < Timer()+1000 And Distance(player\x, player\y, player\hackTestX, player\hackTestY)>trueMaxSpeed And player\LoggedIn = True Then
+                    trueMaxSpeed# = (Sqrt(FORWARD_SPEED * SIDESTEP_SPEED * 2) * 100 / aWeapon( player\weapon, WPNF_WEIGHT ) + 80) * ( player\lag + 1000 ) / 1000.0 
+                    If player\spawnTime < Timer()+1000 And Distance(player\x, player\y, player\hackTestX, player\hackTestY)>trueMaxSpeed And player\LoggedIn = True Then                        
                          nmsg.NET_MESSAGES = New(NET_MESSAGES)
                          nmsg\toPlayer   = player\playerId  // Kenelle viesti l‰hetet‰‰n
                          nmsg\msgType    = NET_SPEEDHACK   // Mik‰ viesti
@@ -462,8 +463,9 @@ Function ReadDataFromClient()
             y2 = ObjectY(plr\obj)
             If Abs(x1 - x2) > 450 Then visible = False
             If Abs(y1 - y2) > 350 Then visible = False
+            
             // Onko n‰kyviss‰ tai voidaanko muuten l‰hett‰‰
-            If sendNames = True Or visible = True Or plr\health <= 0 Then
+            If (sendNames = True Or visible = True Or plr\health <= 0) And plr\underLayer = False Then
                 // N‰kyy
                 _Net_PutByte(NET_PLAYER)            // Pelaajan tietoja
                 _Net_PutByte(plr\playerId)          // Pelaajan tunnus
@@ -478,7 +480,7 @@ Function ReadDataFromClient()
                 _Net_PutByte(plr\team)              // Joukkue
                 protected = (plr\spawnTime + SPAWN_PROTECT > Timer())
                 _Net_PutByte(protected)             // Haavoittumaton
-            Else
+            ElseIf gRadarArrows = True And plr\underLayer = False Then
                 // Ei n‰y. L‰hetet‰‰n tutkatieto.
                 _Net_PutByte(NET_RADAR)
                 ang# = GetAngle2(player\obj, plr\obj)
@@ -573,7 +575,7 @@ Function ReadDataFromClient()
             
             ElseIf nmsg\msgType = NET_KILLMESSAGE Then
                 // Tappoviesti
-                _Net_PutByte(nmsg\msgType)      // Vistin tunnus
+                _Net_PutByte(nmsg\msgType)      // Viestin tunnus
                 _Net_PutByte(nmsg\playerId)     // Tappaja
                 _Net_PutByte(nmsg\playerId2)    // Tapettu
                 _Net_PutByte(nmsg\weapon)       // Ase

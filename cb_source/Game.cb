@@ -310,8 +310,13 @@ Function GameUpdate()
                         player\outOfMap = 0
                     EndIf
                 EndIf
-
-
+                
+                // Onko pelaaja piilossa eli over-kerroksen alla
+                If GetMap(1, player\x, player\y) Then
+                    player\underLayer = True
+                Else
+                    player\underLayer = False
+                EndIf 
 
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // BOTTIEN TEKOÄLY >>>
