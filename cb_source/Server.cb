@@ -7,6 +7,10 @@
 Global gSpeedHackTimer
 gSpeedHackTimer = Timer()
 
+// Milloin kartta vaihdettiin
+Global gMapChangeTimer
+gMapChangeTimer = Timer()
+
 //================================================================================
 // Luodaan palvelin.
 //================================================================================
@@ -331,8 +335,9 @@ Function ReadDataFromClient()
     sendNames = False
     txtMessage$ = ""
     
+    If GetCurrentMapName() <> player\mapname Then gMapChangeTimer = Timer()
+    
     // Luetaan saapuneita viestej‰
-
     While True
         If netmsg = NET_PLAYER Then
         
@@ -355,6 +360,12 @@ Function ReadDataFromClient()
                 PositionObject player\obj, player\x, player\y
                 RotateObject player\obj, player\angle
 
+                // Jos kartta on vasta vaihtunut p‰ivitet‰‰n muuttujat
+                If Timer()-gMapChangeTimer < 5000 Then
+                    player\hackTestX = player\x
+                    player\hackTestY = player\y
+                EndIf
+                
                 // Tarkistetaan pelaajan nopeus per sekunti
                 If Timer()-gSpeedHackTimer=>1000 And player\zombie = False Then
                     // Lasketaan pelaajan todellinen maksimi nopeus jolla saa liikkua
@@ -368,7 +379,7 @@ Function ReadDataFromClient()
                     player\hackTestY = player\y  // Asetetaan pelaajan y-paikka seuraavaa tarkistusta varten
                     gSpeedHackTimer = Timer()
                 EndIf                
-                
+   
                 If shoot = 1 Then CreateServerBullet(gCurrentPlayerId)
                 // Poimittiinko jotain
                 If picked > 0 Then
@@ -465,7 +476,7 @@ Function ReadDataFromClient()
             If Abs(y1 - y2) > 350 Then visible = False
             
             // Onko n‰kyviss‰ tai voidaanko muuten l‰hett‰‰
-            If (sendNames = True Or visible = True Or plr\health <= 0) And plr\underLayer = False Then
+            If sendNames = True Or visible = True Or plr\health <= 0 Then
                 // N‰kyy
                 _Net_PutByte(NET_PLAYER)            // Pelaajan tietoja
                 _Net_PutByte(plr\playerId)          // Pelaajan tunnus
@@ -480,13 +491,21 @@ Function ReadDataFromClient()
                 _Net_PutByte(plr\team)              // Joukkue
                 protected = (plr\spawnTime + SPAWN_PROTECT > Timer())
                 _Net_PutByte(protected)             // Haavoittumaton
-            ElseIf gRadarArrows = True And plr\underLayer = False Then
-                // Ei n‰y. L‰hetet‰‰n tutkatieto.
-                _Net_PutByte(NET_RADAR)
-                ang# = GetAngle2(player\obj, plr\obj)
-                ra = Int(ang / 360.0 * 255.0)
-                _Net_PutByte(ra)
-                _Net_PutByte(plr\team)
+            ElseIf gRadarArrows = True Or gPlayMode=TDM Then
+                // Ei n‰y. L‰hetet‰‰n tutkatieto
+                If player\team = plr\team And gRadarArrows = False Then
+                    _Net_PutByte(NET_RADAR)
+                    ang# = GetAngle2(player\obj, plr\obj)
+                    ra = Int(ang / 360.0 * 255.0)
+                    _Net_PutByte(ra)
+                    _Net_PutByte(plr\team)
+                ElseIf gRadarArrows = True Then
+                    _Net_PutByte(NET_RADAR)
+                    ang# = GetAngle2(player\obj, plr\obj)
+                    ra = Int(ang / 360.0 * 255.0)
+                    _Net_PutByte(ra)
+                    _Net_PutByte(plr\team)                    
+                EndIf
             EndIf
         EndIf
     Next plr
@@ -743,6 +762,21 @@ Function ParseCommand$( _command$, _playerId )
                 EndIf
             Else
                 ret$ = "This gamemode has no teams!"
+            EndIf
+        Else
+            ret$ = "You're not an admin"
+        EndIf
+    ElseIf check$ = "radararrows"
+        If player\admin = True Then
+            If params$ = "" Then 
+                gRadarArrows = Not gRadarArrows
+            Else
+                gRadarArrows = (params$ = 1)
+            EndIf
+            If gRadarArrows = 1 Then 
+                ret$ = "Radar Arrows are now enabled!"
+            Else
+                ret$ = "Radar Arrows are now disabled!"
             EndIf
         Else
             ret$ = "You're not an admin"
