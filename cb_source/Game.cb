@@ -71,6 +71,7 @@ Function GameUpdate()
         gSessionComplete = False
         If gPeriodLength > 0 Then
             timeLeft = gSessionStarted + gPeriodLength * 60000 - Timer()
+            
             //If gSessionStarted + gPeriodLength * 60000 < Timer() Then
             If timeLeft <= 0 Then
                 // Poistetaan kaikki ammukset
@@ -783,15 +784,27 @@ Function Login(_in, _playerId = 0)
                     player\deaths   = 0
                     player\weapon   = WPN_PISTOL
                     player\lastActivity = Timer()
-                    player\spawnTime    = Timer()
-                    If gPlayMode > DM Then
-                        player\team = Rand(1,2)
-                    EndIf
+                    player\spawnTime    = Timer()               
                     player\admin    = False
                     player\kicked   = False
-                    player\kickReason = ""
+                    player\kickReason = ""    
+                    If gPlayMode = TDM Then 
+                        For plr.PLAYERS = Each PLAYERS
+                            If plr\active = True Then
+                                If plr\team = 1 Then greenplayers + 1
+                                If plr\team = 2 Then redplayers + 1
+                            EndIf
+                        Next plr
+                        If greenplayers<redplayers Then
+                            player\team = 1
+                        ElseIf redplayers<greenplayers
+                            player\team = 2
+                        Else
+                            player\team = Rand(1,2)
+                        EndIf                    
+                    EndIf
                     UpdatePlayerProt(player\playerId)
-               
+                    
                     // Lähetetään vastaus clientille
                     _Net_InitMemBlock()
                     _Net_PutByte(NET_LOGIN)

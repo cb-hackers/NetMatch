@@ -836,6 +836,7 @@ Function ReadDataFromServer()
             lapTime         = _Net_GetInt() // Kuinka kauan on pelattu
             gTimeLeft = gSessionTime - lapTime
             gSessionComplete = _Net_GetByte()   // Loppuiko erä
+            gPlayMode = _Net_GetByte() // Serverillä oleva pelimodi myös clientille
             If gSessionTime = 0 Then gSessionComplete = False
             If gSessionComplete = True Then
                 ShowItems(OFF)
