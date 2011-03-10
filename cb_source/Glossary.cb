@@ -23,7 +23,13 @@ gLanguages = ""
 //--------------------------------------------------------------------------------
 
 If IsDirectory("glossary") = False Then
-    gForceUpdate = True
+    // Puuttuu glossary, pakotetaan päivitys.
+    updMsgTxt$ = GetText("update_missing_file", "glossary")
+    If MsgBox(updMsgTxt, "NetMatch", MSG_INFO) = 13 Then
+        gForceUpdate = True
+    Else
+        End
+    EndIf
 Else
     ChDir "glossary"
     // Käydään läpi kaikki tiedostot kansiossa
@@ -77,14 +83,15 @@ EndIf
 //================================================================================
 // Palautetaan kielikoodin mukainen sana
 //================================================================================
-Function GetText$(_key$, _lang$ = "")
-    _lang = Upper(_lang)
-    If _lang = "" Then
-        _lang = gLanguage
-    EndIf
+Function GetText$(_key$, _param1$ = "", _param2$ = "")
+    lang$ = gLanguage
+    
     For gls.GLOSSARY = Each GLOSSARY
-        If Upper(gls\key) = Upper(_key) And Upper(gls\lang) = Upper(_lang) Then
-            Return gls\label
+        If Upper(gls\key) = Upper(_key) And Upper(gls\lang) = Upper(lang) Then
+            ret$ = gls\label
+            If _param1$ <> "" Then ret$ = Replace( gls\label, "%1", _param1 )
+            If _param2$ <> "" Then ret$ = Replace( gls\label, "%2", _param2 )
+            Return ret$
         EndIf
     Next gls
     If gForceUpdate = True Then //Jos glossaryja ei löydy, niin pakotetaan päivitys, jolloin käytetään näitä.

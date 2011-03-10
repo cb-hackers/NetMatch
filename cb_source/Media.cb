@@ -6,6 +6,21 @@
 
 Const RESOURCE_ARCHIVE$ = "NetMatch.dat"
 
+If FileExists( RESOURCE_ARCHIVE ) = 0 Then
+    If IsDirectory( RESOURCE_ARCHIVE ) = 0 Then
+        // Puuttuu mediat, pakotetaan päivitys.
+        msgTxt$ = GetText( "update_missing_file", RESOURCE_ARCHIVE )
+        If MsgBox(msgTxt$, "NetMatch", MSG_INFO) = 13 Then
+            gForceUpdate = True
+        Else
+            End
+        EndIf
+    Else
+        // Wtf, on olemassa kansio nimeltä NetMatch.dat?!
+        MakeError RESOURCE_ARCHIVE + " is a folder! It should be a file!"
+    EndIf
+EndIf
+
 Global gLoadedItems#
 gLoadedItems = 0
 
