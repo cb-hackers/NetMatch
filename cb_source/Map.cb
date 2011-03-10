@@ -102,7 +102,7 @@ While True
             mapAuthors = mapAuthors + Replace(author, "|", ";")
             gMapCount + 1
         Else
-            If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
+            DrawImage gImages(IMG_BACKGROUND), 0, 0
             Error(GetText("incorrect_map") + " (" + file + ")")
         EndIf
         If mVersionData <> 0 Then
@@ -231,8 +231,9 @@ Function LoadGameMap(_mapName$, _loopNum = 0)
         If Lower(gMapNames(i, 1)) = Lower(_mapName) Then found = True
     Next i
     If found = False Then
-        Error(Replace(GetText("map_not_found"), "%1", _mapName))
-        Return False
+        // Ladataan kartta serveriltä
+        If DownloadMap(_mapName) = False Then Error(getText("map_download_failed"))
+        Return False         
     EndIf
     If gGameMode = CLIENT Then
         If gFloor <> 0 Then
@@ -320,6 +321,53 @@ Function LoadGameMap(_mapName$, _loopNum = 0)
     Return True
 EndFunction
 
+Function DownloadMap(_mapName$)
+    For i = 0 To 1
+        If i Then 
+            rtn = HTTPGET("http://netmatch.vesq.org/maps/"+_mapName$+"/"+_mapName$+".mpc",1)
+        Else
+            rtn = HTTPGET("http://netmatch.vesq.org/maps/"+_mapName$+"/"+_mapName$+".cfg",1)
+        EndIf
+        If rtn <> 200 Then 
+            If rtn = 404 Then 
+                Error(Replace(GetText("map_not_in_server"), "%1", _mapName))
+                Return False
+            Else
+                Error(GetText( "unexpected_error" ) )
+                Return False
+            EndIf
+        EndIf
+        
+        Repeat 
+            DrawGame
+            DrawImage gImages(IMG_BACKGROUND), 0, 0
+            SetFont gFonts(FNT_SETUP)
+            Color 255, 255, 0
+            CenterText 400, 260, Replace(GetText("map_download"), "%1", _mapName)
+            Box 299, 299, 202, 22, OFF
+            If i Then
+                pr# = 10+Float(HTTPDownloadState()) / HTTP_ContentLength * 90.0
+            Else
+                pr# = Float(HTTPDownloadState()) / HTTP_ContentLength * 10.0
+            EndIf
+            Color 0, 255, 0
+            Box 300, 300, pr * 2, 20, ON
+            DrawScreen
+        Until HTTPDownloadState() = HTTP_ContentLength
+        
+        If i = 0 Then 
+            HTTPSaveContent ("map/"+_mapName+".cfg")
+        EndIf
+    Next i
+        HTTPSaveContent ("map/"+_mapName+".mpc")
+    
+    If FileExists("map/"+_mapName+".cfg") And FileExists("map/"+_mapName+".mpc") Then 
+        Return True
+    Else
+        Error(getText("unexpected_error"))
+        Return False
+    EndIf
+EndFunction
 
 Function LoadMapConfig(_cfgName$)
 //error(_cfgname)

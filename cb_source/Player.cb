@@ -111,6 +111,9 @@ Type PLAYERS
     Field kicked        As Byte         // Onko pelaaja potkittu pois
     Field kickReason    As String       // Mikä syy on annettu potkuille
     Field kickerId      As Byte         // Kuka potkaisi
+    Field hackTestX     As Integer      // Pelaajan viimeisin sijainti nopeuden tarkistuksessa
+    Field hackTestY     As Integer      // Pelaajan viimeisin sijainti nopeuden tarkistuksessa
+    Field lag           As Integer      // Pelaajan lagi millisekunneissa
 EndType
 
 //--------------------------------------------------------------------------------

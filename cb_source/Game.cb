@@ -42,6 +42,7 @@ Global gDirection#, gDistance#
 //================================================================================
 // Pelitilanteen p‰ivitys
 //================================================================================
+
 Function GameUpdate()
     UpdateFrameTimer() // P‰ivitet‰‰n vakionopeusajastin
 
@@ -54,7 +55,7 @@ Function GameUpdate()
     EndIf
     
     mapChanged = False
-    
+
     If gGameMode = SERVER Then
         // Jos peliss‰ on vain botteja niin kello ei k‰y
         If gPlayerCount <= gBotCount And gPeriodLength > 0 Then
@@ -70,6 +71,7 @@ Function GameUpdate()
         gSessionComplete = False
         If gPeriodLength > 0 Then
             timeLeft = gSessionStarted + gPeriodLength * 60000 - Timer()
+            
             //If gSessionStarted + gPeriodLength * 60000 < Timer() Then
             If timeLeft <= 0 Then
                 // Poistetaan kaikki ammukset
@@ -143,7 +145,7 @@ Function GameUpdate()
     lBotCount = 0
     lPlayerNames$ = ""
     For player.PLAYERS = Each PLAYERS
-    
+
         ratio# = Float(player\kills) * 100.0
         If player\deaths > 0 Then
             ratio = Int(Float(player\kills) / Float(player\deaths) * 100.0)
@@ -225,6 +227,7 @@ Function GameUpdate()
                         // Palautetaan viimeiseen paikkaa jossa oli.
                         PositionObject player\obj, player\lastValidX, player\lastValidY
                     EndIf
+
                 EndIf
 //COM1                If gPlayerCount <> gLastPlayerCount Then
 //COM1                    SetWindow "NetMatch " + gGSSVersion + " Client - " + gPlayerCount + " players online"
@@ -267,7 +270,7 @@ Function GameUpdate()
 
                 
                 If player\zombie = True Then player\hasAmmos = True
-                
+
                 // Onko pelaaja kuollut
                 If player\health <= 0 Then 
                     // Jos kuolemasta on kulunut tarpeeksi aikaa niin her‰tet‰‰n
@@ -279,6 +282,8 @@ Function GameUpdate()
                         player\health = 100
                         player\lastValidX = player\x
                         player\lastValidY = player\y
+                        player\hackTestX = player\x
+                        player\hackTestY = player\y
                         player\spawnTime  = Timer()
                         // Jos t‰m‰ on botti niin arvotaan ase
                         If player\zombie = True Then
@@ -305,8 +310,8 @@ Function GameUpdate()
                         //SpawnObject(player\obj)
                         player\outOfMap = 0
                     EndIf
-                EndIf
-                
+                EndIf             
+
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // BOTTIEN TEKOƒLY >>>
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -770,6 +775,8 @@ Function Login(_in, _playerId = 0)
                     SpawnObject(player\obj)
                     player\x        = ObjectX(player\obj)
                     player\y        = ObjectY(player\obj)
+                    player\hackTestX = player\x
+                    player\hackTestY = player\y
                     player\angle    = ObjectAngle(player\obj)
                     player\zombie   = False
                     player\health   = 100
@@ -777,13 +784,25 @@ Function Login(_in, _playerId = 0)
                     player\deaths   = 0
                     player\weapon   = WPN_PISTOL
                     player\lastActivity = Timer()
-                    player\spawnTime    = Timer()
-                    If gPlayMode > DM Then
-                        player\team = Rand(1,2)
-                    EndIf
+                    player\spawnTime    = Timer()               
                     player\admin    = False
                     player\kicked   = False
-                    player\kickReason = ""
+                    player\kickReason = ""    
+                    If gPlayMode = TDM Then 
+                        For plr.PLAYERS = Each PLAYERS
+                            If plr\active = True Then
+                                If plr\team = 1 Then greenplayers + 1
+                                If plr\team = 2 Then redplayers + 1
+                            EndIf
+                        Next plr
+                        If greenplayers<redplayers Then
+                            player\team = 1
+                        ElseIf redplayers<greenplayers
+                            player\team = 2
+                        Else
+                            player\team = Rand(1,2)
+                        EndIf                    
+                    EndIf
                     UpdatePlayerProt(player\playerId)
                     
                     // L‰hetet‰‰n vastaus clientille
@@ -827,6 +846,7 @@ Function Login(_in, _playerId = 0)
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // SERVER LOGOUT >>>
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 
             player.PLAYERS  = ConvertToType(gPlayers(_playerId))
             player\active   = False
 //COM1            If player\loggedIn = True Then gPlayerCount - 1
@@ -1252,7 +1272,7 @@ Function InScreen(_x, _y, _margin = 0)
 EndFunction
 
 
-Global gKeyEsc, gKeyReturn, gKeyb, gKeyC, gKeyF, gKeyG, gKeyTab
+Global gKeyEsc, gKeyReturn, gKeyb, gKeyC, gKeyF, gKeyG, gKeyU, gKeyY, gKeyTab
 Global gMouseHit1, gMouseHit2, gMouseHit3, gMouseRoll
 
 Function UpdateGame2(_updateGame = 1)
@@ -1263,6 +1283,8 @@ Function UpdateGame2(_updateGame = 1)
     If KeyHit(cbKeyC) Then gKeyC = True
     If KeyHit(cbKeyF) Then gKeyF = True
     If KeyHit(cbKeyG) Then gKeyG = True
+    If KeyHit(cbKeyU) Then gKeyU = True
+    If KeyHit(cbKeyY) Then gKeyY = True
     If KeyHit(cbKeyTab) Then gKeyTab = True
     If MouseHit(1) Then gMouseHit1 = True
     If MouseHit(2) Then gMouseHit2 = True
@@ -1278,6 +1300,8 @@ Function ClearKeys2()
     gKeyC       = False
     gKeyF       = False
     gKeyG       = False
+    gKeyU       = False
+    gKeyY       = False
     gKeyTab     = False
     gMouseHit1  = False
     gMouseHit2  = False

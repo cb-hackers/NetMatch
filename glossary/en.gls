@@ -106,3 +106,7 @@ default_kickreason = No reason.
 server_closing = Server is shutting down.
 server_timeout = Server timed out!
 update_restart = Restarting NetMatch
+speedhack = Speedhacker!
+map_not_in_server = Map %1 Not found from mapserver
+map_download = Downloading map %1...
+map_download_failed = Map download failed!
