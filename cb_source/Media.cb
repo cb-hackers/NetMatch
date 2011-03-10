@@ -163,11 +163,11 @@ Const SND_COUNT         = 27    // ƒ‰nien lukum‰‰r‰
 // Ladataan kuvat
 //--------------------------------------------------------------------------------
 Dim gImages(IMG_COUNT)
-If gDirectServer = False And gForceUpdate = False Then 
+If gDirectServer = False Then 
     gImages(IMG_BACKGROUND) = LoadResourceImage("background.png") : ShowLoading()
 EndIf
 CheckUpdates()
-// Jos menn‰‰n suoraan servuun, niin ei ladata mediaa _OlLENKAAN_ ;)
+// Jos menn‰‰n suoraan servuun, niin ei ladata mediaa _OLLENKAAN_ ;)
 If gDirectServer = False Then
     gImages(IMG_LOGO)       = LoadResourceImage("logo.png") : ShowLoading()
     gImages(IMG_WEAPON1)    = LoadResourceImage("pistol.png") : ShowLoading()
@@ -299,7 +299,7 @@ EndIf
 Function ShowLoading()
     totalItems# = IMG_COUNT + OBJ_COUNT + SND_COUNT + 1
     DrawGame
-    DrawImage gImages(IMG_BACKGROUND), 0, 0
+    If gImages(IMG_BACKGROUND) <> 0 Then DrawImage gImages(IMG_BACKGROUND), 0, 0
     gLoadedItems + 1
     SetFont gFonts(FNT_SETUP)
     Color 255, 255, 0
@@ -313,7 +313,7 @@ EndFunction
 
 
 Function LoadResourceImage(_fileName$, _archive$ = "", _makeError = 1)
-    If (gForceUpdate Or gDirectServer) And _fileName <> "background.png" And _archive = "" Then Return 0
+    If gDirectServer And (_fileName <> "background.png" Or _archive = "") Then Return 0
 //SetWindow "IMAGE " + _fileName
 
 //    If _archive = "media" Then
@@ -326,6 +326,7 @@ Function LoadResourceImage(_fileName$, _archive$ = "", _makeError = 1)
     EndIf
 
     d = ExtractData(_archive, _fileName)
+    If d = 0 And gForceUpdate = True Then Return 0 // Pakotettu p‰ivitys k‰ytt‰‰ kuvaa, jos se lˆytyy ja, jos se on 0 niin sit‰ ei piirret‰.
     If d = 0 And _makeError = 1 Then 
         MakeError "Resource image " + _fileName + " not found!"
     EndIf
@@ -443,9 +444,7 @@ EndFunction
 
 Function CheckUpdates()
     If gForceUpdate Then DoUpdate(): Return False //Pakotetaan p‰ivitys
-    If gDirectServer = False Then
-        DrawImage gImages(IMG_BACKGROUND), 0, 0
-    EndIf
+    If gImages(IMG_BACKGROUND) <> 0 Then DrawImage gImages(IMG_BACKGROUND), 0, 0
     MsgBox(GetText("update_check"), "NetMatch", MSG_INFO_NOWAIT)
     t = Timer()
     result = HTTPGet(gUpdateUrl + "?version")
@@ -486,47 +485,50 @@ Function CheckUpdates()
 EndFunction
 
 Function DoUpdate()
-    If gForceUpdate = False And gDirectServer = False Then
-        DrawImage gImages(IMG_BACKGROUND), 0, 0
-    EndIf
+    If gImages(IMG_BACKGROUND) <> 0 Then DrawImage gImages(IMG_BACKGROUND), 0, 0
     MsgBox(GetText("doing_update"), "NetMatch", MSG_INFO_NOWAIT)
     result = HTTPGet(gUpdateUrl + "?list")
     If result = 200 Then
-        //Ladataan listaus tiedostoista, jotta n‰hd‰‰n, mitk‰ ovat p‰ivittyneet
+        // Ladataan listaus tiedostoista, jotta n‰hd‰‰n, mitk‰ ovat p‰ivittyneet
         HTTPLoadContent()
+        exeName$ = GetFileName(GetEXEName()) // Otetaan t‰m‰ valmiiksi, ettei tule ylim‰‰r‰isi‰ funktio-kutsuja.
         t$ = ""
         y = 0
-        restart = False //Do we need to restart the game?
+        restart = False // T‰ytyykˆ peli k‰ynnist‰‰ uudelleen p‰ivityksen j‰lkeen?
         For i = 1 To HTTP_ContentLength
             t = t + Chr(_Net_GetByte())
         Next i
+        // K‰yd‰‰n kaikki listauksen tiedostot l‰pi
         For i = 1 To Int(CountWords(t,";")) - 1
+            // Parsitaan netist‰ saatu tieto
             l$ = GetWord2(t,i,";")
             file$ = GetWord2(l,1,"|")
             filename$ = GetFileName(file)
-            furl$ = Replace(GetWord2(l,3,"|"),filename,URLEncode(filename))
+            furl$ = Replace(GetWord2(l,3,"|"), filename, URLEncode(filename))
             update=False
+            // Tarkistukset
             If FileExists(file) Then
-                If Hex(Crc32(file)) <> GetWord2(l,2,"|") Then //Do the hashes match? Do they NetMatch? Heh.
-                    If filename <> GetFileName(GetEXEName()) Then DeleteFile file //Poistetaan wanha tiedosto, jos se ei ole t‰m‰ exe.
+                If Hex(Crc32(file)) <> GetWord2(l,2,"|") Then // Do the hashes match? Do they NetMatch? Heh.
+                    If filename <> exeName Then DeleteFile file // Poistetaan wanha tiedosto, jos se ei ole t‰m‰ exe.
                     update = True
                 EndIf
-            Else
-                If IsDirectory(GetDirectoryPath(file))=False Then MakeDirs(GetDirectoryPath(file)) //Luodaan sille kansiot, jos ne uupuvat
-                update = True //Myˆskin ladataan tiedosto jos sit‰ ei meill‰ ole.
+            Else // Myˆskin ladataan tiedosto jos sit‰ ei meill‰ ole.
+                If IsDirectory(GetDirectoryPath(file))=False Then MakeDirs(GetDirectoryPath(file)) // Luodaan sille kansiot, jos ne uupuvat
+                update = True
             EndIf
-            If update = True Then //Ladataan uusi tiedosto
+            If update = True Then // Ladataan uusi tiedosto
                 txt$ = ">>> " + filename + "... "
                 Text 10, 10 + y, txt: DrawScreen OFF
                 If HTTPGet(furl) = 200 Then
                     Text 10 + TextWidth(txt), 10 + y, "Ok!": DrawScreen OFF
-                    If filename <> GetFileName(GetEXEName()) Then
+                    If filename <> exeName Then
                         HTTPSaveContent(file)
-                    Else //Itse pelin exe ja seh‰n on k‰ynniss‰!
+                    Else // Itse pelin exe ja seh‰n on k‰ynniss‰!
                         HTTPSaveContent(file + ".updated")
-                        restart = True //Peli t‰ytyy tietenkin k‰ynnist‰‰ uudestaan, kunhan p‰ivitys on valmis.
+                        restart = True // Peli t‰ytyy tietenkin k‰ynnist‰‰ uudestaan, kunhan p‰ivitys on valmis.
                     EndIf
                 Else
+                    // Jos tiedostoa ei voitu ladata, n‰ytet‰‰n virheilmoitus.
                     Text 10 + TextWidth(txt), 10 + y, "Err!": DrawScreen OFF
                     Wait 1500
                     Error(GetText("update_failed"))
@@ -536,10 +538,10 @@ Function DoUpdate()
             EndIf
         Next i
         Text 10, 10 + y, GetText("update_restart"): DrawScreen OFF
-        Wait 400
+        Wait 200
         If restart = True Or gForceUpdate = True Then
-            e$ = GetFileName(GetEXEName())
-            Execute "CMD /C ECHO "+GetText("update_restart")+" & PING 1.1.1.1 -n 1 -w 1500 >NUL & IF EXIST "+e+".updated DEL "+e+" & RENAME "+e+".updated "+e+" & START "+e
+            // Hieman komentorivitaikoja. ;-)
+            Execute "CMD /C ECHO "+GetText("update_restart")+" & PING 1.1.1.1 -n 1 -w 1500 >NUL & IF EXIST "+exeName+".updated ( DEL "+exeName+" && RENAME "+exeName+".updated "+exeName+" && START "+exeName+" ) Else ( START "+exeName+" )"
             End
         EndIf
     Else
