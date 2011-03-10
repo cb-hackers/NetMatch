@@ -774,7 +774,7 @@ Function ParseCommand$( _command$, _playerId )
         Else
             ret$ = "You're not an admin"
         EndIf
-    ElseIf check$ = "radararrows" Then
+    ElseIf check$ = "radars" Then
         If player\admin = True Then
             If params$ = "" Then 
                 gRadarArrows = Not gRadarArrows
@@ -789,7 +789,7 @@ Function ParseCommand$( _command$, _playerId )
                 EndIf
             Else
                 If gPlayMode > DM Then
-                    ret$ = "Radar now only shows your teammates"
+                    ret$ = "Radar now shows only your teammates"
                 Else
                     ret$ = "Radar is now disabled"
                 EndIf
