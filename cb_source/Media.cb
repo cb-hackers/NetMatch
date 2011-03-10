@@ -425,8 +425,10 @@ Function LoadResourceMap(_mapName$)
     Next y
     
     img = LoadResourceImage(_mapName + ".pxi", archive)
-    PaintObject map, img
-    DeleteImage img
+    If img <> 0 Then
+        PaintObject map, img
+        DeleteImage img
+    EndIf
 
     maskR = PeekByte(d, o) : o + 1
     maskG = PeekByte(d, o) : o + 1
