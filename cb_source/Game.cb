@@ -310,8 +310,8 @@ Function GameUpdate()
                         //SpawnObject(player\obj)
                         player\outOfMap = 0
                     EndIf
-                EndIf             
-
+                EndIf
+                
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // BOTTIEN TEKOÄLY >>>
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -784,10 +784,10 @@ Function Login(_in, _playerId = 0)
                     player\deaths   = 0
                     player\weapon   = WPN_PISTOL
                     player\lastActivity = Timer()
-                    player\spawnTime    = Timer()               
+                    player\spawnTime    = Timer()
                     player\admin    = False
                     player\kicked   = False
-                    player\kickReason = ""    
+                    player\kickReason = ""
                     If gPlayMode = TDM Then 
                         For plr.PLAYERS = Each PLAYERS
                             If plr\active = True Then
@@ -801,7 +801,7 @@ Function Login(_in, _playerId = 0)
                             player\team = 2
                         Else
                             player\team = Rand(1,2)
-                        EndIf                    
+                        EndIf
                     EndIf
                     UpdatePlayerProt(player\playerId)
                     
@@ -846,7 +846,6 @@ Function Login(_in, _playerId = 0)
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // SERVER LOGOUT >>>
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 
             player.PLAYERS  = ConvertToType(gPlayers(_playerId))
             player\active   = False
 //COM1            If player\loggedIn = True Then gPlayerCount - 1

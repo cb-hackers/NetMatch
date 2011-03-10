@@ -100,7 +100,7 @@ Function DrawClientMessages()
                     ElseIf msg\msgType = NET_KILLMESSAGE Then
                         If gPlayMode > DM Then
                             If msg\team1 = 2 Then
-                                Color 255, 0, 0                    
+                                Color 255, 0, 0
                             Else
                                 Color 0, 255, 0
                             EndIf
