@@ -453,13 +453,23 @@ Function ReadDataFromClient()
         // Onko l‰hetetty tekstiviesti
         If Len(txtMessage) > 0 Then
             // L‰hetet‰‰n kaikille muille paitsi boteille
-            toTeam = player\team
             If plr\active = True And plr\zombie = False Then
-                nmsg.NET_MESSAGES = New(NET_MESSAGES)
-                nmsg\toPlayer   = plr\playerId      // Kenelle l‰hetet‰‰n
-                nmsg\msgType    = NET_TEXTMESSAGE   // Mik‰ viesti
-                nmsg\playerId   = gCurrentPlayerId  // Kuka l‰hetti
-                nmsg\msgText    = txtMessage        // Viesti
+                toTeam = player\team
+                If Left(txtMessage,1) = "*" Then
+                    If plr\team = toTeam Then             
+                        nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                        nmsg\toPlayer   = plr\playerId      // Kenelle l‰hetet‰‰n
+                        nmsg\msgType    = NET_TEXTMESSAGE   // Mik‰ viesti
+                        nmsg\playerId   = gCurrentPlayerId  // Kuka l‰hetti
+                        nmsg\msgText    = txtMessage        // Viesti
+                    EndIf
+                Else
+                    nmsg.NET_MESSAGES = New(NET_MESSAGES)
+                    nmsg\toPlayer   = plr\playerId      // Kenelle l‰hetet‰‰n
+                    nmsg\msgType    = NET_TEXTMESSAGE   // Mik‰ viesti
+                    nmsg\playerId   = gCurrentPlayerId  // Kuka l‰hetti
+                    nmsg\msgText    = txtMessage        // Viesti                    
+                EndIf
             EndIf
         EndIf
         

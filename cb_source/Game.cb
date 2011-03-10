@@ -1272,7 +1272,7 @@ Function InScreen(_x, _y, _margin = 0)
 EndFunction
 
 
-Global gKeyEsc, gKeyReturn, gKeyb, gKeyC, gKeyF, gKeyG, gKeyTab
+Global gKeyEsc, gKeyReturn, gKeyb, gKeyC, gKeyF, gKeyG, gKeyU, gKeyY, gKeyTab
 Global gMouseHit1, gMouseHit2, gMouseHit3, gMouseRoll
 
 Function UpdateGame2(_updateGame = 1)
@@ -1283,6 +1283,8 @@ Function UpdateGame2(_updateGame = 1)
     If KeyHit(cbKeyC) Then gKeyC = True
     If KeyHit(cbKeyF) Then gKeyF = True
     If KeyHit(cbKeyG) Then gKeyG = True
+    If KeyHit(cbKeyU) Then gKeyU = True
+    If KeyHit(cbKeyY) Then gKeyY = True
     If KeyHit(cbKeyTab) Then gKeyTab = True
     If MouseHit(1) Then gMouseHit1 = True
     If MouseHit(2) Then gMouseHit2 = True
@@ -1298,6 +1300,8 @@ Function ClearKeys2()
     gKeyC       = False
     gKeyF       = False
     gKeyG       = False
+    gKeyU       = False
+    gKeyY       = False
     gKeyTab     = False
     gMouseHit1  = False
     gMouseHit2  = False
