@@ -779,29 +779,38 @@ Function ParseCommand$( _command$, _playerId )
             If params$ = "" Then 
                 gRadarArrows = Not gRadarArrows
             Else
-                gRadarArrows = (params$ = 1)
+                gRadarArrows = (params$ = "1" Or Upper(params$) = "ON")
             EndIf
             If gRadarArrows = 1 Then 
-                ret$ = "Radar Arrows are now enabled!"
+                If gPlayMode > DM Then
+                    ret$ = "Radar now shows everybody"
+                Else
+                    ret$ = "Radar is now enabled"
+                EndIf
             Else
-                ret$ = "Radar Arrows are now disabled!"
+                If gPlayMode > DM Then
+                    ret$ = "Radar now only shows your teammates"
+                Else
+                    ret$ = "Radar is now disabled"
+                EndIf
             EndIf
         Else
-            ret$ = "You're not an admin"
+            ret$ = "You're not an admin!"
         EndIf
-    ElseIf check$ = "periodlength" Then
+    ElseIf check$ = "roundlength" Then
         If player\admin = True Then 
             // Vaihdetaan pilkku pisteeksi, jotta Float osaa antaa Intille oikean desimaalin
-            params = Int(Float(Replace(params$,",",".")))
-            If params$>0 And params$<=60 Then
-                ret$ = "Period Length is now "+params+"min!"
-                gPeriodLength = params
+            intParam = Int( Float( Replace( params$, ",", "." ) ) )
+            If intParam >= 1 And intParam <= 60 Then
+                ret$ = "Round length is now "+intParam+" minute"
+                If intParam <> 1 Then ret$ = ret$ + "s"
+                gPeriodLength = intParam
                 gSessionStarted = Timer() // Nollataan kello
             Else
-                ret$ = "Period Length must be between 1-60min!"
+                ret$ = "Round length must be set between 1 a"+"nd 60 minutes!"
             EndIf
         Else
-            ret$ = "You're not an admin"
+            ret$ = "You're not an admin!"
         EndIf
     EndIf
     
