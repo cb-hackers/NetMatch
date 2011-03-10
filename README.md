@@ -16,9 +16,7 @@ How to compile
 To build this you need to get [CoolBasic](http://www.coolbasic.com) and change the compiler to the one in this repository.
 <strong>If the modded CBCompiler destroys your computer, too bad. The software is provided "as-is", without any express or implied warranty.</strong>
 
-Error: "Resource image background.png.pxi not found!"
------------------------------------------------------
-You need to build yourself a <em>NetMatch.dat</em> from the media-files.
+Please note that you also ou need to build yourself a <em>NetMatch.dat</em> from the media-files.
 Instructions are found in here: [media/README.md](https://github.com/VesQ/NetMatch/blob/master/media/README.md)
 
 Coding conventions
