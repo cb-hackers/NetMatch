@@ -654,7 +654,6 @@ Function ReadDataFromClient()
     //gameTime = Min(gameTime, periodLength)
     _Net_PutInt(gameTime)                           // Kuinka kauan on pelattu
     _Net_PutByte(gSessionComplete)
-    _Net_PutByte(gPlayMode)
     
     _Net_PutByte(NET_END)
     ServerSend()
@@ -790,46 +789,6 @@ Function ParseCommand$( _command$, _playerId )
         Else
             ret$ = "You're not an admin"
         EndIf
-    ElseIf check$ = "playmode" Then 
-        If player\admin = True Then
-            ret$ = "Invalid parameters"
-            params$ = Upper(params$)
-            If params$ = "" Then
-                ret$ = "No mode given"
-            ElseIf params$ = 1 Or params$ = "DM" Then
-                If gPlayMode<>1 Then
-                    gPlayMode = DM
-                    ret$ = "Playmode is now Death Match!"
-                    team = 1
-                    For plr.PLAYERS = Each PLAYERS
-                        SetTeam( plr\playerId, team )
-                    Next plr   
-                    gSessionStarted = gSessionStarted - ( gPeriodLength * 60000 - ( Timer() - gSessionStarted ) )
-                    gLoopMapLoaded = True
-                Else
-                    ret$ = "Playmode is already Death Match!"
-                EndIf
-            ElseIf params$ = 2 Or params$ = "TDM" Then
-                If gPlayMode<>2 Then
-                    gPlayMode = TDM
-                    ret$ = "Playmode is now Team Death Match!"
-                    team = 1
-                    For plr.PLAYERS = Each PLAYERS
-                        If plr\active = True Then
-                            SetTeam( plr\playerId, team )
-                            team = team Mod 2
-                            team + 1
-                        EndIf
-                    Next plr
-                    gSessionStarted = gSessionStarted - ( gPeriodLength * 60000 - ( Timer() - gSessionStarted ) )
-                    gLoopMapLoaded = True
-                Else
-                    ret$ = "Playmode is already Team Death Match!"
-                EndIf
-            EndIf
-        Else
-            ret$ = "You're not an admin"
-        EndIf  
     ElseIf check$ = "periodlength" Then
         If player\admin = True Then 
             // Vaihdetaan pilkku pisteeksi, jotta Float osaa antaa Intille oikean desimaalin
