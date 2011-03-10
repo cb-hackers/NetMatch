@@ -163,6 +163,11 @@ Const SND_COUNT         = 27    // ƒ‰nien lukum‰‰r‰
 // Ladataan kuvat
 //--------------------------------------------------------------------------------
 Dim gImages(IMG_COUNT)
+// Taulukon alustus
+For i=1 To IMG_COUNT
+    gImages(i) = 0
+Next i
+
 If gDirectServer = False Then 
     gImages(IMG_BACKGROUND) = LoadResourceImage("background.png") : ShowLoading()
 EndIf
@@ -197,6 +202,11 @@ EndIf
 // Ladataan objektit
 //--------------------------------------------------------------------------------
 Dim gObjects(OBJ_COUNT)
+// Taulukon alustus
+For i=1 To OBJ_COUNT
+    gObjects(i) = 0
+Next i
+
 If gDirectServer = False Then
     gObjects(OBJ_PLAYER1)       = LoadResourceObject("player1.png", 45) : ShowLoading()
     gObjects(OBJ_PLAYER2)       = LoadResourceObject("player2.png", 45) : ShowLoading()
@@ -263,6 +273,11 @@ EndIf
 // Ladataan ‰‰net
 //--------------------------------------------------------------------------------
 Dim gSounds(SND_COUNT)
+// Taulukon alustus
+For i=1 To SND_COUNT
+    gSounds(i) = 0
+Next i
+
 If gDirectServer = False Then
     gSounds(SND_SHOOT1)     = LoadResourceSound("pistol_shot.wav") : ShowLoading()
     gSounds(SND_SHOOT2)     = LoadResourceSound("machinegun_shot.wav") : ShowLoading()

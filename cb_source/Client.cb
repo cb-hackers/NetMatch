@@ -340,8 +340,13 @@ Function ClientLoop()
             
             If gConsoleMode = False Then
                 // Vaihdetaan console-tilaan
-                If gKeyC Then 
+                If gKeyC or gKeyY Then 
                     gConsoleText = ""
+                    gConsoleMode = True
+                    ClearKeys
+                EndIf
+                If gKeyU Then
+                    gConsoleText = "*"
                     gConsoleMode = True
                     ClearKeys
                 EndIf
@@ -388,7 +393,7 @@ Function ClientLoop()
             gConsoleText = InputText(10, 565, 780, 25, gConsoleText)
             If gKeyReturn Then
                 gConsoleText = Trim(gConsoleText)
-                If Len(gConsoleText) > 0 Then
+                If Len(gConsoleText) > 0 And gConsoleText<>"*" Then
                     gConsoleMessage = gConsoleText
                 EndIf
                 gConsoleMode = False
@@ -899,7 +904,9 @@ Function ReadDataFromServer()
 
                 gServerMap = mapName
             EndIf
-        
+        ElseIf  netmsg = NET_SPEEDHACK Then 
+            Error(GetText("speedhack"))
+            Return False
         ElseIf netmsg = NET_KICKED Then
             // Joku pelaaja potkittiin palvelimelta
             kickerId = _Net_GetByte()
