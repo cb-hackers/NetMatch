@@ -179,9 +179,9 @@ Function CheckBots()
                         nmsg\playerId       = player\playerId
                     EndIf
                 Next plr
-//COM1                gPlayerCount - 1
-//COM1                gBotCount - 1
-                Return True
+                gPlayerCount - 1
+                gBotCount - 1
+                If Not (gPlayerCount > gMapBotDelete And gBotCount > 0) Then Return True
             EndIf
         Next player
     EndIf
@@ -217,9 +217,9 @@ Function CheckBots()
                         nmsg\playerId2      = player\zombie
                     EndIf
                 Next plr
-//COM1                gBotCount + 1
-//COM1                gPlayerCount + 1
-                Return True
+                gBotCount + 1
+                gPlayerCount + 1
+                If Not (gPlayerCount < gMapBotDelete And gBotCount < gMapMaxBots) Then Return True
             EndIf
         Next player
     EndIf

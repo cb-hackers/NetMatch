@@ -317,7 +317,7 @@ Function GameUpdate()
                 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Onko t‰m‰ pelaaja botti.
                 // Botit p‰ivitet‰‰n vain jos peliss‰ on myˆs oikeita pelaajia
-                If gSessionComplete = False And player\zombie = True And player\health > 0 And gPlayerCount > gBotCount Then
+                If gBotFreeze = False And gSessionComplete = False And player\zombie = True And player\health > 0 And gPlayerCount > gBotCount Then
                     // Mik‰li botti ei ole liian l‰hell‰ sein‰‰ ja on aika arpoa sille uusi suunta
                     // niin tehd‰‰n se nyt.
                     If player\tooClose = False And player\nextAction < Timer() Then
