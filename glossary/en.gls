@@ -96,7 +96,7 @@ control2 = W = Up|S = Down|A = Left|D = Right|
 incorrect_map = Incorrect map version
 author = Author:
 update_check = Finding updates...
-update_missing_file = You are missing %1 and NetMatch can't be played without it.|Press Enter to download all the latest game files.
+update_missing_file = You are missing %1!|NetMatch can't be played without it.|Press Enter to download all the latest game files.
 update_restart = Restarting NetMatch
 update_failed = Update failed!
 doing_update = Updating NetMatch...

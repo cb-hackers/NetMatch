@@ -6,21 +6,6 @@
 
 Const RESOURCE_ARCHIVE$ = "NetMatch.dat"
 
-If FileExists( RESOURCE_ARCHIVE ) = 0 Then
-    If IsDirectory( RESOURCE_ARCHIVE ) = 0 Then
-        // Puuttuu mediat, pakotetaan p‰ivitys.
-        msgTxt$ = GetText( "update_missing_file", RESOURCE_ARCHIVE )
-        If MsgBox(msgTxt$, "NetMatch", MSG_INFO) = 13 Then
-            gForceUpdate = True
-        Else
-            End
-        EndIf
-    Else
-        // Wtf, on olemassa kansio nimelt‰ NetMatch.dat?!
-        MakeError RESOURCE_ARCHIVE + " is a folder! It should be a file!"
-    EndIf
-EndIf
-
 Global gLoadedItems#
 gLoadedItems = 0
 
@@ -172,7 +157,21 @@ Const SND_LAUNCHER      = 27    // Kranaatinlaukaisin
 Const SND_COUNT         = 27    // ƒ‰nien lukum‰‰r‰
 
 
-
+//--------------------------------------------------------------------------------
+// Tarkistetaan ett‰ mediatiedosto on olemassa.
+//--------------------------------------------------------------------------------
+If FileExists( RESOURCE_ARCHIVE ) = 0  Then
+    // Puuttuu mediat, pakotetaan p‰ivitys.
+    msgTxt$ = GetText( "update_missing_file", RESOURCE_ARCHIVE )
+    If MsgBox(msgTxt$, "NetMatch", MSG_INFO) = 13 Then
+        gForceUpdate = True
+    Else
+        End
+    EndIf
+ElseIf IsDirectory( RESOURCE_ARCHIVE ) Then
+    // Wtf, on olemassa kansio nimelt‰ NetMatch.dat?!
+    MakeError RESOURCE_ARCHIVE + " is a directory! It should be a file!"
+EndIf
 
 //--------------------------------------------------------------------------------
 // Ladataan kuvat
@@ -183,8 +182,8 @@ For i=1 To IMG_COUNT
     gImages(i) = 0
 Next i
 
-If gDirectServer = False Then 
-    gImages(IMG_BACKGROUND) = LoadResourceImage("background.png") : ShowLoading()
+If gDirectServer = False And FileExists(RESOURCE_ARCHIVE) And IsDirectory(RESOURCE_ARCHIVE)=0 Then 
+    gImages(IMG_BACKGROUND) = LoadResourceImage("background.png")
 EndIf
 CheckUpdates()
 // Jos menn‰‰n suoraan servuun, niin ei ladata mediaa _OLLENKAAN_ ;)
@@ -327,7 +326,7 @@ EndIf
 // Lataupalkki
 //================================================================================
 Function ShowLoading()
-    totalItems# = IMG_COUNT + OBJ_COUNT + SND_COUNT + 1
+    totalItems# = IMG_COUNT + OBJ_COUNT + SND_COUNT
     DrawGame
     If gImages(IMG_BACKGROUND) <> 0 Then DrawImage gImages(IMG_BACKGROUND), 0, 0
     gLoadedItems + 1
@@ -343,7 +342,7 @@ EndFunction
 
 
 Function LoadResourceImage(_fileName$, _archive$ = "", _makeError = 1)
-    If gDirectServer And (_fileName <> "background.png" Or _archive = "") Then Return 0
+    If gDirectServer And _fileName <> "background.png" Then Return 0
 //SetWindow "IMAGE " + _fileName
 
 //    If _archive = "media" Then

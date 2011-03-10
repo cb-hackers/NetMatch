@@ -96,7 +96,7 @@ control2 = W = Ylˆs|S = Alas|A = Vasemmalle|D = Oikealle
 incorrect_map = Yhteensopimaton karttaversio
 author = Tekij‰:
 update_check = Etsit‰‰n p‰ivityksi‰...
-update_missing_file = Sinulta puuttuu %1 tiedosto eik‰ NetMatchia voi pelata ilman sit‰.|Paina Enter ladataksesi uusimmat pelitiedostot.
+update_missing_file = Sinulta puuttuu %1!NetMatchia ei voi pelata ilman sit‰.|Paina Enter ladataksesi uusimmat pelitiedostot.
 update_restart = K‰ynnistet‰‰n NetMatchia
 update_failed = P‰ivitys ep‰onnistui!
 doing_update = P‰ivitet‰‰n NetMatchia...
