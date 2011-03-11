@@ -1,3 +1,4 @@
+
 Const UPDATER_URL$ = "http://netmatch.vesq.org/updater/"
 
 // Tyyppikokoelma kaikkien kansioiden rekursiivista läpikäymistä varten.

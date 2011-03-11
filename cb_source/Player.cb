@@ -102,7 +102,7 @@ Type PLAYERS
     Field idleSound     As Integer      // Esim. moottorisahan tyhjäkäynti
     Field idleTimer     As Integer      // Koska soitettu viimeksi
     Field hasAmmos      As Integer      // Onko pelaajalla ammuksia nykyisessä aseessa
-    Field team          As Integer      // Joukkue
+    Field team          As Byte         // Joukkue
     Field mapName       As String       // Pelaajalla ladattuna oleva kartta
     Field outOfMap      As Integer      // Kuinka monta päivityskierrosta pelaaja on ollut poissa kartalta
     Field spawnTime     As Integer      // Syntymäaika
@@ -111,6 +111,9 @@ Type PLAYERS
     Field kicked        As Byte         // Onko pelaaja potkittu pois
     Field kickReason    As String       // Mikä syy on annettu potkuille
     Field kickerId      As Byte         // Kuka potkaisi
+    Field hackTestX     As Integer      // Pelaajan viimeisin sijainti nopeuden tarkistuksessa
+    Field hackTestY     As Integer      // Pelaajan viimeisin sijainti nopeuden tarkistuksessa
+    Field lag           As Integer      // Pelaajan lagi millisekunneissa
 EndType
 
 //--------------------------------------------------------------------------------
@@ -176,9 +179,9 @@ Function CheckBots()
                         nmsg\playerId       = player\playerId
                     EndIf
                 Next plr
-//COM1                gPlayerCount - 1
-//COM1                gBotCount - 1
-                Return True
+                gPlayerCount - 1
+                gBotCount - 1
+                If Not (gPlayerCount > gMapBotDelete And gBotCount > 0) Then Return True
             EndIf
         Next player
     EndIf
@@ -214,9 +217,9 @@ Function CheckBots()
                         nmsg\playerId2      = player\zombie
                     EndIf
                 Next plr
-//COM1                gBotCount + 1
-//COM1                gPlayerCount + 1
-                Return True
+                gBotCount + 1
+                gPlayerCount + 1
+                If Not (gPlayerCount < gMapBotDelete And gBotCount < gMapMaxBots) Then Return True
             EndIf
         Next player
     EndIf

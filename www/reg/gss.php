@@ -16,7 +16,10 @@ define( "NM_PROFILE", "NetMatch" );
 header("Content-type: text/plain;");
 
 
-CreateLog();
+if( !isset( $_GET['botlisting'] ) )
+    CreateLog();
+else
+    die( ListServers() );
 
 if( isset( $_GET['mode'] ) )
 {
@@ -55,9 +58,19 @@ function ListServers()
     // mode -> list | profile -> NetMatch | ver -> v2.1b
     // Mahdollinen parametri myˆs: devbuild -> 1
 
-    // Tarkistetaan, ett‰ tarvittavat tiedot on annettu
-    if( !isset( $_GET['profile'], $_GET['ver'] ) ) return "listing_failed";
-    if( $_GET['profile'] !== NM_PROFILE ) return "listing_failed";
+    $botlisting = 0;
+    if( isset( $_GET['botlisting'] ) )
+    {
+        $botlisting = 1;
+    }
+    
+    
+    if( $botlisting == 0 )
+    {
+        // Tarkistetaan, ett‰ tarvittavat tiedot on annettu
+        if( !isset( $_GET['profile'], $_GET['ver'] ) ) return "listing_failed";
+        if( $_GET['profile'] !== NM_PROFILE ) return "listing_failed";
+    }
     
     $devbuild = 0;
     if( !empty( $_GET['devbuild'] ) && $_GET['devbuild'] != 0 )
@@ -110,14 +123,14 @@ function ListServers()
                 // Haetaan seuraava rivi.
                 continue;
             }
-            if( ( $row['version'] == $_GET['ver'] && $row['devbuild'] == 0 ) || $devbuild == 1 )
+            if( ( $row['version'] == $_GET['ver'] && $row['devbuild'] == 0 ) || $devbuild == 1 || $botlisting == 1 )
             {
                 // Lis‰t‰‰n palvelimen tiedot merkkijonoon, versio on oikea.
                 $liststring .= "name=" . StringConvert( $row['desc'] ) . "|";
                 $liststring .= "addr=" . $row['ip'] . "|";
                 $liststring .= "port=" . $row['port'] . "|";
                 $liststring .= "info=" . StringConvert( $row['info'] ) . "|";
-                $liststring .= "ver=" . $row['version'];
+                $liststring .= "ver=" . $row['version'] . ( $row['devbuild'] == 1 && $botlisting ? "-dev" : "" );
                 $liststring .= "\n";
             }
         }

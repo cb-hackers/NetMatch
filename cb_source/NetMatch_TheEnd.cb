@@ -27,16 +27,17 @@ EndIf
 SAFEEXIT OFF
 
 Const NM_VERSION$   = "2.3"
-Const NM_REVISION$  = ""
+Const NM_REVISION$  = "a"
 Const NM_PATCH      = 0
 
-// Tämä pitää AINA laitta 1, jos kyseessä ei ole virallinen julkaisu.
+// Tämä pitää AINA laittaa 1, jos kyseessä ei ole virallinen julkaisu.
 // Tällöin palvelin näkyy vain muille NM_DEVBUILD = 1 omaaville clienteille.
 Const NM_DEVBUILD   = 1
 
 //--------------------------------------------------------------------------------
 // Includet
 //--------------------------------------------------------------------------------
+Include "Message.cb"
 Include "Glossary.cb"
 Include "Config.cb"
 Include "Resource.cb"
@@ -48,7 +49,6 @@ Include "cbGSS.cb"
 Include "cbNetwork.cb"
 Include "Server.cb"
 Include "Client.cb"
-Include "Message.cb"
 Include "Player.cb"
 Include "Game.cb"
 Include "NetMessage.cb"
