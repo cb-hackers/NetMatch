@@ -114,6 +114,7 @@ Type PLAYERS
     Field hackTestX     As Integer      // Pelaajan viimeisin sijainti nopeuden tarkistuksessa
     Field hackTestY     As Integer      // Pelaajan viimeisin sijainti nopeuden tarkistuksessa
     Field lag           As Integer      // Pelaajan lagi millisekunneissa
+    Field spHackTimer   As Integer      // Viimeisimmässä nopeuden tarkistuksessa otettu Timer()
 EndType
 
 //--------------------------------------------------------------------------------
