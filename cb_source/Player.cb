@@ -114,6 +114,7 @@ Type PLAYERS
     Field hackTestX     As Integer      // Pelaajan viimeisin sijainti nopeuden tarkistuksessa
     Field hackTestY     As Integer      // Pelaajan viimeisin sijainti nopeuden tarkistuksessa
     Field lag           As Integer      // Pelaajan lagi millisekunneissa
+    Field handShooted   As Byte         // Kummalla kädellä on viimeksi ammuttu (pistooli) 0=vasen 1=oikea
 EndType
 
 //--------------------------------------------------------------------------------

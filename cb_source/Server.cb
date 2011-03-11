@@ -548,10 +548,15 @@ Function ReadDataFromClient()
                 // Uusi ammus on ammuttu
                 If nmsg\weapon = WPN_CHAINSAW Then
                     _Net_PutByte(nmsg\msgType)
-                    _Net_PutInt(nmsg\bulletId)      // Ammuksen tunnus
+                    _Net_PutShort(nmsg\bulletId)    // Ammuksen tunnus
                     _Net_PutByte(nmsg\playerId)     // Kuka ampui
-                    _Net_PutByte(nmsg\weapon)       // Mill‰ aseella
-                    _Net_PutByte(nmsg\sndPlay)      // Soitetaanko ‰‰ni
+                    
+                    // Tungetaan samaan tavuun useampi muuttuja:
+                    // Huomaa l‰hes samat operaatiot myˆs Else-lohkossa
+                    b = (nmsg\weapon Mod 16) Shl 0  // Mill‰ aseella (mod 16 jottei vie yli 4 bitti‰)
+                    b = b + nmsg\sndPlay     Shl 4  // Soitetaanko ‰‰ni
+                    //b = b + nmsg\handShooted Shl 5  // Kummalla k‰dell‰ ammuttiin (ei tarvita moottorisahalle)
+                    _Net_PutByte(b)
                     // Ammuksen sijainti
                     _Net_PutShort(nmsg\x)
                     _Net_PutShort(nmsg\y)
@@ -562,10 +567,17 @@ Function ReadDataFromClient()
                     If bid <> 0 Then
                         bullet.BULLETS = ConvertToType(bid)
                         _Net_PutByte(nmsg\msgType)
-                        _Net_PutInt(nmsg\bulletId)      // Ammuksen tunnus
+                        _Net_PutShort(nmsg\bulletId)    // Ammuksen tunnus
                         _Net_PutByte(nmsg\playerId)     // Kuka ampui
-                        _Net_PutByte(nmsg\weapon)       // Mill‰ aseella
-                        _Net_PutByte(nmsg\sndPlay)      // Soitetaanko ‰‰ni
+                        
+                        // Tungetaan samaan tavuun useampi muuttuja:
+                        // Esimerkiksi bool arvon (1/0) asettaminen tavun b 4. bittiin tapahtuu seuraavasti
+                        // b = b + bool Shl 4
+                        b = (nmsg\weapon Mod 16) Shl 0  // Mill‰ aseella (mod 16 jottei vie yli 4 bitti‰)
+                        b = b + nmsg\sndPlay     Shl 4  // Soitetaanko ‰‰ni
+                        b = b + nmsg\handShooted Shl 5  // Kummalla k‰dell‰ ammuttiin
+                        _Net_PutByte(b)
+                        
                         // Ammuksen sijainti
                         _Net_PutShort(ObjectX(bullet\obj))
                         _Net_PutShort(ObjectY(bullet\obj))

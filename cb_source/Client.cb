@@ -190,6 +190,7 @@ Function ClientLoop()
     // Muuttujien nollaukset
     gFirstLoop          = True
     gPlayerCount        = 0
+    gNotShotYet         = True
     gConsoleMessage     = ""
     gClientDataSended   = False
     gNetFPS             = 0
@@ -707,13 +708,22 @@ Function ReadDataFromServer()
         ElseIf netmsg = NET_NEWBULLET Then
         
             // Uusi ammus on ammuttu
-            bulletId    = _Net_GetInt()     // Ammuksen tunnus
+            bulletId    = _Net_GetUShort()  // Ammuksen tunnus
             playerId    = _Net_GetByte()    // Kuka ampui
-            weapon      = _Net_GetByte()    // Mill‰ aseella
-            sndPlay     = _Net_GetByte()    // Soitetaanko ‰‰ni
+            b           = _Net_GetByte()    // Sis‰lt‰‰ useampia muuttujia (ks. muutama rivi alasp‰in)
             x           = _Net_GetShort()   // Sijainti
             y           = _Net_GetShort()   // Sijainti
             angle       = _Net_GetShort()   // Kulma
+            
+            // Puretaan b:n bitit oikeisiin muuttujiin
+            // Jos halutaan esim. lukea 4 bitti‰ kohdasta 0, menee lauseke seuraavasti:
+            // value    = (b Shl (32-0-4)) Shr (32-4)
+            weapon      = (b Shl 28) Shr 28 // Mill‰ aseella (b:n bitit 0-3)
+            sndPlay     = (b Shl 27) Shr 31 // Soitetaanko ‰‰ni (b:n nelj‰s)
+            If weapon = WPN_PISTOL Then
+                // Kummalla k‰dell‰ ammuttiin (b:n viides)
+                handShooted = (b Shl 26)Shr 31 
+            EndIf
 
             // Haetaan ampunut pelaaja
             player.PLAYERS  = ConvertToType(gPlayers(playerId))
@@ -735,6 +745,7 @@ Function ReadDataFromServer()
                 // Suuliekki
                 If player\active = True And player\health > 0 And player\passCount = 0 Then
                     player\showFire = True
+                    If weapon = WPN_PISTOL Then player\handShooted = handShooted
                 EndIf
             Else
                 // Moottorisaha
@@ -1027,7 +1038,7 @@ Function SendDataToServer()
     _Net_PutByte(ammoExists)
     // Tutkitaan voidaanko l‰hett‰‰ tieto ampumisesta
     shootNow = 0
-    If (MouseDown(1) = True Or KeyDown(cbKeySpace) = True) And gConsoleMode = False And gSessionComplete = False And player\spawnTime = 0 Then
+    If (MouseDown(1) = True Or KeyDown(cbKeySpace) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gSessionComplete = False And player\spawnTime = 0 Then
         // Onko ase latingissa
         If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() And player\health > 0 Then
             // Onko ammuksia
@@ -1041,6 +1052,7 @@ Function SendDataToServer()
                 PlayGameSound(SND_EMPTY, ObjectX(player\obj), ObjectY(player\obj))
                 player\lastShoot = Timer()
             EndIf
+            gNotShotYet = False // Ammuttiin jo. Pistoolit eiv‰t ammu ennen kuin klikkaa uudestaan
         EndIf
     EndIf
     _Net_PutByte(shootNow)
