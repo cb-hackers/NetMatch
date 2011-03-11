@@ -52,9 +52,11 @@ Function CreateServer(_register = 0)
     EndIf
     gGameMode = SERVER
     gServerMapLoop = 0
-    gServerMapLoopNum = Int(CountWords(gMapNames(gGameMap, 1), ":")) - 1
-    If gServerMapLoopNum > 0 Then gServerMapLoop = 1
-    LoadGameMap(gMapNames(gGameMap, 1), gServerMapLoop)
+    If gServerMapList <> "" Then
+        gServerMapLoop = 1
+    EndIf
+
+    LoadGameMap(gMapNames(gGameMap, 1))
     ShowObject gMap, ON
 
     // Alustetaan pelaajat
@@ -330,10 +332,6 @@ Function ReadDataFromClient()
     sendNames = False
     txtMessage$ = ""
     
-    If GetCurrentMapName() <> gCurrentServerMap Then 
-        gCurrentServerMap = GetCurrentMapName()
-        gMapChangeTimer = Timer()
-    EndIf
     // Luetaan saapuneita viestejä
     While True
         If netmsg = NET_PLAYER Then
@@ -517,12 +515,12 @@ Function ReadDataFromClient()
         EndIf
     Next plr
     
-    If gServerMapLoopNum > 0 Then
-        mapName$ = GetWord2(gMapNames(gGameMap, 1), gServerMapLoop + 1, ":")
+    If gServerMapLoop > 0 Then
+        map.MAPS = ConvertToType( gCurrentMapPtr )
         timeLeft = gSessionStarted + gPeriodLength * 60000 - Timer()
-        If gSessionComplete = True And timeLeft < -5 And player\mapName <> mapName Then
+        If gSessionComplete = True And timeLeft < -5 And player\mapName <> map\name Then
             _Net_PutByte(NET_MAPCHANGE)
-            _Net_PutString(mapName)
+            _Net_PutString(map\name)
             _Net_PutInt(gMapCRC)
         EndIf
     EndIf

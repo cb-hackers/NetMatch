@@ -87,6 +87,14 @@ Global gServerMapLoop, gServerMapLoopNum
 gServerMapLoop = 1
 gServerMapLoopNum = 1
 
+// Tämä globaali sisältää tiedon siitä, mikä karttalista on menossa.
+Global gMapList$
+gServerMapList = ""
+
+// Tässä vakiossa on nykyisen kartan integer-typepointteri MAPS-kokoelman jäseneen.
+Global gCurrentMapPtr
+gCurrentMapPtr = 0
+
 
 
 //================================================================================
@@ -229,9 +237,9 @@ Function InMap(_x#, _y#)
 EndFunction
 
 //================================================================================
-// Ladataan kartta peliin.
+// Ladataan kartta peliin. Parametriksi annetaan kartan nimi. (MAPS\name)
 //================================================================================
-Function LoadGameMap(_mapName$, _loopNum = 0)
+Function LoadGameMap(_mapName$,_loopNum=0)
     gMapMaxPlayers  = 10
     gMapTeamPlayers = 5
     gMapMaxBots     = 5
@@ -249,13 +257,18 @@ Function LoadGameMap(_mapName$, _loopNum = 0)
 //MPR    _mapName = GetWord2(_mapName, _loopNum + 1, ":")
     found = False
     For iMap.MAPS = Each MAPS
-        If Lower( iMap\name ) = Lower( _mapName$ ) Then found = True
+        If Lower( iMap\name ) = Lower( _mapName$ ) Then 
+            found = True
+            Exit
+        EndIf
     Next iMap
     
     If found = False Then
         // Ladataan kartta serveriltä
-        If DownloadMap(_mapName) = False Then Error(getText("map_download_failed"))
-        Return False
+        If DownloadMap(_mapName) = False Then 
+            Error(GetText("map_download_failed"))
+            Return False
+        EndIf
     EndIf
     
     If gGameMode = CLIENT Then
@@ -291,9 +304,15 @@ Function LoadGameMap(_mapName$, _loopNum = 0)
     ObjectPickable gMap, ON
     ShowObject gMap, OFF
     
+    gCurrentMapPtr = ConvertToInteger( iMap )
+    
     Return True
 EndFunction
 
+//================================================================================
+// Ladataan kartta netistä. Funktio palauttaa False jos lataus epäonnistui,
+// muulloin kokoelmaan muistiin ladatun kartan osoitin.
+//================================================================================
 Function DownloadMap(_mapName$)
     For i = 0 To 1
         If i Then 
@@ -303,7 +322,7 @@ Function DownloadMap(_mapName$)
         EndIf
         If rtn <> 200 Then 
             If rtn = 404 Then 
-                Error(Replace(GetText("map_not_in_server"), "%1", _mapName))
+                Error(GetText("map_not_in_server", _mapName))
                 Return False
             Else
                 Error(GetText( "unexpected_error" ) )
@@ -316,7 +335,7 @@ Function DownloadMap(_mapName$)
             DrawImage gImages(IMG_BACKGROUND), 0, 0
             SetFont gFonts(FNT_SETUP)
             Color 255, 255, 0
-            CenterText 400, 260, Replace(GetText("map_download"), "%1", _mapName)
+            CenterText 400, 260, GetText("map_download", _mapName)
             Box 299, 299, 202, 22, OFF
             If i Then
                 pr# = 10+Float(HTTPDownloadState()) / HTTP_ContentLength * 90.0
@@ -335,7 +354,7 @@ Function DownloadMap(_mapName$)
         HTTPSaveContent ("map/"+_mapName+".mpc")
     
     If FileExists("map/"+_mapName+".cfg") And FileExists("map/"+_mapName+".mpc") Then 
-        Return True
+        Return AddMap( _mapName + ".mpc" )
     Else
         Error(getText("unexpected_error"))
         Return False
@@ -450,7 +469,7 @@ Function GetMapThumbnail(_mapName$)
 EndFunction
 
 //================================================================================
-// Palauttaa kartan tekijän nimen perusteella.
+// Palauttaa kartan tekijän kartan nimen perusteella.
 //================================================================================
 Function GetMapAuthor$(_mapName$)
     For iMap.MAPS = Each MAPS
@@ -462,18 +481,10 @@ Function GetMapAuthor$(_mapName$)
 EndFunction
 
 //================================================================================
-// Palauttaa nykyisen kartan nimen.
-//================================================================================
-Function GetCurrentMapName$()
-    mapName$ = gMapNames(gGameMap, 1)
-    Return GetWord2(mapName, gServerMapLoop + 1, ":")
-EndFunction
-
-//================================================================================
 // Lisää uuden kartan muistiin. Parametriksi annetaan kartan tiedostonimi,
 // esimerkiksi AddMap( "Luna.mpc" ). Funktio palauttaa False jos jotain
-// meni mönkään ja heittää mahdollisesti erroria Error-funktiolla. Jos kaikki
-// meni putkeen, palautetaan luodun kokoelman jäsenen osoitin.
+// meni pahasti mönkään ja heittää erroria Error-funktiolla. Jos kartta on jo
+// olemassa tai se lisättiin onnistuneesti, palautetaan sen osoitin.
 //================================================================================
 Function AddMap( _filePath$ )
     
@@ -502,8 +513,8 @@ Function AddMap( _filePath$ )
     
     For iMap.MAPS = Each MAPS
         If Lower( iMap\name ) = Lower( Left( _filePath$, Len( _filePath$ ) - 4 ) ) Then
-            // Kartta on jo olemassa
-            Return False
+            // Kartta on jo olemassa, palautetaan sen osoitin.
+            Return ConvertToInteger( iMap )
         EndIf
     Next iMap
     
@@ -567,6 +578,15 @@ Function AddMapToList( _filePath$, _listName$ )
     
     If intPtr = 0 Then Return False
     
+    For iList.MAPLISTS = Each MAPLISTS
+        // Tarkistetaan ettei karttaa lisätä uudelleen samaan listaan.
+        If iList\listName = _listName Then
+            If iList\mapPtr = intPtr Then
+                Return False
+            EndIf
+        EndIf
+    Next iList
+    
     iList.MAPLISTS = New( MAPLISTS )
     iList\listName = _listName$
     iList\mapPtr   = intPtr
@@ -575,9 +595,78 @@ Function AddMapToList( _filePath$, _listName$ )
 EndFunction
 
 //================================================================================
-// Palauttaa seuraavan vuorossa olevan kartan nimen. Jos ollaan viimeisessä
-// listan kartassa, palautetaan ensimmäinen.
+// Palauttaa nykyisen kartan osoittimen gServerMapLoopNum globaalin pohjalta. Jos 
+// ollaan viimeisessä listan kartassa, palautetaan ensimmäinen. Jos karttalistaa 
+// ei jostain kumman syystä löydy MAPLISTS-kokoelmasta, kaadetaan koko peli,
+// koska virhe on todella kriittinen. Muuten virhe olisi vain MAV. Jos joudutaan
+// kiertämään lista alkuun asti, asetetaan gServerMapLoopNum arvoksi 1. 
+// Jos parametri annetaan ja se on <> 0, palautetaan listan ensimmäinen kartta.
 //================================================================================
-Function GetNextMapName$()
-    // Toteutus uupuu tosin vielä...
+Function GetCurrentMap( _mapLoopNumOverride = 0 )
+
+    If gServerMapLoop = 0 Then
+        // Ei käytetä karttalistaa vaan pelataan vain yhdellä kartalla.
+        // Palautetaan nykyisen kartan osoitin.
+        For iMap.MAPS = Each MAPS
+            If iMap\ID = gGameMap Then
+                Return ConvertToInteger( iMap )
+            EndIf
+        Next iMap
+        
+        // Karttaa ei löytynyt listalta?! Kriittinen virhe!
+        MakeError "Current map not found in GetCurrentMap()-function!"+Chr(13)+Chr(10)+"Please report this error to the developers of NetMatch."
+    EndIf
+
+    If _mapLoopNumOverride <> 0 Then
+        // Ollaan kierretty lista läpi, joten aloitetaan etsimään 1. jäsenestä
+        gServerMapLoop = 1
+    EndIf
+    
+    mapNum = 1
+    For iList.MAPLISTS = Each MAPLISTS
+        If iList\listName = gMapList Then
+            // Löytyi oikea karttalista, palautetaan siitä seuraava kartta.
+            If mapNum = gServerMapLoop Then
+                loopedAround = False
+                // Käydään listaa läpi kunnes löydetään seuraava listan kartta
+                iList.MAPLISTS = After( iList )
+                While True
+                    If iList <> NULL Then
+                        If iList\listName = gMapList Then
+                            // Löydettiin listasta seuraava kartta
+                            Return iList\mapPtr
+                        EndIf
+                        
+                        // Ei ollut samaan listaan kuuluva jäsen, jatketaan...
+                        iList.MAPLISTS = After( iList )
+                    Else
+                        // Jos ollaan jo kerran päädytty tänne, poistutaan silmukasta.
+                        If loopedAround = True Then Exit
+                        
+                        // Osuttiin jo listan viimeiseen jäseneen, aloitetaan alusta.
+                        iList.MAPLISTS = First( MAPLISTS )
+                        loopedAround = True
+                    EndIf
+                Wend
+                // Poistutaan uloimmasta MAPLISTS-silmukasta
+                Exit
+            EndIf
+            // Etsitään seuraavaa karttaa.
+            mapNum = mapNum + 1
+        EndIf
+    Next iList
+    
+    // Jos päästiin tänne asti jo, niin se luultavasti tarkoittaa sitä ettei
+    // listalla ollut enää seuraavaa karttaa vaan lista pitäisi kiertää
+    // takaisin alkuun. Kutsutaan funktiota uudelleen parametrin kanssa,
+    // jolloin funktio alkaakin hakea heti ensimmäistä karttalistan jäsentä.
+    If _mapLoopNumOverride = 0 Then
+        Return GetCurrentMap( True )
+    Else
+        // Jostain kumman syystä myöskään pakotettu listan ensimmäisen jäsenen
+        // haku ei onnistunut. Tällöin virhe on todella kriittinen ja peli
+        // täytyy sulkea voimakeinoin. Tätä ei pitäisi koskaan tapahtua.
+        MakeError "Critical error in GetCurrentMap()-function!"+Chr(13)+Chr(10)+"Please report this error to the developers of NetMatch."
+    EndIf
+    
 EndFunction
