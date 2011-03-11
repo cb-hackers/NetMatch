@@ -20,6 +20,13 @@ Type CLIENT_MESSAGES
     Field y         As Integer
 EndType
 
+//--------------------------------------------------------------------------------
+// Pidetään viimeisimmät viisi viestiä ruudulla, kun gConsoleMode = True.
+// gChatHistory( i, 1 ) = Lähettäjä
+// gChatHistory( i, 2 ) = Viesti
+//--------------------------------------------------------------------------------
+Const CHATHISTORY_AMOUNT = 5
+Dim gChatHistory( CHATHISTORY_AMOUNT, 2 ) As String
 
 //================================================================================
 // Lisätään viesti jonoon
@@ -30,6 +37,14 @@ Function AddClientMessage(_message$, _msgType, _from$ = "")
     msg\timeStamp   = Timer()
     msg\msgType     = _msgType
     msg\from        = _from
+    If _msgType = NET_TEXTMESSAGE Then
+        For i = 2 To CHATHISTORY_AMOUNT
+            gChatHistory( i-1, 1 ) = gChatHistory( i, 1 )
+            gChatHistory( i-1, 2 ) = gChatHistory( i, 2 )
+        Next i
+        gChatHistory( CHATHISTORY_AMOUNT, 1 ) = _from
+        gChatHistory( CHATHISTORY_AMOUNT, 2 ) = _message
+    EndIf
 EndFunction
 
 
@@ -42,9 +57,24 @@ gMessageDelay(2) = 1
 //================================================================================
 Function DrawClientMessages()
     SetFont gFonts(FNT_MSG)
+    Color 255, 255, 0
     th = TextHeight("x")
+    top = 100
+    If gConsoleMode = True Then
+        chHist = 0
+        For i = 1 To CHATHISTORY_AMOUNT
+            If Len( gChatHistory( i, 1 ) ) > 0 And Len( gChatHistory( i, 2 ) ) > 0 Then
+                SetFont gFonts(FNT_MSGBOLD)
+                from$ = gChatHistory( i, 1 ) + ": "
+                Text 10, top + chHist*th, from
+                w = TextWidth(from)
+                SetFont gFonts(FNT_MSG)
+                Text 10 + w, top + chHist*th, gChatHistory( i, 2 )
+                chHist = chHist + 1
+            EndIf
+        Next i
+    EndIf
     For m = 1 To 2
-        top = 100
         If m = 2 Then top = 300
         y = top
         lastY = y
@@ -74,14 +104,13 @@ Function DrawClientMessages()
                 EndIf
                 delay = delay * gMessageDelay(m)
                 msg\y = msg\y - lift
-                Color 255, 255, 0
                 If msg\msgType = NET_LOGIN Then Color 0, 255, 0
                 If msg\msgType = NET_LOGOUT Then Color 255, 0, 0
                 If msg\timeStamp + delay < Timer() And msg\y <= top Then 
                     Delete msg
                 Else
                     If msg\msgType = NET_TEXTMESSAGE Then
-                        If msgCount <= 13 Then
+                        If msgCount <= 13 And gConsoleMode = False Then
                             SetFont gFonts(FNT_MSGBOLD)
                             from$ = msg\from + ": "
                             Text 10, msg\y, from
