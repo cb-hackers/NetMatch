@@ -872,4 +872,5 @@ EndFunction
 Function SetBotLimit(newBotLimit)
     gMapMaxBots   = newBotLimit
     gMapBotDelete = newBotLimit
+    CheckBots()
 End Function
