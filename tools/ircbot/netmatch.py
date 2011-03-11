@@ -4,16 +4,19 @@ import socket
 import time 
 import os
 from time import time
-from urllib import urlopen, quote
+from urllib2 import urlopen, quote, URLError
 from datetime import date
+from threading import Timer
+
 
 configFile    = "botconfig.ini"
 
 # Asetetaan hieman oletusarvoja, jos kaikkia tietoja ei löydäkään config-filusta
 defaultServer = "irc.saunalahti.fi"
 defaultPort   = 6667
-defaultRName  = ""
+defaultRName  = " "
 defaultMinCmdWait = 4
+defaultTimeout = 3
 
 # Varmistetaan config-filun olemassaolo
 if os.path.exists(configFile) == False:
@@ -41,7 +44,7 @@ for cLine in cLines:
 		part = cLine.split('=')
 		name = part[0].strip().lower()
 		value= part[1].strip()
-		if name=='irc_nick':
+		if name=='irc_nick' or name=='list_url':
 			settings[name] = value.split(',')
 		else:
 			settings[name] = value
@@ -186,22 +189,36 @@ def handlePrivMsg(msg):
 		c = m[1:m.find(' ')]
 		lastHandledMsg = time()
 		if c == 'list':
-			try:
-				data = urlopen(settings.get('list_url')).read().strip()
-				if data.startswith('GSS:')==False:
-					return
-				for srv in data[4:].split('\n'):
-					d={}
-					for exp in srv.split('|'):
-						tmp = exp.split('=')
-						if tmp[1].find(',')!=-1:
-							tmp[1]=tmp[1].split(',')
-						d[tmp[0]]=tmp[1]
-					maxPl = int(d['info'][3])
-					totPl = int(d['info'][0])
-					botPl = int(d['info'][1])
-					sendm(ch, "%s - %s - map:%s - players:%d(%d)/%d" % (d['name'], d['ver'], d['info'][2], (totPl-botPl), totPl, maxPl))
-			except:
+			listId = 0
+			success = False
+			while listId<len(settings['list_url']):
+				try:
+					data = urlopen(settings['list_url'][listId]).read().strip()
+					if data.startswith('GSS:')==False:
+						listId+=1
+						continue
+					if len(data)==4:
+						success = True
+						sendm(ch, "No servers online.")
+						break
+					for srv in data[4:].split('\n'):
+						d={}
+						for exp in srv.split('|'):
+							tmp = exp.split('=')
+							if tmp[1].find(',')!=-1:
+								tmp[1]=tmp[1].split(',')
+							d[tmp[0]]=tmp[1]
+						maxPl = int(d['info'][3])
+						totPl = int(d['info'][0])
+						botPl = int(d['info'][1])
+						sendm(ch, "%s - %s - map:%s - players:%d(%d)/%d" % (d['name'], d['ver'], d['info'][2], (totPl-botPl), totPl, maxPl))
+					success = True
+					break
+				except URLError, e:
+					listId+=1
+				except:
+					pass
+			if success == False:
 				sendm(ch,"Got error while getting server list :(")
 
 
