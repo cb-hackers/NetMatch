@@ -1052,7 +1052,8 @@ Function DrawGameStatus()
         If gShowFPS = True Then
             SetFont gFonts(FNT_MENUHELP)
             Color 255, 255, 0
-            Text 730, 580, "FPS: " + FPS() + "/" + gNetFPS
+            FPSstr$ = "FPS: " + FPS() + "/" + gNetFPS + " Latency: " + gLatency +"ms"
+            Text 800-TextWidth(FPSstr$+" "), 580, FPSstr$
         EndIf
         
        
