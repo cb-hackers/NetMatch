@@ -196,3 +196,10 @@ Function MakeDirs( _path$ )
         If IsDirectory(currentPath) = False Then MakeDir currentPath
     Next i
 EndFunction
+
+//================================================================================
+// Pyöristää liukuluvun annetulle tarkuudelle
+//================================================================================
+Function Round#(n#, decimals)
+    Return Float(Int(n*10^decimals)/10.0^decimals)
+End Function

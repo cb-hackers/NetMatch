@@ -1055,7 +1055,14 @@ Function DrawGameStatus()
         If gShowFPS = True Then
             SetFont gFonts(FNT_MENUHELP)
             Color 255, 255, 0
-            Text 730, 580, "FPS: " + FPS() + "/" + gNetFPS
+            
+            inRate# = gBbsIn/1024.0
+            outRate# = gBbsOut/1024.0
+            
+            // Lasketaan verkon nopeus
+            Text 720, 550, "in: " + Round(inRate#, 2) + " kB/s"
+            Text 720, 565, "out: " + Round(outRate#, 2) + " kB/s"
+            Text 720, 580, "FPS: " + FPS() + "/" + gNetFPS
         EndIf
         
        
