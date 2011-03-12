@@ -37,7 +37,8 @@ EndType
 // Tyyppikokoelma karttalistoja varten.
 //--------------------------------------------------------------------------------
 Type MAPLISTS
-    Field listName As String    // Listan nimi, pit‰‰ olla uniikki
+    Field listID                // Listan ID, numero ykkˆsest‰ eteenp‰in.
+    Field listName As String    // Listan nimi
     Field mapPtr                // Osoitin MAPS-kokoelman j‰seneen
 EndType
 
@@ -82,14 +83,14 @@ gFloor = 0
 Global gServerMap$
 gServerMap = ""
 
-// N‰ist‰ globaaleista ei ole suurta varmuutta, mit‰ ne tekev‰t :D
-Global gServerMapLoop, gServerMapLoopNum
+// Globaalissa on tieto siit‰, monesko kartta listalla on menossa. Jos t‰m‰
+// on 0, niin ei k‰ytet‰ karttalistaa vaan yksitt‰ist‰ karttaa.
+Global gServerMapLoop
 gServerMapLoop = 1
-gServerMapLoopNum = 1
 
 // T‰m‰ globaali sis‰lt‰‰ tiedon siit‰, mik‰ karttalista on menossa.
 Global gMapList$
-gServerMapList = ""
+gMapList = ""
 
 // T‰ss‰ vakiossa on nykyisen kartan integer-typepointteri MAPS-kokoelman j‰seneen.
 Global gCurrentMapPtr
@@ -101,9 +102,19 @@ gCurrentMapPtr = 0
 // T‰m‰ funktio etsii map-kansiosta kaikki kartat ja lataa niiden tiedot
 // muistiin kokoelmaan MAPS.
 //================================================================================
-SearchMaps()
+If gForceUpdate = False Then 
+    If SearchMaps() = False Then
+        // Puuttuu map-kansio, pakotetaan p‰ivitys.
+        gForceUpdate = True
+        updMsgTxt$ = GetText("update_missing_file", "map")
+        If MsgBox(updMsgTxt, "NetMatch", MSG_INFO) <> 13 Then
+            End
+        EndIf
+    EndIf
+EndIf
 Function SearchMaps()
     // Siirryt‰‰n map-kansioon.
+    If IsDirectory("map")=0 Then Return False
     ChDir "map"
     mapFiles$ = ""
     mapAuthors$ = ""
@@ -133,14 +144,16 @@ Function SearchMaps()
 
             For i = 1 To CountWords(mprMaps, ",")
                 mapFile$ = GetWord2(mprMaps, i, ",") + ".mpc"
-                AddMapToList( mapFile$, Left( file$, Len( file$ ) - 4 ) )
+                listName$ = Left( file$, Len( file$ ) - 4 )
+                AddMapToList( mapFile$, listName$ )
             Next i
         EndIf
         
         If ext = "mpc" Then
             // mpc-tiedostop‰‰tteen omaavat tiedostot ovat karttoja.
-            // Lis‰t‰‰n kartta muistiin.
-            AddMap( file$ )
+            // Lis‰t‰‰n kartta muistiin. Lis‰t‰‰n se myˆs automaattisesti
+            // teht‰v‰‰n karttalistaan.
+            AddMapToList( file$, "All maps" )
             
         EndIf
     Wend
@@ -154,6 +167,7 @@ Function SearchMaps()
         If Lower( iMap\name ) = Lower( gGameMapName ) Then gGameMap = iMap\ID
     Next iMap
     
+    Return True
 EndFunction
 
 // gMapNames-taulukon rakenne:
@@ -481,6 +495,19 @@ Function GetMapAuthor$(_mapName$)
 EndFunction
 
 //================================================================================
+// Palauttaa kartan osoittimen ID:n perusteella
+//================================================================================
+Function GetMapPtr( _mapID )
+    For iMap.MAPS = Each MAPS
+        If iMap\ID = _mapID Then
+            Return ConvertToInteger( iMap )
+        EndIf
+    Next iMap
+    
+    Return 0
+EndFunction
+
+//================================================================================
 // Lis‰‰ uuden kartan muistiin. Parametriksi annetaan kartan tiedostonimi,
 // esimerkiksi AddMap( "Luna.mpc" ). Funktio palauttaa False jos jotain
 // meni pahasti mˆnk‰‰n ja heitt‰‰ erroria Error-funktiolla. Jos kartta on jo
@@ -578,18 +605,34 @@ Function AddMapToList( _filePath$, _listName$ )
     
     If intPtr = 0 Then Return False
     
+    _listName = Replace( _listName, " ", "_" )
+    
+    If Lower( Left( gGameMapName, 5 ) ) = "list:" Then
+        If Lower(Mid( gGameMapName, 6 )) = Lower(_listName) Then
+            gMapList = _listName
+        EndIf
+    EndIf
+    
+    listID = 1
+    listIDset = False
     For iList.MAPLISTS = Each MAPLISTS
         // Tarkistetaan ettei karttaa lis‰t‰ uudelleen samaan listaan.
         If iList\listName = _listName Then
             If iList\mapPtr = intPtr Then
                 Return False
             EndIf
+            listID = iList\listID
+            listIDset = True
+        EndIf
+        If listIDset = False Then
+            If listID <= iList\listID Then listID = iList\listID + 1
         EndIf
     Next iList
     
     iList.MAPLISTS = New( MAPLISTS )
     iList\listName = _listName$
     iList\mapPtr   = intPtr
+    iList\listID   = listID
     
     Return True
 EndFunction
@@ -669,4 +712,32 @@ Function GetCurrentMap( _mapLoopNumOverride = 0 )
         MakeError "Critical error in GetCurrentMap()-function!"+Chr(13)+Chr(10)+"Please report this error to the developers of NetMatch."
     EndIf
     
+EndFunction
+
+//================================================================================
+// Palauttaa kartan pointterin MAPLISTS listalta j‰rjestysnumeron perusteella.
+// Jos karttaa ei lˆytynyt j‰rjestysnumerolla, palautetaan False.
+//================================================================================
+Function GetMapFromList( _listName$, _mapNum )
+    i = 1
+    For iList.MAPLISTS = Each MAPLISTS
+        If iList\listName = _listName Then
+            If i = _mapNum Then
+                Return iList\mapPtr
+            EndIf
+            i=i+1
+        EndIf
+    Next iList
+    
+    Return 0
+EndFunction
+
+//================================================================================
+// Palauttaa listan nimen ID:n perusteella.
+//================================================================================
+Function GetMaplistName$( _listID )
+    For iList.MAPLISTS = Each MAPLISTS
+        If iList\listID = _listID Then Return iList\listName
+    Next iList
+    Return ""
 EndFunction

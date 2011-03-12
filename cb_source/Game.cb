@@ -80,7 +80,7 @@ Function GameUpdate()
                     Delete bullet
                 Next bullet
 
-                If gLoopMapLoaded = False And timeLeft < -5000 And gServerMapLoopNum > 0 Then
+                If gLoopMapLoaded = False And timeLeft < -5000 And gServerMapLoop > 0 Then
                     gLoopMapLoaded = True
                     gServerMapLoop = gServerMapLoop + 1
                     map.MAPS = ConvertToType( GetCurrentMap() )
@@ -125,8 +125,7 @@ Function GameUpdate()
                     player\kills = 0
                     player\deaths = 0
                     UpdatePlayerProt(player\playerId)
-                    mapPtr.MAPS = ConvertToType( GetCurrentMap() )
-                    If gServerMapLoopNum > 0 And player\active = True And player\mapName <> mapPtr\name And player\zombie = False Then
+                    If gServerMapLoopNum > 0 And player\active = True And player\mapName <> gServerMap And player\zombie = False Then
                         player\loggedIn = False
                         player\active = False
                         

@@ -52,11 +52,17 @@ Function CreateServer(_register = 0)
     EndIf
     gGameMode = SERVER
     gServerMapLoop = 0
-    If gServerMapList <> "" Then
+    If gMapList <> "" Then
         gServerMapLoop = 1
+        mapPtr = GetMapFromList( gMapList, 1 )
+        curMap.MAPS = ConvertToType( mapPtr )
+        gGameMap = curMap\ID
     EndIf
 
-    LoadGameMap(gMapNames(gGameMap, 1))
+    // Asetetaan kartan nimi gServerMap globaaliin
+    gServerMap = gMapNames( gGameMap, 1 )
+    
+    LoadGameMap(gServerMap)
     ShowObject gMap, ON
 
     // Alustetaan pelaajat

@@ -42,7 +42,8 @@ Global gFXVolume
 gFXVolume = 50
 
 Global gGameMap, gGameMapName$
-gGameMap = 0
+gGameMap = 1
+gGameMapName = ""
 
 Global gPeriodLength
 gPeriodLength = 5
@@ -114,7 +115,7 @@ Function SaveConfig()
     WriteLine f, "Address=" + Replace(gAddress, "=", "&#61;")
     WriteLine f, "Port=" + Replace(gPort, "=", "&#61;")
     WriteLine f, "ServerName=" + Replace(gServerName, "=", "&#61;")
-    WriteLine f, "Map=" + gMapNames(gGameMap, 1)
+    WriteLine f, "Map=" + gGameMapName
     WriteLine f, "ServerPort=" + Replace(gServerPort, "=", "&#61;")
     WriteLine f, "Statistics=" + gStatus
     WriteLine f, "MusicVolume=" + gMusicVolume
