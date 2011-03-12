@@ -160,7 +160,7 @@ Const SND_COUNT         = 27    // Äänien lukumäärä
 //--------------------------------------------------------------------------------
 // Tarkistetaan että mediatiedosto on olemassa.
 //--------------------------------------------------------------------------------
-If FileExists( RESOURCE_ARCHIVE ) = 0  Then
+If FileExists( RESOURCE_ARCHIVE ) = 0 And gDirectServer = False Then
     // Puuttuu mediat, pakotetaan päivitys.
     msgTxt$ = GetText( "update_missing_file", RESOURCE_ARCHIVE )
     If MsgBox(msgTxt$, "NetMatch", MSG_INFO) = 13 Then
@@ -342,7 +342,7 @@ EndFunction
 
 
 Function LoadResourceImage(_fileName$, _archive$ = "", _makeError = 1)
-    If gDirectServer And _fileName <> "background.png" Then Return 0
+    If gDirectServer And ( _fileName <> "background.png" Or FileExists( RESOURCE_ARCHIVE )=0 ) Then Return 0
 //SetWindow "IMAGE " + _fileName
 
 //    If _archive = "media" Then
@@ -386,7 +386,7 @@ EndFunction
 
 
 Function LoadResourceObject(_fileName$, _quality = 1)
-    If gDirectServer Then Return 0
+    If gDirectServer Or FileExists( RESOURCE_ARCHIVE )=0 Then Return 0
     img = LoadResourceImage(_fileName)
     obj = MakeObject(_quality)
     PaintObject obj, -img
@@ -458,7 +458,7 @@ EndFunction
 
 
 Function LoadResourceSound(_sndName$)
-    If gDirectServer Then Return 0
+    If gDirectServer Or FileExists( RESOURCE_ARCHIVE )=0 Then Return 0
 //SetWindow "SOUND " + _sndName
 //    snd = LoadSound("media/" + _sndName)
 //    Return snd

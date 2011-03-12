@@ -9,7 +9,7 @@ Function WriteLog(_text$)
 EndFunction
 
 Global gDebug
-gDebug = 0
+gDebug = -1 // Oletuksena ei debuggia.
 
 Function Debug(_text$)
     If gDebug <> gGameMode Then Return False

@@ -80,12 +80,14 @@ Function GameUpdate()
                     Delete bullet
                 Next bullet
 
-                If gLoopMapLoaded = False And timeLeft < -5000 And gServerMapLoopNum > 0 Then
+                If gLoopMapLoaded = False And timeLeft < -5000 And gServerMapLoop > 0 Then
                     gLoopMapLoaded = True
-                    gServerMapLoop + 1
-                    If gServerMapLoop > gServerMapLoopNum Then gServerMapLoop = 1
+                    gServerMapLoop = gServerMapLoop + 1
+                    map.MAPS = ConvertToType( GetCurrentMap() )
+                    gGameMap = map\ID
+                    gServerMap = map\name
                     ClearCollisions
-                    LoadGameMap(gMapNames(gGameMap, 1), gServerMapLoop)
+                    LoadGameMap(gServerMap)
                     If gDisableBots Then
                         gMapMaxBots = 0
                         gMapBotDelete = 0
@@ -123,7 +125,7 @@ Function GameUpdate()
                     player\kills = 0
                     player\deaths = 0
                     UpdatePlayerProt(player\playerId)
-                    If gServerMapLoopNum > 0 And player\active = True And player\mapName <> GetCurrentMapName() And player\zombie = False Then
+                    If gServerMapLoopNum > 0 And player\active = True And player\mapName <> gServerMap And player\zombie = False Then
                         player\loggedIn = False
                         player\active = False
                         
@@ -559,9 +561,6 @@ Function GameUpdate()
     If mapChanged Then forceUpdate = True
     If gGameMode = SERVER Then
         mapName$ = gMapNames(gGameMap, 1)
-        If CountWords(mapName, ":") > 1 Then
-            mapName = GetWord2(mapName, gServerMapLoop + 1, ":")
-        EndIf
         If GSSUpdate(lPlayerCount + "," + lBotCount + "," + mapName + "," + gMapMaxPlayers + "," + lPlayerNames, forceUpdate) = True Then
             gPlayerCount = lPlayerCount
             gPlayerNames = lPlayerNames
@@ -814,7 +813,7 @@ Function Login(_in, _playerId = 0)
                     _Net_PutByte(NET_LOGINOK)
                     _Net_PutByte(player\playerId)
                     _Net_PutByte(gPlayMode)
-                    _Net_PutString(GetWord2(gMapNames(gGameMap, 1), gServerMapLoop + 1, ":"))
+                    _Net_PutString(gServerMap)
                     _Net_PutInt(gMapCRC)
                     ServerSend()
                     WriteLog(player\name + " logged in (" + GetWord2(NET_ClientId, 1, ":") + ")")

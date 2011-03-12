@@ -176,9 +176,17 @@ Function DrawMenu(_menu)
     txtHelp$ = ""
     clickTime = 0
     
+    currentMapList = 0
     loopMapNum = 1
     loopMapTime = 0
-    loopMapDelay = 1000
+    loopMapDelay = 1500
+    
+    If gMapList <> "" Then 
+        For iList.MAPLISTS = Each MAPLISTS
+            If iList\listName = gMapList Then currentMapList = iList\listID
+        Next iList
+    EndIf
+    If currentMapList > 0 Then gGameMap = 0
     
     UpdateGame
     Repeat
@@ -373,24 +381,36 @@ Function DrawMenu(_menu)
                 EndIf
                 // Valittu kartta
                 If mi\itemId = MI_MAP Then
-                    Text cfgX, sy, GetWord2(Replace(gMapNames(gGameMap, 1), "_", " "), 1, ":")
+                    If gMapList <> "" Then 
+                        mapTitle$ = "List: " + Replace( gMapList, "_", " " )
+                    Else
+                        mapTitle$ = gMapNames( gGameMap, 1 )
+                    EndIf
                     If selection = miIndex Then
-                        loopMaps = Int(CountWords(gMapNames(gGameMap, 1), ":")) - 1
-                        If loopMaps >= 1 Then
-                            mapName$ = GetWord2(gMapNames(gGameMap, 1), loopMapNum + 1, ":")
-                            gMapImages(gGameMap, 1) = GetMapThumbnail(mapName)
-                            gMapNames(gGameMap, 2) = GetMapAuthor(mapName)
+                        If gMapList <> "" Then
                             If loopMapTime + loopMapDelay < Timer() Then
                                 loopMapTime = Timer()
-                                loopMapNum + 1
-                                If loopMapNum > loopMaps Then loopMapNum = 1
+                                // N‰ytet‰‰n seuraava pikkukuva
+                                loopMapNum = loopMapNum + 1
+                                nextMap = GetMapFromList( gMapList, loopMapNum )
+                                If nextMap = 0 Then
+                                    loopMapNum = 1
+                                    nextMap = GetMapFromList( gMapList, loopMapNum )
+                                EndIf
+                                curMap.MAPS = ConvertToType( nextMap )
                             EndIf
+                        Else
+                            mapPtr = GetMapPtr( gGameMap )
+                            If mapPtr <> 0 Then
+                                curMap.MAPS = ConvertToType( mapPtr )
+                                mapTitle$ = curMap\name
+                            EndIf  
                         EndIf
-                        If gGameMap <> 0 And gMapImages(gGameMap, 1) <> 0 Then
-                            Text cfgX, sy + cfgH, Chr(169) + " " + gMapNames(gGameMap, 2)
-                            DrawImage gMapImages(gGameMap, 1), cfgX, sy + cfgH + cfgH
-                        EndIf
+                        
+                        Text cfgX, sy + cfgH, Chr(169) + " " + curMap\author
+                        DrawImage curMap\thumbnail, cfgX, sy + cfgH + cfgH
                     EndIf
+                    Text cfgX, sy, mapTitle$
                 EndIf
                 // Kartta-asetukset
                 // EI KƒYT÷SSƒ
@@ -517,8 +537,20 @@ Function DrawMenu(_menu)
 
             // Vaihdetaan karttaa
             ElseIf miSelected = MI_MAP Then
-                gGameMap + 1
-                If gGameMap > gMapCount Then gGameMap = 1
+                If gMapList = "" And gGameMap < gMapCount Then
+                    gGameMap + 1
+                    gGameMapName = gMapNames( gGameMap, 1 )
+                Else
+                    // Vaihdetaan listaa
+                    currentMapList = currentMapList + 1
+                    gMapList = GetMaplistName( currentMapList )
+                    If gMapList = "" Then 
+                        gGameMap = 1
+                        currentMapList = 0
+                    Else
+                        gGameMapName = "List:" + gMapList
+                    EndIf
+                EndIf
                 SaveConfig()
                 
             // Vaihdetaan pelimoodia

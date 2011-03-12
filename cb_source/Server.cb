@@ -4,8 +4,6 @@
 // Palvelimen toiminnot
 //********************************************************************************
 
-Global gSpeedHackTimer
-gSpeedHackTimer = Timer()
 Global gBotFreeze As Byte
 
 //================================================================================
@@ -54,9 +52,17 @@ Function CreateServer(_register = 0)
     EndIf
     gGameMode = SERVER
     gServerMapLoop = 0
-    gServerMapLoopNum = Int(CountWords(gMapNames(gGameMap, 1), ":")) - 1
-    If gServerMapLoopNum > 0 Then gServerMapLoop = 1
-    LoadGameMap(gMapNames(gGameMap, 1), gServerMapLoop)
+    If gMapList <> "" Then
+        gServerMapLoop = 1
+        mapPtr = GetMapFromList( gMapList, 1 )
+        curMap.MAPS = ConvertToType( mapPtr )
+        gGameMap = curMap\ID
+    EndIf
+
+    // Asetetaan kartan nimi gServerMap globaaliin
+    gServerMap = gMapNames( gGameMap, 1 )
+    
+    LoadGameMap(gServerMap)
     ShowObject gMap, ON
 
     // Alustetaan pelaajat
@@ -332,10 +338,6 @@ Function ReadDataFromClient()
     sendNames = False
     txtMessage$ = ""
     
-    If GetCurrentMapName() <> gCurrentServerMap Then 
-        gCurrentServerMap = GetCurrentMapName()
-        gMapChangeTimer = Timer()
-    EndIf
     // Luetaan saapuneita viestejä
     While True
         If netmsg = NET_PLAYER Then
@@ -366,9 +368,9 @@ Function ReadDataFromClient()
                 EndIf
                 
                 // Tarkistetaan pelaajan nopeus per sekunti
-                If Timer()-gSpeedHackTimer=>1000 And player\zombie = False Then
+                If Timer()-player\spHackTimer=>1000 And player\zombie = False Then
                     // Lasketaan pelaajan todellinen maksimi nopeus jolla saa liikkua
-                    trueMaxSpeed# = (Sqrt(FORWARD_SPEED * SIDESTEP_SPEED * 2) * 100 / aWeapon( player\weapon, WPNF_WEIGHT ) + 80) * ( player\lag + 1000 ) / 1000.0 
+                    trueMaxSpeed# = (Sqrt(FORWARD_SPEED * SIDESTEP_SPEED * 2) * 100 / aWeapon( player\weapon, WPNF_WEIGHT ) + 85) * ( player\lag + 1000 ) / 1000.0 
                     If player\spawnTime < Timer()+1000 And Distance(player\x, player\y, player\hackTestX, player\hackTestY)>trueMaxSpeed And player\LoggedIn = True Then
                          nmsg.NET_MESSAGES = New(NET_MESSAGES)
                          nmsg\toPlayer   = player\playerId  // Kenelle viesti lähetetään
@@ -376,7 +378,7 @@ Function ReadDataFromClient()
                     EndIf
                     player\hackTestX = player\x  // Asetetaan pelaajan x-paikka seuraavaa tarkistusta varten
                     player\hackTestY = player\y  // Asetetaan pelaajan y-paikka seuraavaa tarkistusta varten
-                    gSpeedHackTimer = Timer()
+                    player\spHackTimer = Timer()
                 EndIf
    
                 If shoot = 1 Then CreateServerBullet(gCurrentPlayerId)
@@ -519,12 +521,12 @@ Function ReadDataFromClient()
         EndIf
     Next plr
     
-    If gServerMapLoopNum > 0 Then
-        mapName$ = GetWord2(gMapNames(gGameMap, 1), gServerMapLoop + 1, ":")
+    If gServerMapLoop > 0 Then
+        map.MAPS = ConvertToType( gCurrentMapPtr )
         timeLeft = gSessionStarted + gPeriodLength * 60000 - Timer()
-        If gSessionComplete = True And timeLeft < -5 And player\mapName <> mapName Then
+        If gSessionComplete = True And timeLeft < -5 And player\mapName <> map\name Then
             _Net_PutByte(NET_MAPCHANGE)
-            _Net_PutString(mapName)
+            _Net_PutString(map\name)
             _Net_PutInt(gMapCRC)
         EndIf
     EndIf
