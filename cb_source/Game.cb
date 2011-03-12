@@ -1056,13 +1056,21 @@ Function DrawGameStatus()
             SetFont gFonts(FNT_MENUHELP)
             Color 255, 255, 0
             
-            inRate# = gBbsIn/1024.0
-            outRate# = gBbsOut/1024.0
+            inRate#  = gBbsIn/1024.0 // kilotavuja sis‰‰n per sekunti
+            outRate# = gBbsOut/1024.0 // kilotavuja ulos per sekunti
+            iostr$ = Round(inRate#, 1) + "/" + Round(outRate#, 1) + " kB/s"
             
-            // Lasketaan verkon nopeus
-            Text 720, 550, "in: " + Round(inRate#, 2) + " kB/s"
-            Text 720, 565, "out: " + Round(outRate#, 2) + " kB/s"
-            Text 720, 580, "FPS: " + FPS() + "/" + gNetFPS
+            // J‰rjestell‰‰n tekstit hienosti
+            padding = TextWidth("latency: ")
+            x1 = 800-padding-TextWidth(iostr)-5
+            x2 = x1 + padding
+            
+            Text x1, 550, "fps: "
+            Text x2, 550, FPS()
+            Text x1, 565, "latency: "
+            Text x2, 565, gLatency + " ms"
+            Text x1, 580, "net i/o: "
+            Text x2, 580, iostr$
         EndIf
         
        
