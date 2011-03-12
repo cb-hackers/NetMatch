@@ -164,7 +164,8 @@ EndFunction
 //--------------------------------------------------------------------------------
 Global gClientDataSended, gNetFPS, gNetFPSCounter, gNetFPSTimer, gFirstLoop
 Global gConsoleMessage$, gConsoleText$, gConsoleMode
-Global gBbs, gBbsCount, gBbsTimer
+Global gBbsIn, gBbsInCount, gBbsInTimer
+Global gBbsOut, gBbsOutCount, gBbsOutTimer
 Global gShowFloor
 
 // Ollaanko minut potkittu palvelimelta.
@@ -192,6 +193,7 @@ Function ClientLoop()
     // Muuttujien nollaukset
     gFirstLoop          = True
     gPlayerCount        = 0
+    gNotShotYet         = True
     gConsoleMessage     = ""
     gClientDataSended   = False
     gNetFPS             = 0
@@ -199,10 +201,12 @@ Function ClientLoop()
     gNetFPSTimer        = Timer()
     gConsoleMode        = False
     gConsoleText$       = ""
-    gBbsCount           = 0
-    gBbs                = 0
-    gBbsTimer           = 0
-    gBbsTimer           = Timer()
+    gBbsInCount         = 0
+    gBbsIn              = 0
+    gBbsInTimer         = Timer()
+    gBbsOutCount        = 0
+    gBbsOut             = 0
+    gBbsOutTimer        = Timer()
     gKickedOut          = False
     gKickReason         = ""
     gKickerName         = ""
@@ -534,11 +538,11 @@ Function ReadDataFromServer()
     gRadarId = 0
     
     // Muistipalan alussa on aina saapuneen datan pituus joka luetaan t‰ss‰ pois
-    gBbsCount = gBbsCount + _Net_GetInt()
-    If gBbsTimer + 1000 < Timer() Then
-        gBbsTimer = Timer()
-        gBbs = gBbsCount
-        gBbsCount = 0
+    gBbsInCount = gBbsInCount + _Net_GetInt()
+    If gBbsInTimer + 1000 < Timer() Then
+        gBbsIn = gBbsInCount/((Timer()-gBbsInTimer)/1000.0)
+        gBbsInTimer = Timer()
+        gBbsInCount = 0
     EndIf
     
     // Luetaan kaikki saapuneet viestit
@@ -555,14 +559,19 @@ Function ReadDataFromServer()
             player\x        = _Net_GetShort()   // Sijainti
             player\y        = _Net_GetShort()   // Sijainti
             player\angle    = _Net_GetShort()   // Kulma
-            weapon          = _Net_GetByte()    // Ase
-            player\hasAmmos = _Net_GetByte()    // Onko ammuksia
+            b               = _Net_GetByte()    // Sis‰lt‰‰ useamman muuttujan (alla)
+            
+            // Jos halutaan esim. lukea 4 bitti‰ kohdasta 0, menee lauseke seuraavasti:
+            // value= (b Shl (32-0-4)) Shr (32-4)
+            weapon          = (b Shl 28) Shr 28     // Ase (bitit 0-3)
+            player\hasAmmos = (b Shl 27) Shr 31     // Onko ammuksia (bitti 4)
+            team            = (b Shl 25) Shr 31 + 1 // Joukkue (bitti 6)
+            player\spawnTime= (b Shl 24) Shr 31     // Haavoittumaton (bitti 7)
+            
             player\health   = _Net_GetByte()    // Terveys
             If player\health > 128 Then player\health = player\health - 256
             player\kills    = _Net_GetShort()  // Tapot
             player\deaths   = _Net_GetShort()  // Kuolemat
-            team            = _Net_GetByte()    // Joukkue
-            player\spawnTime= _Net_GetByte()    // Haavoittumaton
             newPlayer       = Not player\loggedIn
             player\loggedIn = True
             wakeUp = False
@@ -716,13 +725,22 @@ Function ReadDataFromServer()
         ElseIf netmsg = NET_NEWBULLET Then
         
             // Uusi ammus on ammuttu
-            bulletId    = _Net_GetInt()     // Ammuksen tunnus
+            bulletId    = _Net_GetUShort()  // Ammuksen tunnus
             playerId    = _Net_GetByte()    // Kuka ampui
-            weapon      = _Net_GetByte()    // Mill‰ aseella
-            sndPlay     = _Net_GetByte()    // Soitetaanko ‰‰ni
+            b           = _Net_GetByte()    // Sis‰lt‰‰ useampia muuttujia (ks. muutama rivi alasp‰in)
             x           = _Net_GetShort()   // Sijainti
             y           = _Net_GetShort()   // Sijainti
             angle       = _Net_GetShort()   // Kulma
+            
+            // Puretaan b:n bitit oikeisiin muuttujiin
+            // Jos halutaan esim. lukea 4 bitti‰ kohdasta 0, menee lauseke seuraavasti:
+            // value    = (b Shl (32-0-4)) Shr (32-4)
+            weapon      = (b Shl 28) Shr 28 // Mill‰ aseella (b:n bitit 0-3)
+            sndPlay     = (b Shl 27) Shr 31 // Soitetaanko ‰‰ni (b:n nelj‰s bitti)
+            If weapon = WPN_PISTOL Then
+                // Kummalla k‰dell‰ ammuttiin (b:n viides bitti)
+                handShooted = (b Shl 26)Shr 31 
+            EndIf
 
             // Haetaan ampunut pelaaja
             player.PLAYERS  = ConvertToType(gPlayers(playerId))
@@ -744,6 +762,7 @@ Function ReadDataFromServer()
                 // Suuliekki
                 If player\active = True And player\health > 0 And player\passCount = 0 Then
                     player\showFire = True
+                    If weapon = WPN_PISTOL Then player\handShooted = handShooted
                 EndIf
             Else
                 // Moottorisaha
@@ -772,7 +791,7 @@ Function ReadDataFromServer()
         ElseIf netmsg = NET_BULLETHIT Then
         
             // Ammuksen osumaviesti saapuu
-            bulletId    = _Net_GetInt()     // Ammuksen tunnus
+            bulletId    = _Net_GetUShort()  // Ammuksen tunnus
             playerId    = _Net_GetByte()    // Keneen osui
             x           = _Net_GetShort()   // Miss‰ osui
             y           = _Net_GetShort()   // Miss‰ osui
@@ -1030,13 +1049,13 @@ Function SendDataToServer()
     _Net_PutShort(ObjectX(player\obj))      // Sijainti
     _Net_PutShort(ObjectY(player\obj))      // Sijainti
     _Net_PutShort(ObjectAngle(player\obj))  // Kulma
-    _Net_PutByte(player\weapon)             // Ase
+    
+    // Tarkastetaan, onko panoksia
     ammoExists = False
     If aWeapon(player\weapon, WPNF_AMMO) > 0 Then ammoExists = True
-    _Net_PutByte(ammoExists)
     // Tutkitaan voidaanko l‰hett‰‰ tieto ampumisesta
     shootNow = 0
-    If (MouseDown(1) = True Or KeyDown(cbKeySpace) = True) And gConsoleMode = False And gSessionComplete = False And player\spawnTime = 0 Then
+    If (MouseDown(1) = True Or KeyDown(cbKeySpace) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gSessionComplete = False And player\spawnTime = 0 Then
         // Onko ase latingissa
         If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() And player\health > 0 Then
             // Onko ammuksia
@@ -1050,10 +1069,17 @@ Function SendDataToServer()
                 PlayGameSound(SND_EMPTY, ObjectX(player\obj), ObjectY(player\obj))
                 player\lastShoot = Timer()
             EndIf
+            gNotShotYet = False // Ammuttiin jo. Pistoolit eiv‰t ammu ennen kuin klikkaa uudestaan
         EndIf
     EndIf
-    _Net_PutByte(shootNow)
-    _Net_PutByte(pickedItem)
+    
+    // Tungetaan useampi muuttuja yhteen tavuun:
+    b = (player\weapon Mod 16) Shl 0 // Ase (bitit 0-3)
+    b = b + ammoExists         Shl 4 // Onko panoksia (bitti 4)
+    b = b + shootNow           Shl 5 // Ammutaanko (bitti 5)
+    
+    _Net_PutByte(b)          // L‰hetet‰‰n luotu tavu
+    _Net_PutByte(pickedItem) // Poimittu itemi (id)
 
     // L‰hetet‰‰n tekstiviesti jos sellainen on
     If Len(gConsoleMessage) > 0 Then
@@ -1069,6 +1095,12 @@ Function SendDataToServer()
     
     
     _Net_PutByte(NET_END)
+    gBbsOutCount = gBbsOutCount + MEMBlockSize(gNetMemBlock)-4
+    If gBbsOutTimer + 1000 < Timer() Then
+        gBbsOut = gBbsOutCount/((Timer()-gBbsOutTimer)/1000.0)
+        gBbsOutTimer = Timer()
+        gBbsOutCount = 0
+    EndIf
     ClientSendBack()
     gClientDataSended = True
 EndFunction

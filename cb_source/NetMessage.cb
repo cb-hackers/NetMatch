@@ -52,5 +52,6 @@ Type NET_MESSAGES
     Field y             As Integer  // Sijaintitietoa
     Field playerId2     As Integer  // Pelaajatunnus (kuka tapettiin)
     Field sndPlay       As Integer  // Soitetaanko ‰‰ni
+    Field handShooted   As Byte     // Kumpi k‰si ampui (pistooli) 0=vasen 1=oikea
 EndType
 

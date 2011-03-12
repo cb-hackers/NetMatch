@@ -346,10 +346,17 @@ Function ReadDataFromClient()
             x       = _Net_GetShort()   // x-positio
             y       = _Net_GetShort()   // y-positio
             angle   = _Net_GetShort()   // kulma
-            weapon  = _Net_GetByte()    // Valittuna oleva ase
-            hasAmmo = _Net_GetByte()    // Onko valitussa aseessa ammuksia
-            shoot   = _Net_GetByte()    // Ampuuko
-            picked  = _Net_GetByte()    // Onko poimittu jotain
+            b       = _Net_GetByte()    // T‰m‰ tavu sis‰lt‰‰ useamman muuttujan (alempana)
+            
+            // Puretaan b-tavu muuttujiin
+            // Jos halutaan esim. lukea 4 bitti‰ kohdasta 0, menee lauseke seuraavasti:
+            // value= (b Shl (32-0-4)) Shr (32-4)
+            weapon  = (b Shl 28) Shr 28 // Valittuna oleva ase (bitit 0-3)
+            hasAmmo = (b Shl 27) Shr 31 // Onko valitussa aseessa ammuksia (bitti 4)
+            shoot   = (b Shl 26) Shr 31 // Ampuuko (bitti 5)
+            
+            picked  = _Net_GetByte()    // Poimitun itemin id (0, jos ei poimittu)
+            
             // Arvot p‰ivitet‰n vain jos pelaaja on hengiss‰
             If player\death = False Then
                 player\x        = x
@@ -494,14 +501,23 @@ Function ReadDataFromClient()
                 _Net_PutShort(ObjectX(plr\obj))     // Sijainti
                 _Net_PutShort(ObjectY(plr\obj))     // Sijainti
                 _Net_PutShort(ObjectAngle(plr\obj)) // Kulma
-                _Net_PutByte(plr\weapon)            // Ase
-                _Net_PutByte(plr\hasAmmos)          // Onko ammuksia
+                
+                // Spawn-protect
+                protected = (plr\spawnTime + SPAWN_PROTECT > Timer())
+                
+                // Muutetaan team arvo v‰lille 0-1
+                teamBit = (plr\team = 2)
+                
+                // Tungetaan yhteen tavuun useampi muuttuja
+                b = (plr\weapon Mod 16) Shl 0       // Ase (bitit 0-3)
+                b = b + plr\hasAmmos    Shl 4       // Onko ammuksia (bitti 4)
+                b = b + teamBit         Shl 6       // Joukkue/tiimi (bitti 6)
+                b = b + protected       Shl 7       // Haavoittumaton (bitti 7)
+                _Net_PutByte(b)
+                
                 _Net_PutByte(plr\health)            // Terveys
                 _Net_PutShort(plr\kills)            // Tapot
                 _Net_PutShort(plr\deaths)           // Kuolemat
-                _Net_PutByte(plr\team)              // Joukkue
-                protected = (plr\spawnTime + SPAWN_PROTECT > Timer())
-                _Net_PutByte(protected)             // Haavoittumaton
             ElseIf gRadarArrows = True Or gPlayMode=TDM Then
                 // Ei n‰y. L‰hetet‰‰n tutkatieto
                 If player\team = plr\team And gRadarArrows = False Then
@@ -550,10 +566,15 @@ Function ReadDataFromClient()
                 // Uusi ammus on ammuttu
                 If nmsg\weapon = WPN_CHAINSAW Then
                     _Net_PutByte(nmsg\msgType)
-                    _Net_PutInt(nmsg\bulletId)      // Ammuksen tunnus
+                    _Net_PutShort(nmsg\bulletId)    // Ammuksen tunnus
                     _Net_PutByte(nmsg\playerId)     // Kuka ampui
-                    _Net_PutByte(nmsg\weapon)       // Mill‰ aseella
-                    _Net_PutByte(nmsg\sndPlay)      // Soitetaanko ‰‰ni
+                    
+                    // Tungetaan samaan tavuun useampi muuttuja:
+                    // Huomaa l‰hes samat operaatiot myˆs Else-lohkossa
+                    b = (nmsg\weapon Mod 16) Shl 0  // Mill‰ aseella (mod 16 jottei vie yli 4 bitti‰)
+                    b = b + nmsg\sndPlay     Shl 4  // Soitetaanko ‰‰ni
+                    //b = b + nmsg\handShooted Shl 5  // Kummalla k‰dell‰ ammuttiin (ei tarvita moottorisahalle)
+                    _Net_PutByte(b)
                     // Ammuksen sijainti
                     _Net_PutShort(nmsg\x)
                     _Net_PutShort(nmsg\y)
@@ -564,10 +585,17 @@ Function ReadDataFromClient()
                     If bid <> 0 Then
                         bullet.BULLETS = ConvertToType(bid)
                         _Net_PutByte(nmsg\msgType)
-                        _Net_PutInt(nmsg\bulletId)      // Ammuksen tunnus
+                        _Net_PutShort(nmsg\bulletId)    // Ammuksen tunnus
                         _Net_PutByte(nmsg\playerId)     // Kuka ampui
-                        _Net_PutByte(nmsg\weapon)       // Mill‰ aseella
-                        _Net_PutByte(nmsg\sndPlay)      // Soitetaanko ‰‰ni
+                        
+                        // Tungetaan samaan tavuun useampi muuttuja:
+                        // Esimerkiksi bool arvon (1/0) asettaminen tavun b 4. bittiin tapahtuu seuraavasti
+                        // b = b + bool Shl 4
+                        b = (nmsg\weapon Mod 16) Shl 0  // Mill‰ aseella (mod 16 jottei vie yli 4 bitti‰)
+                        b = b + nmsg\sndPlay     Shl 4  // Soitetaanko ‰‰ni
+                        b = b + nmsg\handShooted Shl 5  // Kummalla k‰dell‰ ammuttiin
+                        _Net_PutByte(b)
+                        
                         // Ammuksen sijainti
                         _Net_PutShort(ObjectX(bullet\obj))
                         _Net_PutShort(ObjectY(bullet\obj))
@@ -589,7 +617,7 @@ Function ReadDataFromClient()
             ElseIf nmsg\msgType = NET_BULLETHIT Then
                 // Osumaviesti
                 _Net_PutByte(nmsg\msgType)      // Vistin tunnus
-                _Net_PutInt(nmsg\bulletId)      // Ammuksen tunnus
+                _Net_PutShort(nmsg\bulletId)    // Ammuksen tunnus
                 _Net_PutByte(nmsg\playerId)     // Keneen osui
                 _Net_PutShort(nmsg\x)           // Miss‰ osui
                 _Net_PutShort(nmsg\y)           // Miss‰ osui

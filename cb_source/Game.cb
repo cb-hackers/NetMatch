@@ -456,7 +456,10 @@ Function GameUpdate()
                         If player\weapon = WPN_CHAINSAW Then sAngle = sAngle * 2
                         protected = (player\spawnTime + SPAWN_PROTECT > Timer())
                         If protected = False And Abs(pickedDirection) < sAngle And pickedDist > aWeapon(player\weapon, WPNF_SAFERANGE) / 2 And pickedDist <= aWeapon(player\weapon, WPNF_SHOOTRANGE) Then
-                            If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() Then
+                            // Jos botilla on pistooli niin luodaan botille satunnaisuutta liipasunopeuteen
+                            If player\weapon = WPN_PISTOL Then rldFc# = Rnd(1.2,2) Else rldFc# = 1.0
+                            
+                            If (player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME)*rldFc#) < Timer() Then
                                 CreateServerBullet(player\playerId)
                                 player\lastShoot = Timer()
                             EndIf
@@ -1052,8 +1055,22 @@ Function DrawGameStatus()
         If gShowFPS = True Then
             SetFont gFonts(FNT_MENUHELP)
             Color 255, 255, 0
-            FPSstr$ = "FPS: " + FPS() + "/" + gNetFPS + " Latency: " + gLatency +"ms"
-            Text 800-TextWidth(FPSstr$+" "), 580, FPSstr$
+            
+            inRate#  = gBbsIn/1024.0 // kilotavuja sisään per sekunti
+            outRate# = gBbsOut/1024.0 // kilotavuja ulos per sekunti
+            iostr$ = Round(inRate#, 1) + "/" + Round(outRate#, 1) + " kB/s"
+            
+            // Järjestellään tekstit hienosti
+            padding = TextWidth("latency: ")
+            x1 = 800-padding-TextWidth(iostr)-5
+            x2 = x1 + padding
+            
+            Text x1, 550, "fps: "
+            Text x2, 550, FPS()
+            Text x1, 565, "latency: "
+            Text x2, 565, gLatency + " ms"
+            Text x1, 580, "net i/o: "
+            Text x2, 580, iostr$
         EndIf
         
        
@@ -1135,10 +1152,12 @@ Function WeaponFire(_playerId)
     If player\health <= 0 Then Return False
     
 //    If aWeapon(player\weapon, WPNF_FIRE) = OBJ_NULL Then Return False
+    fact = 1
+    If player\weapon = WPN_PISTOL And player\handShooted = 1 Then fact = -1
     
     CloneObjectPosition player\fireObj, player\obj
     CloneObjectOrientation player\fireObj, player\obj
-    MoveObject player\fireObj, aWeapon(player\weapon, WPNF_FIREPOS), aWeapon(player\weapon, WPNF_BULLET_YAW)
+    MoveObject player\fireObj, aWeapon(player\weapon, WPNF_FIREPOS), aWeapon(player\weapon, WPNF_BULLET_YAW)*fact
     If player\weapon = WPN_LAUNCHER Then
         x = ObjectX(player\obj)
         expl.EXPL_ANIMS = New(EXPL_ANIMS)
@@ -1154,13 +1173,6 @@ Function WeaponFire(_playerId)
         
     If aWeapon(player\weapon, WPNF_FIRE) = OBJ_NULL Then Return False
     ShowObject player\fireObj, ON
-    
-    If player\weapon = WPN_PISTOL Then 
-        CloneObjectPosition player\fireObj2, player\obj
-        CloneObjectOrientation player\fireObj2, player\obj
-        MoveObject player\fireObj2, aWeapon(player\weapon, WPNF_FIREPOS), -aWeapon(player\weapon, WPNF_BULLET_YAW)
-        ShowObject player\fireObj2, ON
-    EndIf
 EndFunction
 
 //================================================================================
@@ -1274,6 +1286,9 @@ EndFunction
 Global gKeyEsc, gKeyReturn, gKeyb, gKeyC, gKeyF, gKeyG, gKeyU, gKeyY, gKeyTab
 Global gMouseHit1, gMouseHit2, gMouseHit3, gMouseRoll
 
+// Eihän olla vielä ammuttu vaikka hiiren 1-näppäin tai space on pohjassa
+Global gNotShotYet
+
 Function UpdateGame2(_updateGame = 1)
     If _updateGame Then UpdateGame
     If KeyHit(cbKeyEsc) Then gKeyEsc = True
@@ -1288,6 +1303,7 @@ Function UpdateGame2(_updateGame = 1)
     If MouseHit(1) Then gMouseHit1 = True
     If MouseHit(2) Then gMouseHit2 = True
     If MouseHit(3) Then gMouseHit3 = True
+    If gNotShotYet = False And (MouseUp(1) Or KeyUp(cbkeyspace)) Then gNotShotYet = True
     mz = MouseMoveZ() 
     If mz <> 0 Then gMouseRoll = mz
 EndFunction
