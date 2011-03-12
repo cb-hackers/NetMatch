@@ -106,10 +106,7 @@ If gForceUpdate = False Then
     If SearchMaps() = False Then
         // Puuttuu map-kansio, pakotetaan päivitys.
         gForceUpdate = True
-        updMsgTxt$ = GetText("update_missing_file", "map")
-        If MsgBox(updMsgTxt, "NetMatch", MSG_INFO) <> 13 Then
-            End
-        EndIf
+        gForceUpdateMsg = GetText("update_missing_file", "map")
     EndIf
 EndIf
 Function SearchMaps()

@@ -158,19 +158,21 @@ Const SND_COUNT         = 27    // Äänien lukumäärä
 
 
 //--------------------------------------------------------------------------------
-// Tarkistetaan että mediatiedosto on olemassa.
+// Heitetään kysymystä pakollisesta päivityksestä, jos niin halutaan.
+// Tarkistetaan myös onko RESOURCE_ARCHIVE-vakion kertoma tiedosto olemassa.
 //--------------------------------------------------------------------------------
 If FileExists( RESOURCE_ARCHIVE ) = 0 And gDirectServer = False Then
     // Puuttuu mediat, pakotetaan päivitys.
-    msgTxt$ = GetText( "update_missing_file", RESOURCE_ARCHIVE )
-    If MsgBox(msgTxt$, "NetMatch", MSG_INFO) = 13 Then
-        gForceUpdate = True
-    Else
-        End
-    EndIf
+    gForceUpdate = True
+    gForceUpdateMsg = GetText( "update_missing_file", RESOURCE_ARCHIVE )
 ElseIf IsDirectory( RESOURCE_ARCHIVE ) Then
     // Wtf, on olemassa kansio nimeltä NetMatch.dat?!
     MakeError RESOURCE_ARCHIVE + " is a directory! It should be a file!"
+EndIf
+
+If gForceUpdate = True And gForceUpdateMsg <> "" Then
+    If MsgBox(gForceUpdateMsg, "NetMatch", MSG_INFO) <> 13 Then End
+    Cls
 EndIf
 
 //--------------------------------------------------------------------------------
@@ -517,6 +519,7 @@ EndFunction
 
 Function DoUpdate()
     If gImages(IMG_BACKGROUND) <> 0 Then DrawImage gImages(IMG_BACKGROUND), 0, 0
+    If FileExists(NET_DLL_FILE)=0 Then MakeError NET_DLL_FILE + " is missing! NetMatch can't be updated without it!"
     MsgBox(GetText("doing_update"), "NetMatch", MSG_INFO_NOWAIT)
     result = HTTPGet(gUpdateUrl + "?list")
     If result = 200 Then

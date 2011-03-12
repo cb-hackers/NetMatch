@@ -3,11 +3,12 @@
 //
 // P‰‰ohjelma
 //********************************************************************************
-Global gFullScreen, gDirectServer, gDirectReg, gForceUpdate
+Global gFullScreen, gDirectServer, gDirectReg, gForceUpdate, gForceUpdateMsg$
 gFullScreen = False
 gDirectServer = False
 gDirectReg = False
 gForceUpdate = False
+gForceUpdateMsg = ""
 
 cmdLine$ = CommandLine()
 For i = 1 To CountWords(cmdLine)
