@@ -92,7 +92,7 @@ Function CreateServer(_register = 0)
     SetMap gMap, OFF, OFF
     gGameMode = MENU
     GSSUnregister()
-    // L‰hetet‰‰n kaikille clienteille lopetustavu, varataan t‰h‰n aikaa yksi sekunti.
+    // L‰hetet‰‰n kaikille clienteille lopetustavu, varataan t‰h‰n aikaa kaksi ja puoli sekuntia.
     rec = Timer()
     Repeat
         nret = ServerRead()
