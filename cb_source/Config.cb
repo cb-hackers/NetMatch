@@ -71,6 +71,10 @@ Global gUpdateUrl$
 gUpdateUrl = "http://netmatch.vesq.org/updater/updater.php"
 If NM_DEVBUILD Then gUpdateUrl = "http://vesq.viuhka.fi/nm/devbuild/updater.php"
 
+// Osoite, josta ladataan kartta sen puuttuessa clientiltä.
+Global gMapServerUrl$
+gMapServerUrl = "http://www.tuhoojabotti.com/nm/maps/"
+
 ReadConfig()
 //--------------------------------------------------------------------------------
 // Luetaan asetukset jos tiedosto on olemassa
@@ -100,6 +104,7 @@ Function ReadConfig()
             If key = "ADMINPASSWORD" Then gServerAdminPassword = value
             If key = "RADARARROWS" Then gRadarArrows = (value = "1")
             If key = "UPDATEURL" Then gUpdateUrl = value
+            If key = "MAPSERVER" Then gMapServerUrl = value
         Wend
         CloseFile f
     EndIf
@@ -124,8 +129,9 @@ Function SaveConfig()
     WriteLine f, "GameMode=" + gPlayMode
     WriteLine f, "ControlMode=" + gControlMode
     WriteLine f, "DisableBots=" + gDisableBots
-    WriteLine f, "AdminPassword=" + gServerAdminPassword
+    WriteLine f, "AdminPassword=" + Replace( gServerAdminPassword, "=", "&#61;" )
     WriteLine f, "RadarArrows=" + gRadarArrows
-    WriteLine f, "UpdateUrl=" + gUpdateUrl
+    WriteLine f, "UpdateUrl=" + Replace( gUpdateUrl, "=", "&#61;" )
+    WriteLine f, "MapServer=" + Replace( gMapServerUrl, "=", "&#61;" )
     CloseFile f
 EndFunction

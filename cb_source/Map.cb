@@ -327,9 +327,9 @@ EndFunction
 Function DownloadMap(_mapName$)
     For i = 0 To 1
         If i Then 
-            rtn = HTTPGET("http://netmatch.vesq.org/maps/"+_mapName$+"/"+_mapName$+".mpc",1)
+            rtn = HTTPGET(gMapServerUrl+_mapName$+"/"+_mapName$+".mpc",1)
         Else
-            rtn = HTTPGET("http://netmatch.vesq.org/maps/"+_mapName$+"/"+_mapName$+".cfg",1)
+            rtn = HTTPGET(gMapServerUrl+_mapName$+"/"+_mapName$+".cfg",1)
         EndIf
         If rtn <> 200 Then 
             If rtn = 404 Then 
