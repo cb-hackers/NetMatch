@@ -4,6 +4,8 @@
 // Clienttiin liittyv‰t toiminnot
 //********************************************************************************
 
+Global gLatencyTimer, gLatencies, gLatency
+
 //================================================================================
 // Liityt‰‰n peliin
 //================================================================================
@@ -476,9 +478,16 @@ Function ReadDataFromServer()
     If gNetFPSTimer + 1000 < Timer() Then
         gNetFPSTimer = Timer()
         gNetFPS = gNetFPSCounter
+        // Lasketaan latenssien keskiarvo
+        gLatency = Int( Float( gLatencies ) / gNetFPSCounter )
+        gLatencies = 0
         gNetFPSCounter = 0
     EndIf
     
+    // P‰ivitet‰‰n latenssi-laskuri
+    gLatencies = gLatencies + (Timer()-gLatencyTimer)
+    gLatencyTimer = Timer()
+  
     // Lukemisessa tuli joku virhe
     If nRet <> 0 Then 
         If nRet = 10060 Then 
