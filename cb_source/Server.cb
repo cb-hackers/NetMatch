@@ -6,40 +6,52 @@
 
 Global gBotFreeze As Byte
 
+// cbNetworkin Gosub-toteutusta varten tarvittavat muuttujat.
+Dim gs_valueInt As Integer
+Dim gs_valueFloat As Float
+Dim gs_valueString As String
+Dim gs_valueShort As Short
+Dim gs_valueByte As Byte
+
+Dim gs_dllMethod As String
+Dim gs_memBlockResize As Integer
+
 //================================================================================
 // Luodaan palvelin.
 //================================================================================
-Function CreateServer(_register = 0)
+Goto skipCreateServer
+
+CreateServer:
     // Palvelinta ei voi k‰ynnist‰‰ kokoruututilassa
     If gFullScreen = True
         Error(GetText("fs_server"))
-        Return False
+        Goto returnCreateServer
     EndIf
     // Portti pit‰‰ olla m‰‰ritelty
     If Int(gServerPort) <= 0 Then
         Error(GetText("no_port"))
-        Return False
+        Goto returnCreateServer
     EndIf
     // Jos rekisterˆid‰‰n niin nimi pit‰‰ olla annettu
     //If _register = True Then
         If Trim(gServerName) = "" Then
             Error(GetText("no_servername"))
-            Return False
+            Goto returnCreateServer
         EndIf
     //EndIf
     If gGameMap = 0 Then
         Error(GetText("no_map"))
-        Return False
+        Goto returnCreateServer
     EndIf
     // K‰ynnistet‰‰n palvelin
     nRet = InitServer(Int(gServerPort), 500)
     If nRet <> 0 Then
         msg$ = "(" + nRet + ") " + GetNetErrorString(nRet)
         Error(msg)
-        Return False
+        Goto returnCreateServer
     EndIf
     // Suoritetaan rekisterˆinti
-    If _register = True Then
+    If gDirectReg = True Then
         t = Timer()
         MsgBox(GetText("registering"), "", MSG_INFO_NOWAIT)
         regOk = GSSRegister(Int(gServerPort), gServerName)
@@ -47,7 +59,7 @@ Function CreateServer(_register = 0)
         If regOk = False Then
             CloseServer()
             Error(GetText("reg_failed"))
-            Return False
+            Goto returnCreateServer
         EndIf
     EndIf
     gGameMode = SERVER
@@ -97,9 +109,9 @@ Function CreateServer(_register = 0)
     Repeat
         nret = ServerRead()
         If nret <> 0 Then
-            _Net_InitMemBlock()
-            _Net_PutByte(NET_SERVERCLOSING)
-            _Net_PutByte(NET_END)
+            Gosub gs_InitMemBlock
+            gs_valueByte = NET_SERVERCLOSING : Gosub gs_PutByte
+            gs_valueByte = NET_END : Gosub gs_PutByte
             ServerSend()
         EndIf
     Until rec + 2500 < Timer()
@@ -137,7 +149,11 @@ Function CreateServer(_register = 0)
     Else
         SetWindow "NetMatch " + gGSSVersion + "-dev"
     EndIf
-EndFunction
+    
+    returnCreateServer:
+Return
+
+skipCreateServer:
 
 Global gBannedIP$
 gBannedIP = ""
@@ -264,19 +280,20 @@ Function ServerLoop()
     
     clientIP$ = GetWord2(NET_ClientId, 1, ":")
     If InStr(gBannedIP, "," + clientIp + ",") > 0 Then
-        _Net_InitMemBlock()
-        _Net_PutByte(NET_BANNED)
-        _Net_PutByte(NET_END)
+        Gosub gs_InitMemBlock
+        gs_valueByte = NET_BANNED : Gosub gs_PutByte
+        gs_valueByte = NET_END : Gosub gs_PutByte
         ServerSend()
         WriteLog("Block request blocked (" + clientIP + ")")
         Goto returnServerLoop
     EndIf
     
     // Muistipalan alussa on aina luetun datan pituus joka luetaan t‰ss‰ pois
-    _Net_GetInt()
+    Gosub gs_GetInt
 
     // Mit‰ dataa on tulossa
-    netmsg = _Net_GetByte()
+    Gosub gs_GetByte
+    netmsg = gs_valueByte
 
     // Joku liittyy peliin
     If netmsg = NET_LOGIN Then
@@ -285,7 +302,8 @@ Function ServerLoop()
     EndIf
 
     // Pelaajan id
-    gCurrentPlayerId = _Net_GetByte()
+    Gosub gs_GetByte
+    gCurrentPlayerId = gs_valueByte
     If gCurrentPlayerId < 1 Or gCurrentPlayerId > MAX_PLAYERS Then
         // Pelaajatunnus on v‰‰r‰
         WriteLog("Possible hack attempt from " + GetWord2(NET_ClientId, 1, ":") + " Invalid playerId (" + gCurrentPlayerId + ")")
@@ -297,18 +315,23 @@ Function ServerLoop()
     
     // Tarkistetaan onko pelaaja potkittu
     If player\kicked And player\clientId = NET_ClientId Then
-        _Net_InitMemBlock()
-        _Net_PutByte(NET_KICKED)
-        _Net_PutByte( player\kickerId )
-        _Net_PutByte(gCurrentPlayerId)
-        _Net_PutString( player\kickReason )
+        //_Net_InitMemBlock()
+        //_Net_PutByte(NET_KICKED)
+        //_Net_PutByte( player\kickerId )
+        //_Net_PutByte(gCurrentPlayerId)
+        //_Net_PutString( player\kickReason )
+        Gosub gs_InitMemBlock
+        gs_valueByte = NET_KICKED : Gosub gs_PutByte
+        gs_valueByte = player\kickerId : Gosub gs_PutByte
+        gs_valueByte = gCurrentPlayerId : Gosub gs_PutByte
+        gs_valueString = player\kickReason : Gosub gs_PutString
         ServerSend()
         Goto returnServerLoop
     EndIf
     
     If player\clientId <> NET_ClientId Or player\active = False Then
-        _Net_InitMemBlock()
-        _Net_PutByte(NET_NOLOGIN)
+        Gosub gs_InitMemBlock
+        gs_valueByte = NET_NOLOGIN : Gosub gs_PutByte
         ServerSend()
 //        WriteLog("Possible hack attempt from " + GetWord2(NET_ClientId, 1, ":") + " Not logged in (" + gCurrentPlayerId + ")")
         Goto returnServerLoop
@@ -333,10 +356,14 @@ Function ServerLoop()
         If netmsg = NET_PLAYER Then
         
             // PELAAJAN DATAA
-            x       = _Net_GetShort()   // x-positio
-            y       = _Net_GetShort()   // y-positio
-            angle   = _Net_GetShort()   // kulma
-            b       = _Net_GetByte()    // T‰m‰ tavu sis‰lt‰‰ useamman muuttujan (alempana)
+            Gosub gs_GetShort
+            x       = gs_valueShort   // x-positio
+            Gosub gs_GetShort
+            y       = gs_valueShort   // y-positio
+            Gosub gs_GetShort
+            angle   = gs_valueShort   // kulma
+            Gosub gs_GetByte
+            b       = gs_valueByte    // T‰m‰ tavu sis‰lt‰‰ useamman muuttujan (alempana)
             
             // Puretaan b-tavu muuttujiin
             // Jos halutaan esim. lukea 4 bitti‰ kohdasta 0, menee lauseke seuraavasti:
@@ -345,7 +372,8 @@ Function ServerLoop()
             hasAmmo = (b Shl 27) Shr 31 // Onko valitussa aseessa ammuksia (bitti 4)
             shoot   = (b Shl 26) Shr 31 // Ampuuko (bitti 5)
             
-            picked  = _Net_GetByte()    // Poimitun itemin id (0, jos ei poimittu)
+            Gosub gs_GetByte
+            picked  = gs_valueByte    // Poimitun itemin id (0, jos ei poimittu)
             
             // Arvot p‰ivitet‰n vain jos pelaaja on hengiss‰
             If player\death = False Then
@@ -407,7 +435,7 @@ Function ServerLoop()
         ElseIf netmsg = NET_TEXTMESSAGE Then
         
             // Pelaaja l‰hetti tekstiviestin
-            txtMessage$ = Trim(_Net_GetString())
+            txtMessage$ = Trim(gs_valueString)
             If Left( txtMessage$, 1 ) = "/" Then 
                 parseRet$ = ParseCommand( txtMessage$, gCurrentPlayerId )
                 newMsg.NET_MESSAGES = New( NET_MESSAGES )
@@ -421,32 +449,33 @@ Function ServerLoop()
         ElseIf netmsg = NET_MAPCHANGE Then
         
             // Pelaaja l‰hetti kartan nimen
-            player\mapName = Trim(_Net_GetString())
+            player\mapName = Trim(gs_valueString)
         
         Else
             // Viestit loppui tai tuli tuntematon viesti
             Exit
         EndIf
         // Seuraava viesti
-        netmsg = _Net_GetByte()
+        Gosub gs_GetByte
+        netmsg = gs_valueByte
     Wend
     
     // Jos er‰ on p‰‰ttynyt niin l‰hetet‰‰n kaikkien pelaajien kaikki tiedot
     If gSessionComplete = True Then sendnames = True
     
     // L‰hetet‰‰n clientille dataa
-    _Net_InitMemBlock()
+    Gosub gs_InitMemBlock
     
     // L‰hetet‰‰n kaikkien pelaajien tiedot
     For plr.PLAYERS = Each PLAYERS
         // Onko pyydetty nimet
         If sendNames = True Then
             If plr\active = True Then
-                _Net_PutByte(NET_PLAYERNAME)    // Nimet
-                _Net_PutByte(plr\playerId)      // Pelaajan tunnus
-                _Net_PutString(plr\name)        // Nimi
-                _Net_PutByte(plr\zombie)        // Onko botti
-                _Net_PutByte(plr\team)          // Joukkue
+                gs_valueByte = NET_PLAYERNAME : Gosub gs_PutByte    // Nimet
+                gs_valueByte = plr\playerId : Gosub gs_PutByte      // Pelaajan tunnus
+                gs_valueString = plr\name : Gosub gs_PutString        // Nimi
+                gs_valueByte = plr\zombie : Gosub gs_PutByte        // Onko botti
+                gs_valueByte = plr\team : Gosub gs_PutByte          // Joukkue
             EndIf
         EndIf
         
@@ -486,11 +515,11 @@ Function ServerLoop()
             // Onko n‰kyviss‰ tai voidaanko muuten l‰hett‰‰
             If sendNames = True Or visible = True Or plr\health <= 0 Then
                 // N‰kyy
-                _Net_PutByte(NET_PLAYER)            // Pelaajan tietoja
-                _Net_PutByte(plr\playerId)          // Pelaajan tunnus
-                _Net_PutShort(ObjectX(plr\obj))     // Sijainti
-                _Net_PutShort(ObjectY(plr\obj))     // Sijainti
-                _Net_PutShort(ObjectAngle(plr\obj)) // Kulma
+                gs_valueByte = NET_PLAYER : Gosub gs_PutByte             // Pelaajan tietoja
+                gs_valueByte = plr\playerId : Gosub gs_PutByte           // Pelaajan tunnus
+                gs_valueShort = ObjectX(plr\obj) : Gosub gs_PutShort     // Sijainti
+                gs_valueShort = ObjectY(plr\obj) : Gosub gs_PutShort     // Sijainti
+                gs_valueShort = ObjectAngle(plr\obj) : Gosub gs_PutShort // Kulma
                 
                 // Spawn-protect
                 protected = (plr\spawnTime + SPAWN_PROTECT > Timer())
@@ -503,25 +532,25 @@ Function ServerLoop()
                 b = b + plr\hasAmmos    Shl 4       // Onko ammuksia (bitti 4)
                 b = b + teamBit         Shl 6       // Joukkue/tiimi (bitti 6)
                 b = b + protected       Shl 7       // Haavoittumaton (bitti 7)
-                _Net_PutByte(b)
+                gs_valueByte = b : Gosub gs_PutByte
                 
-                _Net_PutByte(plr\health)            // Terveys
-                _Net_PutShort(plr\kills)            // Tapot
-                _Net_PutShort(plr\deaths)           // Kuolemat
+                gs_valueByte = plr\health : Gosub gs_PutByte             // Terveys
+                gs_valueShort = plr\kills : Gosub gs_PutShort            // Tapot
+                gs_valueShort = plr\deaths : Gosub gs_PutShort           // Kuolemat
             ElseIf gRadarArrows = True Or gPlayMode=TDM Then
                 // Ei n‰y. L‰hetet‰‰n tutkatieto
                 If player\team = plr\team And gRadarArrows = False Then
-                    _Net_PutByte(NET_RADAR)
+                    gs_valueByte = NET_RADAR : Gosub gs_PutByte
                     ang# = GetAngle2(player\obj, plr\obj)
                     ra = Int(ang / 360.0 * 255.0)
-                    _Net_PutByte(ra)
-                    _Net_PutByte(plr\team)
+                    gs_valueByte = ra : Gosub gs_PutByte
+                    gs_valueByte = plr\team : Gosub gs_PutByte
                 ElseIf gRadarArrows = True Then
-                    _Net_PutByte(NET_RADAR)
+                    gs_valueByte = NET_RADAR : Gosub gs_PutByte
                     ang# = GetAngle2(player\obj, plr\obj)
                     ra = Int(ang / 360.0 * 255.0)
-                    _Net_PutByte(ra)
-                    _Net_PutByte(plr\team)
+                    gs_valueByte = ra : Gosub gs_PutByte
+                    gs_valueByte = plr\team : Gosub gs_PutByte
                 EndIf
             EndIf
         EndIf
@@ -531,9 +560,9 @@ Function ServerLoop()
         map.MAPS = ConvertToType( gCurrentMapPtr )
         timeLeft = gSessionStarted + gPeriodLength * 60000 - Timer()
         If gSessionComplete = True And timeLeft < -5 And player\mapName <> map\name Then
-            _Net_PutByte(NET_MAPCHANGE)
-            _Net_PutString(map\name)
-            _Net_PutInt(gMapCRC)
+            gs_valueByte = NET_MAPCHANGE : Gosub gs_PutByte
+            gs_valueString = map\name : Gosub gs_PutString
+            gs_valueInt = gMapCRC : Gosub gs_PutInt
         EndIf
     EndIf
     
@@ -542,41 +571,41 @@ Function ServerLoop()
         If nmsg\toPlayer = gCurrentPlayerId Then
             If nmsg\msgType = NET_LOGIN Then
                 // Joku on liittynyt peliin
-                _Net_PutByte(nmsg\msgType)
-                _Net_PutByte(nmsg\playerId)
-                _Net_PutString(nmsg\msgText)
-                _Net_PutByte(nmsg\playerId2)
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte
+                gs_valueByte = nmsg\playerId : Gosub gs_PutByte
+                gs_valueString = nmsg\msgText : Gosub gs_PutString
+                gs_valueByte = nmsg\playerId2 : Gosub gs_PutByte
             
             ElseIf nmsg\msgType = NET_LOGOUT Then
                 // Joku on poistunut pelist‰
-                _Net_PutByte(nmsg\msgType)
-                _Net_PutByte(nmsg\playerId)
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte
+                gs_valueByte = nmsg\playerId : Gosub gs_PutByte
             
             ElseIf nmsg\msgType = NET_NEWBULLET Then
                 // Uusi ammus on ammuttu
                 If nmsg\weapon = WPN_CHAINSAW Then
-                    _Net_PutByte(nmsg\msgType)
-                    _Net_PutShort(nmsg\bulletId)    // Ammuksen tunnus
-                    _Net_PutByte(nmsg\playerId)     // Kuka ampui
+                    gs_valueByte = nmsg\msgType : Gosub gs_PutByte
+                    gs_valueShort = nmsg\bulletId : Gosub gs_PutShort    // Ammuksen tunnus
+                    gs_valueByte = nmsg\playerId : Gosub gs_PutByte      // Kuka ampui
                     
                     // Tungetaan samaan tavuun useampi muuttuja:
                     // Huomaa l‰hes samat operaatiot myˆs Else-lohkossa
                     b = (nmsg\weapon Mod 16) Shl 0  // Mill‰ aseella (mod 16 jottei vie yli 4 bitti‰)
                     b = b + nmsg\sndPlay     Shl 4  // Soitetaanko ‰‰ni
                     //b = b + nmsg\handShooted Shl 5  // Kummalla k‰dell‰ ammuttiin (ei tarvita moottorisahalle)
-                    _Net_PutByte(b)
+                    gs_valueByte = b : Gosub gs_PutByte
                     // Ammuksen sijainti
-                    _Net_PutShort(nmsg\x)
-                    _Net_PutShort(nmsg\y)
-                    _Net_PutShort(0)
+                    gs_valueShort = nmsg\x : Gosub gs_PutShort
+                    gs_valueShort = nmsg\y : Gosub gs_PutShort
+                    gs_valueShort = 0 : Gosub gs_PutShort
                 Else
                     // Etsit‰‰n ammus
                     bid = FindBullet(nmsg\bulletId)
                     If bid <> 0 Then
                         bullet.BULLETS = ConvertToType(bid)
-                        _Net_PutByte(nmsg\msgType)
-                        _Net_PutShort(nmsg\bulletId)    // Ammuksen tunnus
-                        _Net_PutByte(nmsg\playerId)     // Kuka ampui
+                        gs_valueByte = nmsg\msgType : Gosub gs_PutByte
+                        gs_valueShort = nmsg\bulletId : Gosub gs_PutShort   // Ammuksen tunnus
+                        gs_valueByte = nmsg\playerId : Gosub gs_PutByte     // Kuka ampui
                         
                         // Tungetaan samaan tavuun useampi muuttuja:
                         // Esimerkiksi bool arvon (1/0) asettaminen tavun b 4. bittiin tapahtuu seuraavasti
@@ -584,72 +613,72 @@ Function ServerLoop()
                         b = (nmsg\weapon Mod 16) Shl 0  // Mill‰ aseella (mod 16 jottei vie yli 4 bitti‰)
                         b = b + nmsg\sndPlay     Shl 4  // Soitetaanko ‰‰ni
                         b = b + nmsg\handShooted Shl 5  // Kummalla k‰dell‰ ammuttiin
-                        _Net_PutByte(b)
+                        gs_valueByte = b : Gosub gs_PutByte
                         
                         // Ammuksen sijainti
-                        _Net_PutShort(ObjectX(bullet\obj))
-                        _Net_PutShort(ObjectY(bullet\obj))
-                        _Net_PutShort(ObjectAngle(bullet\obj))
+                        gs_valueShort = ObjectX(bullet\obj) : Gosub gs_PutShort
+                        gs_valueShort = ObjectY(bullet\obj) : Gosub gs_PutShort
+                        gs_valueShort = ObjectAngle(bullet\obj) : Gosub gs_PutShort
                     EndIf
                 EndIf
             
             ElseIf nmsg\msgType = NET_TEXTMESSAGE Then
                 // Tekstiviesti
-                _Net_PutByte(nmsg\msgType)
-                _Net_PutByte(nmsg\playerId)
-                _Net_PutString(nmsg\msgText)
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte
+                gs_valueByte = nmsg\playerId : Gosub gs_PutByte
+                gs_valueString = nmsg\msgText : Gosub gs_PutString
             
             ElseIf nmsg\msgType = NET_SERVERMSG Then
                 // Palvelimen generoima viesti
-                _Net_PutByte(nmsg\msgType)
-                _Net_PutString(nmsg\msgText)
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte
+                gs_valueString = nmsg\msgText : Gosub gs_PutString
             
             ElseIf nmsg\msgType = NET_BULLETHIT Then
                 // Osumaviesti
-                _Net_PutByte(nmsg\msgType)      // Vistin tunnus
-                _Net_PutShort(nmsg\bulletId)    // Ammuksen tunnus
-                _Net_PutByte(nmsg\playerId)     // Keneen osui
-                _Net_PutShort(nmsg\x)           // Miss‰ osui
-                _Net_PutShort(nmsg\y)           // Miss‰ osui
-                _Net_PutByte(nmsg\weapon)       // Mist‰ aseesta ammus on
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte      // Vistin tunnus
+                gs_valueShort = nmsg\bulletId : Gosub gs_PutShort   // Ammuksen tunnus
+                gs_valueByte = nmsg\playerId : Gosub gs_PutByte     // Keneen osui
+                gs_valueShort = nmsg\x : Gosub gs_PutShort          // Miss‰ osui
+                gs_valueShort = nmsg\y : Gosub gs_PutShort          // Miss‰ osui
+                gs_valueByte = nmsg\weapon : Gosub gs_PutByte       // Mist‰ aseesta ammus on
             
             ElseIf nmsg\msgType = NET_ITEM Then
                 // Tavaraviesti
-                _Net_PutByte(nmsg\msgType)      // Vistin tunnus
-                _Net_PutByte(nmsg\itemId)       // Tavaran tunnus
-                _Net_PutByte(nmsg\itemType)     // Tavaran tyyppi
-                _Net_PutShort(nmsg\x)           // Miss‰ osui
-                _Net_PutShort(nmsg\y)           // Miss‰ osui
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte      // Vistin tunnus
+                gs_valueByte = nmsg\itemId : Gosub gs_PutByte       // Tavaran tunnus
+                gs_valueByte = nmsg\itemType : Gosub gs_PutByte     // Tavaran tyyppi
+                gs_valueShort = nmsg\x : Gosub gs_PutShort          // Miss‰ osui
+                gs_valueShort = nmsg\y : Gosub gs_PutShort          // Miss‰ osui
             
             ElseIf nmsg\msgType = NET_KILLMESSAGE Then
                 // Tappoviesti
-                _Net_PutByte(nmsg\msgType)      // Viestin tunnus
-                _Net_PutByte(nmsg\playerId)     // Tappaja
-                _Net_PutByte(nmsg\playerId2)    // Tapettu
-                _Net_PutByte(nmsg\weapon)       // Ase
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte      // Viestin tunnus
+                gs_valueByte = nmsg\playerId : Gosub gs_PutByte     // Tappaja
+                gs_valueByte = nmsg\playerId2 : Gosub gs_PutByte    // Tapettu
+                gs_valueByte = nmsg\weapon : Gosub gs_PutByte       // Ase
                 plr.PLAYERS = ConvertToType(gPlayers(nmsg\playerId))
-                _Net_PutShort(plr\kills)        // Tappajan tapot
-                _Net_PutShort(plr\deaths)       // Tappajan kuolemat
+                gs_valueShort = plr\kills : Gosub gs_PutShort       // Tappajan tapot
+                gs_valueShort = plr\deaths : Gosub gs_PutShort      // Tappajan kuolemat
                 plr.PLAYERS = ConvertToType(gPlayers(nmsg\playerId2))
-                _Net_PutShort(plr\kills)        // Uhrin tapot
-                _Net_PutShort(plr\deaths)       // Uhrin kuolemat
+                gs_valueShort = plr\kills : Gosub gs_PutShort       // Uhrin tapot
+                gs_valueShort = plr\deaths : Gosub gs_PutShort      // Uhrin kuolemat
             
             ElseIf nmsg\msgType = NET_KICKED Then
                 // Pelaaja potkittiin
-                _Net_PutByte(nmsg\msgType)      // Viestin tunnus
-                _Net_PutByte(nmsg\playerId)     // Potkaisija
-                _Net_PutByte(nmsg\playerId2)    // Kuka potkittiin
-                _Net_PutString(nmsg\msgText)    // Potkujen syy
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte      // Viestin tunnus
+                gs_valueByte = nmsg\playerId : Gosub gs_PutByte     // Potkaisija
+                gs_valueByte = nmsg\playerId2 : Gosub gs_PutByte    // Kuka potkittiin
+                gs_valueString = nmsg\msgText : Gosub gs_PutString  // Potkujen syy
 
             ElseIf nmsg\msgType = NET_TEAMINFO Then
                 // L‰hetet‰‰n pelaajan joukkue
-                _Net_PutByte(nmsg\msgType)      // Viestin tunnus
-                _Net_PutByte(nmsg\playerId)     // Pelaaja
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte      // Viestin tunnus
+                gs_valueByte = nmsg\playerId : Gosub gs_PutByte     // Pelaaja
                 plr.PLAYERS = ConvertToType(gPlayers(nmsg\playerId))
-                _Net_PutByte(plr\team)          // Joukkue
+                gs_valueByte = plr\team : Gosub gs_PutByte          // Joukkue
             EndIf
             If nmsg\msgType = NET_SPEEDHACK Then 
-                _Net_PutByte(nmsg\msgType)
+                gs_valueByte = nmsg\msgType : Gosub gs_PutByte
                 Login( False, gCurrentPlayerId )
             EndIf
             Delete nmsg
@@ -659,29 +688,142 @@ Function ServerLoop()
     // Jos on pyydetty nimilista niin palautetaan myˆs kaikkien tavaroiden tiedot
     If sendNames = True Then
         For item.ITEMS = Each ITEMS
-            _Net_PutByte(NET_ITEM)              // Vistin tunnus
-            _Net_PutByte(item\itemId)           // Tavaran tunnus
-            _Net_PutByte(item\itemType)         // Tavaran tyyppi
-            _Net_PutShort(ObjectX(item\obj))    // Miss‰
-            _Net_PutShort(ObjectY(item\obj))    // Miss‰
+            gs_valueByte = NET_ITEM : Gosub gs_PutByte              // Vistin tunnus
+            gs_valueByte = item\itemId : Gosub gs_PutByte           // Tavaran tunnus
+            gs_valueByte = item\itemType : Gosub gs_PutByte         // Tavaran tyyppi
+            gs_valueShort = ObjectX(item\obj) : Gosub gs_PutShort   // Miss‰
+            gs_valueShort = ObjectY(item\obj) : Gosub gs_PutShort   // Miss‰
         Next item
     EndIf
     
     // Pelisession aikatiedot
-    _Net_PutByte(NET_SESSIONTIME)                   // Viestin tunnus
+    gs_valueByte = NET_SESSIONTIME : Gosub gs_PutByte                  // Viestin tunnus
     periodLength = gPeriodLength * 60
-    _Net_PutInt(periodLength)                       // Er‰n pituus
+    gs_valueInt = periodLength : Gosub gs_PutInt                       // Er‰n pituus
     gameTime = (Timer() - gSessionStarted) / 1000
     //gameTime = Min(gameTime, periodLength)
-    _Net_PutInt(gameTime)                           // Kuinka kauan on pelattu
-    _Net_PutByte(gSessionComplete)
+    gs_valueInt = gameTime : Gosub gs_PutInt                           // Kuinka kauan on pelattu
+    gs_valueByte = gSessionComplete : Gosub gs_PutByte
     
-    _Net_PutByte(NET_END)
+    gs_valueByte = NET_END : Gosub gs_PutByte
     ServerSend()
     
     // Takaisin serverilooppiin
     Goto returnServerLoop
 EndFunction
+
+//==============================================================================
+// cbNetwork Gosub-komentoina. Annettavat arvot Put-gosubeille ovat:
+//  - gs_valueInt As Integer
+//  - gs_valueFloat As Float
+//  - gs_valueString As String
+//  - gs_valueShort As Short
+//  - gs_valueByte As Byte
+// N‰ihin myˆs tallennetaan Get-gosubien palautusarvot.
+// Erikoisparametri kirjaston sis‰ist‰ gs_MemBlockResize-Gosubia varten:
+//  - gs_blockLength%
+//==============================================================================
+
+Goto skipCbNetwork
+
+gs_InitMemBlock:
+    If gNetMemBlock Then DeleteMEMBlock gNetMemBlock
+    gNetMemBlock = MakeMEMBlock(gs_valueInt + 4)
+    PokeInt gNetMemBlock, 0, 0
+    gNetMemBlockOffset = 4
+Return
+
+gs_DeleteMemBlock:
+    DeleteMEMBlock gNetMemBlock
+    gNetMemBlockOffset = 0
+    gNetMemBlock = 0
+Return
+
+gs_MemBlockResize:
+    lMemSize = MEMBlockSize(gNetMemBlock)
+    If gNetMemBlockOffset + gs_blockLength > lMemSize Then
+        ResizeMEMBlock gNetMemBlock, gNetMemBlockOffset + gs_blockLength
+    EndIf
+Return
+
+gs_PutInt:
+    gs_blockLength = 4
+    Gosub gs_MemBlockResize
+    PokeInt gNetMemBlock, gNetMemBlockOffset, gs_valueInt
+    gNetMemBlockOffset + 4
+Return
+
+gs_GetInt:
+    gs_valueInt = PeekInt(gNetMemBlock, gNetMemBlockOffset)
+    gNetMemBlockOffset + 4
+Return
+
+gs_PutShort:
+    gs_blockLength = 2
+    Gosub gs_MemBlockResize
+    PokeShort gNetMemBlock, gNetMemBlockOffset, gs_valueShort
+    gNetMemBlockOffset + 2
+Return
+
+gs_GetShort:
+    gs_valueShort = PeekShort(gNetMemBlock, gNetMemBlockOffset)
+    If gs_valueShort > 32768 Then gs_valueShort = gs_valueShort - 65536
+    gNetMemBlockOffset + 2
+Return
+
+gs_GetUShort:
+    gs_valueShort = PeekShort(gNetMemBlock, gNetMemBlockOffset)
+    gNetMemBlockOffset + 2
+Return
+
+gs_PutFloat:
+    gs_blockLength = 4
+    Gosub gs_MemBlockResize
+    PokeFloat gNetMemBlock, gNetMemBlockOffset, gs_valueFloat
+    gNetMemBlockOffset + 4
+Return
+
+gs_GetFloat:
+    gs_valueFloat = PeekFloat(gNetMemBlock, gNetMemBlockOffset)
+    gNetMemBlockOffset + 4
+Return
+
+gs_PutByte:
+    gs_blockLength = 1
+    Gosub gs_MemBlockResize
+    PokeByte gNetMemBlock, gNetMemBlockOffset, gs_valueByte
+    gNetMemBlockOffset + 1
+Return
+
+gs_GetByte:
+    gs_valueByte = PeekByte(gNetMemBlock, gNetMemBlockOffset)
+    gNetMemBlockOffset + 1
+Return
+
+gs_PutString:
+    gs_blockLength = Len(gs_valueString)
+    Gosub gs_MemBlockResize
+    PokeInt gNetMemBlock, gNetMemBlockOffset, gs_blockLength
+    gNetMemBlockOffset + 4
+    For i = 1 To gs_blockLength
+        PokeByte gNetMemBlock, gNetMemBlockOffset, Asc(Mid(gs_valueString, i, 1))
+        gNetMemBlockOffset + 1
+    Next i
+Return
+
+gs_GetString:
+    Gosub gs_GetInt
+    lStrLen = gs_valueInt
+    gs_valueString = ""
+    For i = 1 To lStrLen
+        Gosub gs_GetByte
+        c = gs_valueByte
+        If c > 0 Then gs_valueString = gs_valueString + Chr(c)
+    Next i
+Return
+
+// Hyp‰t‰‰n koko cbNetwork-gosub h‰rp‰kkeen yli kun tiedosto includetataan.
+skipCbNetwork:
 
 
 Function ReadBanList()

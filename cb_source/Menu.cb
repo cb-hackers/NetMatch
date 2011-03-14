@@ -567,10 +567,12 @@ Function DrawMenu(_menu)
             ElseIf _menu = MNU_SERVER Then
                 If miSelected = MI_REGISTER Then
                     //PlayMusic(OFF)
-                    CreateServer(True) // Server.cb
+                    Execute Chr(34) + GetEXEName() + Chr(34) + " -S"
+                    End
                 ElseIf miSelected = MI_START Then
                     //PlayMusic(OFF)
-                    CreateServer(False) // Server.cb
+                    Execute Chr(34) + GetEXEName() + Chr(34) + " -P"
+                    End
                 EndIf
                 
             ElseIf _menu = MNU_CLIENT Then

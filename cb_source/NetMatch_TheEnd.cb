@@ -77,7 +77,7 @@ GetTimeSync(True)
 If gDirectServer = False Then
     DrawMenu(MNU_MAIN) // Menu.cb
 Else
-    CreateServer(gDirectReg)
+    Gosub CreateServer
 EndIf
 
 
