@@ -100,7 +100,7 @@ CreateServer:
     Next player
 
     WriteLog("SERVER STARTED")
-    ServerLoop()
+    Gosub ServerLoop
     SetMap gMap, OFF, OFF
     gGameMode = MENU
     GSSUnregister()
@@ -161,7 +161,8 @@ gBannedIP = ""
 //================================================================================
 // Palvelimen p‰‰silmukka
 //================================================================================
-Function ServerLoop()
+Goto skipServerLoop
+ServerLoop:
 
     If gPlayMode > DM Then
         gMapMaxPlayers  = gMapTeamPlayers * 2
@@ -246,7 +247,7 @@ Function ServerLoop()
 //COM1        gLastPlayerCount = gPlayerCount
         Goto ReadDataFromClient    // Luetaan clientin l‰hett‰m‰‰ dataa
         // Palaaminen Goto:sta tapahtuu alla olevaan kirjanmerkkiin
-        returnServerLoop:
+        returnToLoop:
         UpdateGame
         If KeyHit(cbKeyF5) Then ReadBanList()
         If KeyHit(cbKeyF8) And gPlayMode > DM Then
@@ -266,7 +267,7 @@ Function ServerLoop()
     ShowObject gMap, OFF
     ClearKeys
     
-    Return True
+    Goto returnServerLoop
     
     //================================================================================
     // Luetaan clientin l‰hett‰m‰‰ dataa
@@ -709,8 +710,12 @@ Function ServerLoop()
     ServerSend()
     
     // Takaisin serverilooppiin
-    Goto returnServerLoop
-EndFunction
+    Goto returnToLoop
+    
+    returnServerLoop:
+Return
+
+skipServerLoop:
 
 //==============================================================================
 // cbNetwork Gosub-komentoina. Annettavat arvot Put-gosubeille ovat:
