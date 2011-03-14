@@ -277,7 +277,7 @@ ServerLoop:
     nRet = ServerRead()
 
     // Tuli joku virhe
-    If nRet <> 0 Then Goto returnServerLoop
+    If nRet <> 0 Then Goto returnToLoop
     
     clientIP$ = GetWord2(NET_ClientId, 1, ":")
     If InStr(gBannedIP, "," + clientIp + ",") > 0 Then
@@ -286,7 +286,7 @@ ServerLoop:
         gs_valueByte = NET_END : Gosub gs_PutByte
         ServerSend()
         WriteLog("Block request blocked (" + clientIP + ")")
-        Goto returnServerLoop
+        Goto returnToLoop
     EndIf
     
     // Muistipalan alussa on aina luetun datan pituus joka luetaan t‰ss‰ pois
@@ -299,7 +299,7 @@ ServerLoop:
     // Joku liittyy peliin
     If netmsg = NET_LOGIN Then
         Login(True)
-        Goto returnServerLoop
+        Goto returnToLoop
     EndIf
 
     // Pelaajan id
@@ -308,7 +308,7 @@ ServerLoop:
     If gCurrentPlayerId < 1 Or gCurrentPlayerId > MAX_PLAYERS Then
         // Pelaajatunnus on v‰‰r‰
         WriteLog("Possible hack attempt from " + GetWord2(NET_ClientId, 1, ":") + " Invalid playerId (" + gCurrentPlayerId + ")")
-        Goto returnServerLoop
+        Goto returnToLoop
     EndIf
     
     // Tarkistetaan ett‰ pelaaja on kirjautunut oikein.
@@ -327,7 +327,7 @@ ServerLoop:
         gs_valueByte = gCurrentPlayerId : Gosub gs_PutByte
         gs_valueString = player\kickReason : Gosub gs_PutString
         ServerSend()
-        Goto returnServerLoop
+        Goto returnToLoop
     EndIf
     
     If player\clientId <> NET_ClientId Or player\active = False Then
@@ -335,13 +335,13 @@ ServerLoop:
         gs_valueByte = NET_NOLOGIN : Gosub gs_PutByte
         ServerSend()
 //        WriteLog("Possible hack attempt from " + GetWord2(NET_ClientId, 1, ":") + " Not logged in (" + gCurrentPlayerId + ")")
-        Goto returnServerLoop
+        Goto returnToLoop
     EndIf
 
     // Pelaaja poistuu pelist‰
     If netmsg = NET_LOGOUT Then
         Login(False, gCurrentPlayerId)
-        Goto returnServerLoop
+        Goto returnToLoop
     EndIf
     
     // Lasketaan pelaajan ja serverin v‰linen lagi
