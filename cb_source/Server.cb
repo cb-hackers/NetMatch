@@ -226,9 +226,11 @@ Function ServerLoop()
     Next i
     
     Repeat
-        GameUpdate()            // Pelitilanteen p‰ivitys
+        GameUpdate()                // Pelitilanteen p‰ivitys
 //COM1        gLastPlayerCount = gPlayerCount
-        ReadDataFromClient()    // Luetaan clientin l‰hett‰m‰‰ dataa
+        Goto ReadDataFromClient    // Luetaan clientin l‰hett‰m‰‰ dataa
+        // Palaaminen Goto:sta tapahtuu alla olevaan kirjanmerkkiin
+        returnServerLoop:
         UpdateGame
         If KeyHit(cbKeyF5) Then ReadBanList()
         If KeyHit(cbKeyF8) And gPlayMode > DM Then
@@ -247,30 +249,18 @@ Function ServerLoop()
     
     ShowObject gMap, OFF
     ClearKeys
-EndFunction
-
-
-Function ReadBanList()
-    gBannedIP = ","
-    If FileExists("ipban.txt") Then
-        f = OpenToRead("ipban.txt")
-        While Not EOF(f)
-            txt$ = Trim(GetWord2(ReadLine(f), 1, "#"))
-            gBannedIP = gBannedIP + txt + ","
-        Wend
-        CloseFile f
-    EndIf
-EndFunction
-
-//================================================================================
-// Luetaan clientin l‰hett‰m‰‰ dataa
-//================================================================================
-Function ReadDataFromClient()
+    
+    Return True
+    
+    //================================================================================
+    // Luetaan clientin l‰hett‰m‰‰ dataa
+    //================================================================================
+    ReadDataFromClient:
     // Luetaan dataa
     nRet = ServerRead()
 
     // Tuli joku virhe
-    If nRet <> 0 Then Return False
+    If nRet <> 0 Then Goto returnServerLoop
     
     clientIP$ = GetWord2(NET_ClientId, 1, ":")
     If InStr(gBannedIP, "," + clientIp + ",") > 0 Then
@@ -279,7 +269,7 @@ Function ReadDataFromClient()
         _Net_PutByte(NET_END)
         ServerSend()
         WriteLog("Block request blocked (" + clientIP + ")")
-        Return False
+        Goto returnServerLoop
     EndIf
     
     // Muistipalan alussa on aina luetun datan pituus joka luetaan t‰ss‰ pois
@@ -291,7 +281,7 @@ Function ReadDataFromClient()
     // Joku liittyy peliin
     If netmsg = NET_LOGIN Then
         Login(True)
-        Return True
+        Goto returnServerLoop
     EndIf
 
     // Pelaajan id
@@ -299,7 +289,7 @@ Function ReadDataFromClient()
     If gCurrentPlayerId < 1 Or gCurrentPlayerId > MAX_PLAYERS Then
         // Pelaajatunnus on v‰‰r‰
         WriteLog("Possible hack attempt from " + GetWord2(NET_ClientId, 1, ":") + " Invalid playerId (" + gCurrentPlayerId + ")")
-        Return False
+        Goto returnServerLoop
     EndIf
     
     // Tarkistetaan ett‰ pelaaja on kirjautunut oikein.
@@ -313,7 +303,7 @@ Function ReadDataFromClient()
         _Net_PutByte(gCurrentPlayerId)
         _Net_PutString( player\kickReason )
         ServerSend()
-        Return True
+        Goto returnServerLoop
     EndIf
     
     If player\clientId <> NET_ClientId Or player\active = False Then
@@ -321,13 +311,13 @@ Function ReadDataFromClient()
         _Net_PutByte(NET_NOLOGIN)
         ServerSend()
 //        WriteLog("Possible hack attempt from " + GetWord2(NET_ClientId, 1, ":") + " Not logged in (" + gCurrentPlayerId + ")")
-        Return False
+        Goto returnServerLoop
     EndIf
 
     // Pelaaja poistuu pelist‰
     If netmsg = NET_LOGOUT Then
         Login(False, gCurrentPlayerId)
-        Return True
+        Goto returnServerLoop
     EndIf
     
     // Lasketaan pelaajan ja serverin v‰linen lagi
@@ -688,6 +678,20 @@ Function ReadDataFromClient()
     
     _Net_PutByte(NET_END)
     ServerSend()
+    
+EndFunction
+
+
+Function ReadBanList()
+    gBannedIP = ","
+    If FileExists("ipban.txt") Then
+        f = OpenToRead("ipban.txt")
+        While Not EOF(f)
+            txt$ = Trim(GetWord2(ReadLine(f), 1, "#"))
+            gBannedIP = gBannedIP + txt + ","
+        Wend
+        CloseFile f
+    EndIf
 EndFunction
 
 //================================================================================

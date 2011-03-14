@@ -48,7 +48,6 @@ Include "Menu.cb"
 Include "Utils.cb"
 Include "cbGSS.cb"
 Include "cbNetwork.cb"
-Include "Server.cb"
 Include "Client.cb"
 Include "Player.cb"
 Include "Game.cb"
@@ -59,6 +58,7 @@ Include "Sound.cb"
 Include "Effect.cb"
 Include "Items.cb"
 Include "Log.cb"
+Include "Server.cb"
 
 //gDebug = SERVER
 
