@@ -679,6 +679,8 @@ Function ServerLoop()
     _Net_PutByte(NET_END)
     ServerSend()
     
+    // Takaisin serverilooppiin
+    Goto returnServerLoop
 EndFunction
 
 
