@@ -15,6 +15,8 @@ Dim gs_valueByte As Byte
 
 Dim gs_dllMethod As String
 Dim gs_memBlockResize As Integer
+Dim gs_initValue As Integer
+gs_initValue = 0 // Oletus
 
 //================================================================================
 // Luodaan palvelin.
@@ -727,15 +729,18 @@ skipServerLoop:
 // Näihin myös tallennetaan Get-gosubien palautusarvot.
 // Erikoisparametri kirjaston sisäistä gs_MemBlockResize-Gosubia varten:
 //  - gs_blockLength%
+// Myös gs_InitMemBlock-Gosubille on oma erikoisparametrinsa:
+//  - gs_initValue%
 //==============================================================================
 
 Goto skipCbNetwork
 
 gs_InitMemBlock:
     If gNetMemBlock Then DeleteMEMBlock gNetMemBlock
-    gNetMemBlock = MakeMEMBlock(gs_valueInt + 4)
+    gNetMemBlock = MakeMEMBlock(gs_initValue + 4)
     PokeInt gNetMemBlock, 0, 0
     gNetMemBlockOffset = 4
+    gs_initValue = 0 // Nollataan alkuperäiseen tilaan
 Return
 
 gs_DeleteMemBlock:
