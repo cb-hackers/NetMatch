@@ -284,8 +284,6 @@ Function GameUpdate()
                         player\health = 100
                         player\lastValidX = player\x
                         player\lastValidY = player\y
-                        player\hackTestX = player\x
-                        player\hackTestY = player\y
                         player\spawnTime  = Timer()
                         // Jos tämä on botti niin arvotaan ase
                         If player\zombie = True Then
@@ -777,8 +775,6 @@ Function Login(_in, _playerId = 0)
                     SpawnObject(player\obj)
                     player\x        = ObjectX(player\obj)
                     player\y        = ObjectY(player\obj)
-                    player\hackTestX = player\x
-                    player\hackTestY = player\y
                     player\angle    = ObjectAngle(player\obj)
                     player\zombie   = False
                     player\health   = 100
