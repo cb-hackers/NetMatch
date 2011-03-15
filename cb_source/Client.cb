@@ -6,6 +6,13 @@
 
 Global gLatencyTimer, gLatencies, gLatency
 
+// Kuinka kauan pitää olla kulunut viime paketista että palvelimelle lähetetään
+// uusi paketti?
+Const PACKET_WAIT = 50
+
+Global gPacketWaitTimer
+gPacketWaitTimer = 0
+
 //================================================================================
 // Liitytään peliin
 //================================================================================
@@ -1012,6 +1019,9 @@ Function SendDataToServer()
         ClientSendBack()
         Return True
     EndIf
+    
+    // Odotellaan jos meinaa lähteä pakettia liian tiuhaan tahtiin.
+    If gPacketWaitTimer + PACKET_WAIT > Timer() Then Return False
     
     // Poimitaanko joku tavara
     pickedItem = 0

@@ -10,8 +10,8 @@ Global gBotFreeze As Byte
 Dim gs_valueInt As Integer
 Dim gs_valueFloat As Float
 Dim gs_valueString As String
-Dim gs_valueShort As Short
-Dim gs_valueByte As Byte
+Dim gs_valueShort As Integer
+Dim gs_valueByte As Integer
 
 Dim gs_dllMethod As String
 Dim gs_memBlockResize As Integer
@@ -353,7 +353,7 @@ ServerLoop:
     player\lastActivity = Timer()
     sendNames = False
     txtMessage$ = ""
-    
+        
     // Luetaan saapuneita viestejä
     While True
         If netmsg = NET_PLAYER Then
