@@ -1,14 +1,16 @@
 <?php
 $html = true;
-if( isset( $_GET['list'] ) || isset( $_GET['newlist'] ) )
+$listType = 0;
+if( isset( $_GET['list'] ) )
+{
     $html = false;
-$newList = false;
-if( isset( $_GET['newlist'] ) )
-    $newList = true;
+    $listType = (int) $_GET['list'];
+}
+
 $versionOnly = false;
 if( isset( $_GET['version'] ) )
     $versionOnly = true;
-if( !$html ) header( "Content-type: text\plain;" );
+if( !$html || $versionOnly ) header( "Content-type: text\plain;" );
 define( "SCRIPT_DIR", "http://" . $_SERVER['SERVER_NAME'] . pathinfo( $_SERVER['REQUEST_URI'], PATHINFO_DIRNAME ) . "/" );
 define( "CRC_DELIMITER", "|" );
 define( "CRC_NEXTFILE", ";" );
@@ -53,10 +55,10 @@ foreach( $crcArray as $dirArray )
     {
         if( !$html )
         {
-            if( !$newList )
-                echo $file . CRC_DELIMITER . $fileArray['hash'] . CRC_DELIMITER . $fileArray['link'] . CRC_NEXTFILE;
-            else
+            if( $listType == 2 )
                 echo $file . CRC_DELIMITER . $fileArray['hash'] . CRC_DELIMITER . $fileArray['size'] . CRC_DELIMITER . $fileArray['link'] . CRC_NEXTFILE;
+            else
+                echo $file . CRC_DELIMITER . $fileArray['hash'] . CRC_DELIMITER . $fileArray['link'] . CRC_NEXTFILE;
         } else {
             echo "\n<li>$file<ul>";
             echo "\n\t<li>Hash: $fileArray[hash]</li>";
