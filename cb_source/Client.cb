@@ -8,7 +8,8 @@ Global gLatencyTimer, gLatencies, gLatency
 
 // Kuinka kauan pit‰‰ olla kulunut viime paketista ett‰ palvelimelle l‰hetet‰‰n
 // uusi paketti?
-Const PACKET_WAIT = 50
+Global gPacketWait
+gPacketWait = 30
 
 Global gPacketWaitTimer
 gPacketWaitTimer = 0
@@ -432,6 +433,14 @@ Function ClientLoop()
                 SetFont gFonts(FNT_SETUP)
                 Color 255, 255, 0
                 Text 10, 550, GetText("mi_music_vol") + ": " + gMusicVolume
+            EndIf
+            If KeyDown(cbKeyR) = True Then
+                If DownKey() Then gPacketWait = gPacketWait - 1
+                If UpKey() Then gPacketWait = gPacketWait + 1
+                If gPacketWait < 0 Then gPacketWait = 0
+                SetFont gFonts(FNT_SETUP)
+                Color 255, 255, 0
+                Text 10, 550, "PacketLimit: " + gPacketWait + "ms"
             EndIf
         EndIf
         
@@ -939,6 +948,9 @@ Function ReadDataFromServer()
 
                 gServerMap = mapName
             EndIf
+        ElseIf  netmsg = NET_SPEEDHACK Then 
+            Error(GetText("speedhack"))
+            Return False
         ElseIf netmsg = NET_KICKED Then
             // Joku pelaaja potkittiin palvelimelta
             kickerId = _Net_GetByte()
@@ -1021,7 +1033,10 @@ Function SendDataToServer()
     EndIf
     
     // Odotellaan jos meinaa l‰hte‰ pakettia liian tiuhaan tahtiin.
-    If gPacketWaitTimer + PACKET_WAIT > Timer() Then Return False
+    If gPacketWaitTimer + gPacketWait > Timer() Then Return False
+    
+    // Otetaan viimeksi l‰hetetty aika talteen.
+    gPacketWaitTimer = Timer()
     
     // Poimitaanko joku tavara
     pickedItem = 0
