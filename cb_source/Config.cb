@@ -68,8 +68,8 @@ gRadarArrows = 1
 
 // Päivitystä varten oleva url
 Global gUpdateUrl$
-gUpdateUrl = "http://netmatch.vesq.org/updater/updater.php"
-If NM_DEVBUILD Then gUpdateUrl = "http://vesq.viuhka.fi/nm/devbuild/updater.php"
+gUpdateUrl = "http://nm.vesq.org/release/updater.php"
+If NM_DEVBUILD Then gUpdateUrl = "http://nm.vesq.org/devbuild/updater.php"
 
 // Osoite, josta ladataan kartta sen puuttuessa clientiltä.
 Global gMapServerUrl$
