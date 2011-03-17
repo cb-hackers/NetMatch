@@ -1,7 +1,10 @@
 <?php
 $html = true;
-if( isset( $_GET['list'] ) )
+if( isset( $_GET['list'] ) || isset( $_GET['newlist'] ) )
     $html = false;
+$newList = false;
+if( isset( $_GET['newlist'] ) )
+    $newList = true;
 $versionOnly = false;
 if( isset( $_GET['version'] ) )
     $versionOnly = true;
@@ -9,7 +12,7 @@ if( !$html ) header( "Content-type: text\plain;" );
 define( "SCRIPT_DIR", "http://" . $_SERVER['SERVER_NAME'] . pathinfo( $_SERVER['REQUEST_URI'], PATHINFO_DIRNAME ) . "/" );
 define( "CRC_DELIMITER", "|" );
 define( "CRC_NEXTFILE", ";" );
-define( "NM_VERSION", "2.3" );
+define( "NM_VERSION", "2.4" );
 define( "NM_REVISION", "" );
 define( "NM_PATCH", 0 );
 
@@ -50,10 +53,14 @@ foreach( $crcArray as $dirArray )
     {
         if( !$html )
         {
-            echo $file . CRC_DELIMITER . $fileArray['hash'] . CRC_DELIMITER . $fileArray['link'] . CRC_NEXTFILE;
+            if( !$newList )
+                echo $file . CRC_DELIMITER . $fileArray['hash'] . CRC_DELIMITER . $fileArray['link'] . CRC_NEXTFILE;
+            else
+                echo $file . CRC_DELIMITER . $fileArray['hash'] . CRC_DELIMITER . $fileArray['size'] . CRC_DELIMITER . $fileArray['link'] . CRC_NEXTFILE;
         } else {
             echo "\n<li>$file<ul>";
             echo "\n\t<li>Hash: $fileArray[hash]</li>";
+            echo "\n\t<li>Size: " . format_bytes( $fileArray['size'] ) . "</li>";
             echo "\n\t<li>Link: <a href=\"$fileArray[link]\">$fileArray[link]</a></li>";
             echo "\n</ul></li>";
         }
@@ -92,12 +99,19 @@ function gohash( $dir = "." )
             }
             $hash = strtoupper(hash_file('crc32b', $file));
             $link = SCRIPT_DIR . $file;
-            $crcArray[$dir][$file] = array( "hash" => $hash, "link" => $link );
+            $size = filesize($file);
+            $crcArray[$dir][$file] = array( "hash" => $hash, "link" => $link, "size" => $size );
         }
     }
 }
 
 function isort($a,$b) {
     return strtolower($a)>strtolower($b);
+}
+
+function format_bytes($size) {
+    $units = array(' B', ' KB', ' MB', ' GB', ' TB');
+    for ($i = 0; $size >= 1024 && $i < 4; $i++) $size /= 1024;
+    return round($size, 2).$units[$i];
 }
 ?>
