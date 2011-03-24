@@ -672,6 +672,7 @@ Function Login(_in, _playerId = 0)
                 gPlayMode = _Net_GetByte()
                 gServerMap = _Net_GetString()
                 gMapCRC = _Net_GetInt()
+                gServerMapServerUrl = _Net_GetString()
                 Return True
             EndIf
     
@@ -815,6 +816,7 @@ Function Login(_in, _playerId = 0)
                     _Net_PutByte(gPlayMode)
                     _Net_PutString(gServerMap)
                     _Net_PutInt(gMapCRC)
+                    _Net_PutString(gMapServerUrl)
                     ServerSend()
                     WriteLog(player\name + " logged in (" + GetWord2(NET_ClientId, 1, ":") + ")")
                     // Lis‰t‰‰n viestijonoon ilmoitus uudesta pelaajasta.

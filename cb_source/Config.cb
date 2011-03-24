@@ -73,7 +73,7 @@ If NM_DEVBUILD Then gUpdateUrl = "http://nm.vesq.org/devbuild/updater.php"
 
 // Osoite, josta ladataan kartta sen puuttuessa clientiltä.
 Global gMapServerUrl$
-gMapServerUrl = "http://www.tuhoojabotti.com/nm/maps/"
+gMapServerUrl = "http://netmatch.vesq.org/maps/"
 
 ReadConfig()
 //--------------------------------------------------------------------------------

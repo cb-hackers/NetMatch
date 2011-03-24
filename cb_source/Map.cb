@@ -96,6 +96,9 @@ gMapList = ""
 Global gCurrentMapPtr
 gCurrentMapPtr = 0
 
+// Palvelimen k‰ytt‰m‰n karttapalvelimen URL
+Global gServerMapServerUrl$
+gServerMapServerUrl = ""
 
 
 //================================================================================
@@ -114,7 +117,6 @@ Function SearchMaps()
     If IsDirectory("map")=0 Then Return False
     ChDir "map"
     mapFiles$ = ""
-    mapAuthors$ = ""
     
     StartSearch
     While True
@@ -250,7 +252,7 @@ EndFunction
 //================================================================================
 // Ladataan kartta peliin. Parametriksi annetaan kartan nimi. (MAPS\name)
 //================================================================================
-Function LoadGameMap(_mapName$,_loopNum=0)
+Function LoadGameMap(_mapName$,_loopNum=0,forceDownload=0)
     gMapMaxPlayers  = 10
     gMapTeamPlayers = 5
     gMapMaxBots     = 5
@@ -275,9 +277,15 @@ Function LoadGameMap(_mapName$,_loopNum=0)
     Next iMap
     
     If found = False Then
-        // Ladataan kartta serverilt‰
-        If DownloadMap(_mapName) = False Then 
-            Error(GetText("map_download_failed"))
+        If forceDownload <> 0 Then
+            // Ladataan kartta serverilt‰
+            If DownloadMap(_mapName) = False Then
+                Return False
+            EndIf
+        Else
+            // Jos karttaa ei ole, niin yritet‰‰n yhdist‰‰ uudelleen palvelimelle,
+            // jolloin kartan lataus t‰ss‰ kohtaa toimisi.
+            gReconnectToServer = True
             Return False
         EndIf
     EndIf
@@ -301,7 +309,7 @@ Function LoadGameMap(_mapName$,_loopNum=0)
     gMap = LoadResourceMap(_mapName)
     
     If gGameMode = SERVER Then
-        LoadMapConfig(cfgName)
+        LoadMapConfig(cfgName, ConvertToInteger( iMap ))
 
         For player.PLAYERS = Each PLAYERS
             botName$            = "Bot_" + player\playerId
@@ -327,16 +335,16 @@ EndFunction
 Function DownloadMap(_mapName$)
     For i = 0 To 1
         If i Then 
-            rtn = HTTPGET(gMapServerUrl+_mapName$+"/"+_mapName$+".mpc",1)
+            rtn = HTTPGET(gServerMapServerUrl+_mapName$+"/"+_mapName$+".mpc",1)
         Else
-            rtn = HTTPGET(gMapServerUrl+_mapName$+"/"+_mapName$+".cfg",1)
+            rtn = HTTPGET(gServerMapServerUrl+_mapName$+"/"+_mapName$+".cfg",1)
         EndIf
         If rtn <> 200 Then 
             If rtn = 404 Then 
                 Error(GetText("map_not_in_server", _mapName))
                 Return False
             Else
-                Error(GetText( "unexpected_error" ) )
+                Error(GetText("map_download_failed"))
                 Return False
             EndIf
         EndIf
@@ -367,7 +375,7 @@ Function DownloadMap(_mapName$)
     If FileExists("map/"+_mapName+".cfg") And FileExists("map/"+_mapName+".mpc") Then 
         Return AddMap( _mapName + ".mpc" )
     Else
-        Error(getText("unexpected_error"))
+        Error(GetText("map_download_failed"))
         Return False
     EndIf
 EndFunction
@@ -375,7 +383,7 @@ EndFunction
 //================================================================================
 // Ladataan kartan asetukset.
 //================================================================================
-Function LoadMapConfig(_cfgName$)
+Function LoadMapConfig(_cfgName$, _mapPtr = 0)
         
     cfgFile$ = "map/" + Replace(_cfgName, " ", "_")
     gBotNames = ""
@@ -414,6 +422,22 @@ Function LoadMapConfig(_cfgName$)
         gBotWeapons = tmpWeapons
         If gBotWeapons = "" Then
             gBotWeapons = "1,2,3"
+        EndIf
+        
+        If _mapPtr <> 0 Then
+            // Tallennetaan muistiin kartan asetukset.
+            iMap.MAPS = ConvertToType( _mapPtr )
+            iMap\maxPlayers     = gMapMaxPlayers
+            iMap\teamPlayers    = gMapTeamPlayers
+            iMap\maxBots        = gMapMaxBots
+            iMap\botWeapons     = gBotWeapons
+            iMap\botNames       = gBotNames
+            iMap\amountHealth   = gMapHealth
+            iMap\amountAmmo     = gMapAmmo
+            iMap\amountRocket   = gMapRocket
+            iMap\amountFuel     = gMapFuel
+            iMap\amountShotgun  = gMapShotgun
+            iMap\amountLauncher = gMapLauncher
         EndIf
     EndIf
 EndFunction

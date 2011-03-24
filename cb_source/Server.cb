@@ -1063,5 +1063,14 @@ EndFunction
 Function SetBotLimit(newBotLimit)
     gMapMaxBots   = newBotLimit
     gMapBotDelete = newBotLimit
+    gMapMaxPlayers = newBotLimit + 1 // Jätetään aina tilaa yhdelle pelaajalle.
+    // ...ellei raja tule vastaan.
+    If gMapMaxPlayers > MAX_PLAYERS Then gMapMaxPlayers = MAX_PLAYERS
+    
+    // Jos asetettava bottien limitti on pienempi kuin kartan asetuksissa
+    // oleva pelaajien maksimimäärä niin asetetaan pelaajien maksimimäärä
+    // kartan asetuksissa määrättyyn.
+    curMap.MAPS = ConvertToType( gCurrentMapPtr )
+    If curMap\maxPlayers > gMapMaxPlayers Then gMapMaxPlayers = curMap\maxPlayers
     CheckBots()
 End Function

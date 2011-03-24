@@ -14,6 +14,10 @@ gPacketWait = 30
 Global gPacketWaitTimer
 gPacketWaitTimer = 0
 
+// Globaali, joka kertoo että yhdistetäänkö uudelleen.
+Global gReconnectToServer
+gReconnectToServer = False
+
 //================================================================================
 // Liitytään peliin
 //================================================================================
@@ -46,7 +50,7 @@ Function JoinGame(_host$, _port)
         Return False
     EndIf
     crc = gMapCRC
-    If LoadGameMap(gServerMap) = False Then
+    If LoadGameMap(gServerMap,0,True) = False Then
         Login(False)
         gGameMode = MENU
         Return False
@@ -157,6 +161,12 @@ Function JoinGame(_host$, _port)
     
     // Asetetaan oma, configeista luettu playmode takaisin.
     gPlayMode = gConfigPlayMode
+    
+    If gReconnectToServer = True Then
+        // Kutsutaan uudelleen tätä funktiota samoilla parametreilla.
+        gReconnectToServer = False
+        JoinGame(_host$, _port)
+    EndIf
     
     If NM_DEVBUILD = False Then
         SetWindow "NetMatch " + gGSSVersion

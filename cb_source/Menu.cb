@@ -578,6 +578,7 @@ Function DrawMenu(_menu)
             ElseIf _menu = MNU_CLIENT Then
                 If miSelected = MI_START Then
                     JoinGame(gAddress, Int(gPort))
+                    gReconnectToServer = False
                 EndIf
                 
             ElseIf miSelected = MI_STATISTICS Then
@@ -595,6 +596,7 @@ Function DrawMenu(_menu)
         
             If (keyReturn = True Or mSel = 1) And itemCount > 0 Then
                 JoinGame(GSSServerInfo(selection, GSS_SERVER_HOST), Int(GSSServerInfo(selection, GSS_SERVER_PORT)))
+                gReconnectToServer = False
                 itemCount = FindServers()
                 firstVisible = 1
                 selection = 1
