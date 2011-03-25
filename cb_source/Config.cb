@@ -75,6 +75,10 @@ If NM_DEVBUILD Then gUpdateUrl = "http://nm.vesq.org/devbuild/updater.php"
 Global gMapServerUrl$
 gMapServerUrl = "http://netmatch.vesq.org/maps/"
 
+// Speedhackin tarkistuksen poistaminen
+Global gDisableSpeedhackTest
+gDisableSpeedhackTest = False
+
 ReadConfig()
 //--------------------------------------------------------------------------------
 // Luetaan asetukset jos tiedosto on olemassa
@@ -105,6 +109,7 @@ Function ReadConfig()
             If key = "RADARARROWS" Then gRadarArrows = (value = "1")
             If key = "UPDATEURL" Then gUpdateUrl = value
             If key = "MAPSERVER" Then gMapServerUrl = value
+            If key = "DISABLESPEEDHACKTEST" Then gDisableSpeedhackTest = value
         Wend
         CloseFile f
     EndIf
@@ -133,5 +138,6 @@ Function SaveConfig()
     WriteLine f, "RadarArrows=" + gRadarArrows
     WriteLine f, "UpdateUrl=" + Replace( gUpdateUrl, "=", "&#61;" )
     WriteLine f, "MapServer=" + Replace( gMapServerUrl, "=", "&#61;" )
+    WriteLine f, "DisableSpeedhackTest=" + gDisableSpeedhackTest
     CloseFile f
 EndFunction
