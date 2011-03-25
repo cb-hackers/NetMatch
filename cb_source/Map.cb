@@ -122,6 +122,11 @@ Function SearchMaps()
     While True
         file$ = FindFile()
         If file = "" Then Exit
+        If Lower(file) = "all_maps.mpr" Then
+            DeleteFile file
+            file = FindFile()
+            If file = "" Then Exit
+        EndIf
         
         // Tiedostop‰‰tteeksi riitt‰‰ ett‰ katsotaan viimeiset kolme merkki‰.
         ext$ = Lower( Right(file, 3) )
