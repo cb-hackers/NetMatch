@@ -989,7 +989,7 @@ Function ParseCommand$( _command$, _playerId )
         Else
             ret$ = "You're not an admin!"
         EndIf
-    ElseIf check$ = "roundlength" Then
+    ElseIf check$ = "roundlength" Or check$ = "timelimit" Then
         If player\admin = True Then 
             // Vaihdetaan pilkku pisteeksi, jotta Float osaa antaa Intille oikean desimaalin
             intParam = Int( Float( Replace( params$, ",", "." ) ) )

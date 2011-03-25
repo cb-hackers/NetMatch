@@ -49,6 +49,7 @@ ul ul
 			<li><a href="#register">Palvelimen rekisteröinti ja käynnistys</a></li>
 			<li><a href="#serverstart">Palvelimen käynnistys ilman rekisteröintiä</a></li>
 			<li><a href="#playingserver">Palvelimella pelaaminen</a></li>
+            <li><a href="#servercommands">Palvelimen hallinta pelissä</a></li>
 		</ul>
 	<li><a href="#playing">Pelaaminen</a></li>
 		<ul>
@@ -68,7 +69,7 @@ ul ul
 </ul>
 
 <h2><a name="netmatch">NetMatch - The End</h2>
-<b>NetMatch - The End</b> on monen pelaajan DeathMatch-verkkopeli.<br>
+<strong>NetMatch - The End</strong> on monen pelaajan DeathMatch-verkkopeli.<br>
 Käytettävissä on ominaisuuksiltaan erilaisia aseita: tuplapistoolit, konepistooli, sinko, haulikko, kranaatinlaukaisin ja moottorisaha.<br>
 Kentältä voi kerätä lisäammuksia ja lääkintäpakkauksia tehostaakseen toimintaansa taistelukentällä.<br>
 Aseista vain tuplapistooleilla on loputtomat ammukset.<br>
@@ -83,7 +84,7 @@ Ihmispelaajien lisäksi kentällä on myös tietokoneohjattuja tekoälyhahmoja.<
 <h2><a name="settings">Asetukset</h2>
 
 <h4><a name="language">Kielen valinta</h4>
-<b>NetMatch - The End</b> tukee kahta pelinsisäistä kieltä: Englantia ja Suomea. Käytettävän kielen voi vaihtaa valikosta ASETUKSET - KIELI.
+<strong>NetMatch - The End</strong> tukee kahta pelinsisäistä kieltä: Englantia ja Suomea. Käytettävän kielen voi vaihtaa valikosta ASETUKSET - KIELI.
 
 <h4><a name="stats">Pelitilastot</h4>
 Tilastot esittävät pelin aikana pelaajan tapot, kuolemat ja tappo/kuolema-suhteen. <br>
@@ -134,6 +135,39 @@ Palvelimen ollessa päällä ruutuun piirtyy pelkkä sininen tausta.<br>
 Jos halutaan pelata samalla koneella, jossa palvelinta pidetään yllä, on käynnistettävä toinen ohjelma pelin kuvakkeesta.<br>
 Kahden ohjelman toimiminen samanaikaisesti kuitenkin saattaa aiheuttaa epävakautta palvelinohjelman toiminnassa, mikä näkyy eritoten verkkoviiveenä.
 
+<h4><a name="servercommands">Palvelimen hallinta pelissä</a></h4>
+Palvelinta voi hallita pelistä käsin kirjoittamalla komentoja muodossa <code>/&lt;komento&gt; [parametrit]</code>.<br>
+Alla olevassa taulukossa on listattuna käytössä olevat komennot. Pakolliset parametrit on merkitty <code>&lt;näin&gt;</code><br>
+ja valinnaiset parametrit hakasulkeiden sisään <code>[näin]</code>.<br><br>
+
+<table>
+<tr>
+    <td><code>/admin &lt;salasana&gt;</code></td>
+    <td>Autentikoi pelaajan hallinnoijaksi.</td>
+</tr><tr>
+    <td><code>/kick &lt;pelaaja&gt; [syy]</code></td>
+    <td>Potkaisee pelaajan <code>&lt;pelaaja&gt;</code> palvelimelta.</td>
+</tr><tr>
+    <td><code>/team &lt;pelaaja&gt; &lt;joukkue&gt;</code></td>
+    <td>Siirtää pelaajan <code>&lt;pelaaja&gt;</code> joukkueeseen <code>&lt;joukkue&gt;</code>. <code>&lt;joukkue&gt;</code> voi olla <code>1</code> tai <code>Green</code>, jolloin pelaaja
+    siirretään vihreille, tai se voi olla <code>2</code> tai <code>Red</code>, jolloin pelaaja siirretään punaisille.</td>
+</tr><tr>
+    <td><code>/radars [ON|OFF|0|1]</code></td>
+    <td>Asettaa tutkan virkaa toimittavat nuolet päälle/pois. Oman joukkueen jäsenet kuitenkin näkyvät aina.
+    Jos parametria ei anneta niin kytkee tutkan päälle tai jos se oli jo päällä niin kytkee sen pois.</td>
+</tr><tr>
+    <td><code>/timelimit &lt;min&gt;</code> tai <code>/roundlength &lt;min&gt;</code></td>
+    <td>Nollaa kierroksen pituuden <code>&lt;min&gt;</code> minuuttiin. Arvon tulee olla väliltä 1-60.</td>
+</tr><tr>
+    <td><code>/bot limit [määrä]</code></td>
+    <td>Asettaa bottien määrän. Kun tästä määrästä poistetaan palvelimella olevien pelaajien määrä, saadaan bottien todellinen luku.</td>
+</tr><tr>
+    <td><code>/bot freeze [päälle]</code></td>
+    <td>Kytkee bottien aivotoiminnan päälle/pois. Jos parametri <code>[päälle]</code> annetaan ja se on eri suuri kuin 0,
+    niin komento sammuttaa botit.</td>
+</tr>
+</table>
+
 <br><br><a href="#top">Sivun alkuun</a>
 
 <h2><a name="playing">Pelaaminen</h2>
@@ -156,7 +190,7 @@ Tällöin on tiedettävä palvelimen käyttämä portti (katso myös Osoite)
 Kun IP-osoite ja portti ovat tiedossa, liitytään suoraan palvelimelle.
 
 <h4><a name="playing2">Pelaaminen</h4>
-<b>NetMatch - The End</b> tukee kahdenlaista pelihahmon ohjaustyyliä: hiiri- tai näppäinohjausta.<br>
+<strong>NetMatch - The End</strong> tukee kahdenlaista pelihahmon ohjaustyyliä: hiiri- tai näppäinohjausta.<br>
 <br>
 Pelihahmon ohjauksen voi valita kahdesta vaihtoehdosta.<br>
 Asetus vaikuttaa siihen, miten hahmo liikkuu käytettäessä näppäimiä WASD.<br>
@@ -188,20 +222,17 @@ Musiikkikappaleita voi olla useita ja ohjelma arpoo seuraavan kappaleen edellise
 Tuettuja tiedostomuotoja ovat raw, mod, s3m, xm, it, mid, rmi, wav, mp2, mp3, ogg, wma, asf ja mo3.
 
 <h4><a name="maps">Kartat</h4>
-<b>NetMatch - The End</b>:in käyttämät kartat ovat pelin "map"-kansiossa. 
+<strong>NetMatch - The End</strong>:in käyttämät kartat ovat pelin "map"-kansiossa. 
 Karttoja voi ladata lisää NetMatchin kotisivuilta karttakansioon, 
 jolloin kartat saa suoraan käyttöön palvelinta luotaessa tai liityttäessä palvelimelle joka käyttää samaa karttaa.
 
 <br><br><a href="#top">Sivun alkuun</a>
 
 <h2><a name="credits">Tekijät</h2>
-<table>
-<tr><td><b>Marko Hiltunen</b>:</td><td>suunnittelu, ohjelmointi</td></tr>
-<tr><td><b>Kari Tervo</b>:</td><td>suunnittelu, grafiikka</td></tr>
-<tr><td><b>Vesa Laakso</b>:</td><td>suunnittelu, ohjelmointi</td></tr>
-<tr><td><b>Jasse Lahdenperä</b>:</td><td>suunnittelu, ohjelmointi</td></tr>
-<tr><td><b>Vesa Viljakainen</b>:</td><td>musiikki</td></tr>
-</table>
+<p>suunnittelu, ohjelmointi:<br />
+<strong>Marko Hiltunen, Vesa Laakso, Jasse Lahdenperä, Ville Lahdenvuo, Viltzu, Valtzu</strong></p>
+<p>suunnittelu, grafiikka: <strong>Kari Tervo</strong></p>
+<p>musiikki: <strong>Vesa Viljakainen</strong></p>
 
 <br><br><a href="#top">Sivun alkuun</a>
 
