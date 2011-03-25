@@ -1,1 +1,1 @@
-<?php header("Location: downloads/nm_v2.3.rar"); ?>
+<?php header("Location: https://github.com/downloads/VesQ/NetMatch/nm_v2.4_release.zip"); ?>
