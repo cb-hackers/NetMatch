@@ -69,3 +69,19 @@ aControls( KEY_SFXVOLUME,       KEYF_SCANCODE )    = cbKeyV
 aControls( KEY_STATS,           KEYF_SCANCODE )    = cbKeyG
 aControls( KEY_SHOWFPS,         KEYF_SCANCODE )    = cbKeyF
 aControls( KEY_TOGGLEFLOOR,     KEYF_SCANCODE )    = cbKeyB
+
+Function MappedInput(in)
+	scan = aControls(in, KEYF_SCANCODE)
+	button = aControls(in, KEYF_MOUSEBUTTON)
+	scroll = aControls(in, KEYF_MOUSESCROLL)
+
+	If (scan <> 0) Then
+		Return KeyDown(scan)
+	ElseIf (button <> 0) Then
+		Return (GetMouse() = button)
+	ElseIf (scroll <> 0) Then
+		Return (MouseMoveZ() = scroll)
+	EndIf
+
+	Return False
+EndFunction
