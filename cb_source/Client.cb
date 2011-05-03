@@ -299,18 +299,18 @@ Function ClientLoop()
                 
                 If LeftKey() Or RightKey() Then ShowMouse OFF
                 If gControlMode = 1 Then
-                    If KeyDown(cbKeyW) Or UpKey() Then MoveObject obj, PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If KeyDown(cbKeyS) Or DownKey() Then MoveObject obj, -PxPerSec(BACKWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If KeyDown(cbKeyA) Then MoveObject obj, 0, -PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If KeyDown(cbKeyD) Then MoveObject obj, 0, PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If MappedInput(KEY_MOVE_UP) Or UpKey() Then MoveObject obj, PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If MappedInput(KEY_MOVE_DOWN) Or DownKey() Then MoveObject obj, -PxPerSec(BACKWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If MappedInput(KEY_STRAFE_LEFT) Then MoveObject obj, 0, -PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If MappedInput(KEY_STRAFE_RIGHT) Then MoveObject obj, 0, PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
                 EndIf
                 If gControlMode = 2 Then
                     moveX = 0
                     moveY = 0
-                    If KeyDown(cbKeyW) Then moveY = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If KeyDown(cbKeyS) Then moveY = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If KeyDown(cbKeyA) Then moveX = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If KeyDown(cbKeyD) Then moveX = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If MappedInput(KEY_MOVE_UP) Then moveY = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If MappedInput(KEY_MOVE_DOWN) Then moveY = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If MappedInput(KEY_MOVE_LEFT) Then moveX = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If MappedInput(KEY_MOVE_RIGHT) Then moveX = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
                     TranslateObject obj, moveX, moveY
                 EndIf
                 

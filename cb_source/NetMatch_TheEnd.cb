@@ -28,7 +28,7 @@ EndIf
 SAFEEXIT OFF
 
 Const NM_VERSION$   = "2.4"
-Const NM_REVISION$  = ""
+Const NM_REVISION$  = "input"
 Const NM_PATCH      = 0
 
 // T‰m‰ pit‰‰ AINA laittaa 1, jos kyseess‰ ei ole virallinen julkaisu.
@@ -48,6 +48,7 @@ Include "Menu.cb"
 Include "Utils.cb"
 Include "cbGSS.cb"
 Include "cbNetwork.cb"
+Include "Controls.cb" ' KOKEELLINEN
 Include "Client.cb"
 Include "Player.cb"
 Include "Game.cb"
