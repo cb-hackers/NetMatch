@@ -7,36 +7,46 @@
 //--------------------------------------------------------------------------------
 // Vakiot taulukkoa varten.
 //--------------------------------------------------------------------------------
-Const KEY_SHOOT         = 1
-Const KEY_SWITCHWEAPON  = 2
-Const KEY_WEAPON_UP     = 3
-Const KEY_WEAPON_DOWN   = 4
-Const KEY_MOVE_LEFT     = 5
-Const KEY_MOVE_UP       = 6
-Const KEY_MOVE_RIGHT    = 7
-Const KEY_MOVE_DOWN     = 8
-Const KEY_STRAFE_LEFT   = 9
-Const KEY_STRAFE_RIGHT  = 10
-Const KEY_MOVE_FORWARD  = 11
-Const KEY_MOVE_BACKWARD = 12
-Const KEY_CHAT          = 13
-Const KEY_MUSICVOLUME   = 14
-Const KEY_SFXVOLUME     = 15
-Const KEY_STATS         = 16
-Const KEY_SHOWFPS       = 17
-Const KEY_TOGGLEFLOOR   = 18
+Const KEY_SHOOT          = 1
+Const KEY_SWITCHWEAPON   = 2
+Const KEY_WEAPON_UP      = 3
+Const KEY_WEAPON_DOWN    = 4
+Const KEY_MOVE_LEFT      = 5
+Const KEY_MOVE_UP        = 6
+Const KEY_MOVE_RIGHT     = 7
+Const KEY_MOVE_DOWN      = 8
+Const KEY_STRAFE_LEFT    = 9
+Const KEY_STRAFE_RIGHT   = 10
+Const KEY_MOVE_FORWARD   = 11
+Const KEY_MOVE_BACKWARD  = 12
+Const KEY_CHAT           = 13
+Const KEY_MUSICVOLUME    = 14
+Const KEY_SFXVOLUME      = 15
+Const KEY_STATS          = 16
+Const KEY_SHOWFPS        = 17
+Const KEY_TOGGLEFLOOR    = 18
 // Näppäinten määrä yhteensä
-Const KEY_AMOUNT        = 18
+Const KEY_AMOUNT         = 18
 
 //--------------------------------------------------------------------------------
 // Mitä tietoa haetaan, taulukon aControls toinen ulottuvuus.
 //--------------------------------------------------------------------------------
-Const KEYF_SCANCODE     = 1
-Const KEYF_MOUSEBUTTON  = 2
-Const KEYF_MOUSESCROLL  = 3
-Const KEYF_PRESSED      = 4
+Const KEYF_MODE          = 1
+Const KEYF_CODE          = 2
+Const KEYF_PRESSED       = 3
 // Tietosolujen määrä
-Const KEYF_AMOUNT       = 4
+Const KEYF_AMOUNT        = 3
+
+//--------------------------------------------------------------------------------
+// Näppäimen 'moodi', ts. mikä inputtilaite
+//--------------------------------------------------------------------------------
+Const KEYM_KEYBOARD      = 1
+Const KEYM_MOUSE         = 2
+Const KEYM_SCROLL        = 3
+Const KEYM_KEYBOARD_ONCE = 4
+Const KEYM_MOUSE_ONCE    = 5
+
+Const KEYM_AMOUNT        = 5
 
 //--------------------------------------------------------------------------------
 // Näppäintaulukko ja sen alustus oletusarvoilla.
@@ -51,37 +61,73 @@ For i=1 To KEY_AMOUNT
 Next i
 
 // Oletusarvojen asetus
-aControls( KEY_SHOOT,           KEYF_MOUSEBUTTON ) = 1  // Hiiren ykkösnapikka
-aControls( KEY_SWITCHWEAPON,    KEYF_MOUSEBUTTON ) = 2  // Hiiren kakkosnapikka
-aControls( KEY_WEAPON_UP,       KEYF_MOUSESCROLL ) = 1  // Hiiren rullaus ylöspäin
-aControls( KEY_WEAPON_DOWN,     KEYF_MOUSESCROLL ) = -1 // Hiiren rullaus alaspäin
-aControls( KEY_MOVE_LEFT,       KEYF_SCANCODE )    = cbKeyA
-aControls( KEY_MOVE_UP,         KEYF_SCANCODE )    = cbKeyW
-aControls( KEY_MOVE_RIGHT,      KEYF_SCANCODE )    = cbKeyD
-aControls( KEY_MOVE_DOWN,       KEYF_SCANCODE )    = cbKeyS
-aControls( KEY_STRAFE_LEFT,     KEYF_SCANCODE )    = cbKeyA
-aControls( KEY_STRAFE_RIGHT,    KEYF_SCANCODE )    = cbKeyD
-aControls( KEY_MOVE_FORWARD,    KEYF_SCANCODE )    = cbKeyW
-aControls( KEY_MOVE_BACKWARD,   KEYF_SCANCODE )    = cbKeyS
-aControls( KEY_CHAT,            KEYF_SCANCODE )    = cbKeyC
-aControls( KEY_MUSICVOLUME,     KEYF_SCANCODE )    = cbKeyM
-aControls( KEY_SFXVOLUME,       KEYF_SCANCODE )    = cbKeyV
-aControls( KEY_STATS,           KEYF_SCANCODE )    = cbKeyG
-aControls( KEY_SHOWFPS,         KEYF_SCANCODE )    = cbKeyF
-aControls( KEY_TOGGLEFLOOR,     KEYF_SCANCODE )    = cbKeyB
+aControls( KEY_SHOOT,           KEYF_MODE )        = KEYM_MOUSE
+aControls( KEY_SHOOT,           KEYF_CODE )        = 1  // Hiiren ykkösnapikka
 
-Function MappedInput(in)
-	scan = aControls(in, KEYF_SCANCODE)
-	button = aControls(in, KEYF_MOUSEBUTTON)
-	scroll = aControls(in, KEYF_MOUSESCROLL)
+aControls( KEY_SWITCHWEAPON,    KEYF_MODE )        = KEYM_MOUSE_ONCE
+aControls( KEY_SWITCHWEAPON,    KEYF_CODE )        = 2  // Hiiren kakkosnapikka
 
-	If (scan <> 0) Then
-		Return KeyDown(scan)
-	ElseIf (button <> 0) Then
-		Return (GetMouse() = button)
-	ElseIf (scroll <> 0) Then
-		Return (MouseMoveZ() = scroll)
-	EndIf
+aControls( KEY_WEAPON_UP,       KEYF_MODE )        = KEYM_SCROLL
+aControls( KEY_WEAPON_UP,       KEYF_CODE )        = 1  // Hiiren rullaus ylöspäin
 
-	Return False
+aControls( KEY_WEAPON_DOWN,     KEYF_MODE )        = KEYM_SCROLL
+aControls( KEY_WEAPON_DOWN,     KEYF_CODE )        = -1 // Hiiren rullaus alaspäin
+
+aControls( KEY_MOVE_LEFT,       KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_MOVE_LEFT,       KEYF_CODE )        = cbKeyA
+
+aControls( KEY_MOVE_UP,         KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_MOVE_UP,         KEYF_CODE )        = cbKeyW
+
+aControls( KEY_MOVE_RIGHT,      KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_MOVE_RIGHT,      KEYF_CODE )        = cbKeyD
+
+aControls( KEY_MOVE_DOWN,       KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_MOVE_DOWN,       KEYF_CODE )        = cbKeyS
+
+aControls( KEY_STRAFE_LEFT,     KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_STRAFE_LEFT,     KEYF_CODE )        = cbKeyA
+
+aControls( KEY_STRAFE_RIGHT,    KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_STRAFE_RIGHT,    KEYF_CODE )        = cbKeyD
+
+aControls( KEY_MOVE_FORWARD,    KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_MOVE_FORWARD,    KEYF_CODE )        = cbKeyW
+
+aControls( KEY_MOVE_BACKWARD,   KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_MOVE_BACKWARD,   KEYF_CODE )        = cbKeyS
+
+aControls( KEY_CHAT,            KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_CHAT,            KEYF_CODE )        = cbKeyC
+
+aControls( KEY_MUSICVOLUME,     KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_MUSICVOLUME,     KEYF_CODE )        = cbKeyM
+
+aControls( KEY_SFXVOLUME,       KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_SFXVOLUME,       KEYF_CODE )        = cbKeyV
+
+aControls( KEY_STATS,           KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_STATS,           KEYF_CODE )        = cbKeyG
+
+aControls( KEY_SHOWFPS,         KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_SHOWFPS,         KEYF_CODE )        = cbKeyF
+
+aControls( KEY_TOGGLEFLOOR,     KEYF_MODE )        = KEYM_KEYBOARD
+aControls( KEY_TOGGLEFLOOR,     KEYF_CODE )        = cbKeyB
+
+Function UpdateInput()
+    For i = 1 To KEY_AMOUNT
+        Select aControls(i, KEYF_MODE)
+            Case KEYM_KEYBOARD
+                aControls(i, KEYF_PRESSED) = KeyDown(aControls(i, KEYF_CODE))
+            Case KEYM_MOUSE
+                aControls(i, KEYF_PRESSED) = MouseDown(aControls(i, KEYF_CODE))
+            Case KEYM_SCROLL
+                aControls(i, KEYF_PRESSED) = (aControls(i, KEYF_CODE) = gMouseRoll)
+            Case KEYM_KEYBOARD_ONCE
+                aControls(i, KEYF_PRESSED) = KeyHit(aControls(i, KEYF_CODE))
+            Case KEYM_MOUSE_ONCE
+                aControls(i, KEYF_PRESSED) = MouseHit(aControls(i, KEYF_CODE))
+        EndSelect
+    Next i
 EndFunction

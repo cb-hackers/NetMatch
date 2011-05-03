@@ -299,18 +299,18 @@ Function ClientLoop()
                 
                 If LeftKey() Or RightKey() Then ShowMouse OFF
                 If gControlMode = 1 Then
-                    If MappedInput(KEY_MOVE_UP) Or UpKey() Then MoveObject obj, PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If MappedInput(KEY_MOVE_DOWN) Or DownKey() Then MoveObject obj, -PxPerSec(BACKWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If MappedInput(KEY_STRAFE_LEFT) Then MoveObject obj, 0, -PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If MappedInput(KEY_STRAFE_RIGHT) Then MoveObject obj, 0, PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If aControls(KEY_MOVE_UP, KEYF_PRESSED) Or UpKey() Then MoveObject obj, PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If aControls(KEY_MOVE_DOWN, KEYF_PRESSED) Or DownKey() Then MoveObject obj, -PxPerSec(BACKWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If aControls(KEY_STRAFE_LEFT, KEYF_PRESSED) Then MoveObject obj, 0, -PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If aControls(KEY_STRAFE_RIGHT, KEYF_PRESSED) Then MoveObject obj, 0, PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
                 EndIf
                 If gControlMode = 2 Then
                     moveX = 0
                     moveY = 0
-                    If MappedInput(KEY_MOVE_UP) Then moveY = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If MappedInput(KEY_MOVE_DOWN) Then moveY = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If MappedInput(KEY_MOVE_LEFT) Then moveX = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If MappedInput(KEY_MOVE_RIGHT) Then moveX = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If aControls(KEY_MOVE_UP, KEYF_PRESSED) Then moveY = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If aControls(KEY_MOVE_DOWN, KEYF_PRESSED) Then moveY = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If aControls(KEY_MOVE_LEFT, KEYF_PRESSED) Then moveX = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If aControls(KEY_MOVE_RIGHT, KEYF_PRESSED) Then moveX = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
                     TranslateObject obj, moveX, moveY
                 EndIf
                 
@@ -329,13 +329,14 @@ Function ClientLoop()
                 // Voidaan yleens‰ edes vaihtaa
                 If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() Then
                     onlyLoaded = False
-                    If gMouseHit2 = True Or gKeyTab = True Then
+                    If aControls(KEY_SWITCHWEAPON, KEYF_PRESSED) Then
                         onlyLoaded = True
-                        gMouseRoll = 1
+                        aControls(KEY_WEAPON_UP, KEYF_PRESSED) = True
                     EndIf
-                    If gMouseRoll <> 0 Then 
+                    _wepchange_am = aControls(KEY_WEAPON_UP, KEYF_PRESSED) - aControls(KEY_WEAPON_DOWN, KEYF_PRESSED)
+                    If _wepchange_am <> 0 Then 
                         While True
-                            player\weapon = player\weapon + gMouseRoll
+                            player\weapon = player\weapon + _wepchange_am
                             If player\weapon > WPN_COUNT Then player\weapon = 1
                             If player\weapon < 1 Then player\weapon = WPN_COUNT
                             player\lastShoot = 0
@@ -480,6 +481,7 @@ Function ClientLoop()
 
         If player\loggedIn Then DrawScreen
         UpdateGame2()
+        UpdateInput()
         PlayMusic()
     Forever
     PlayMusic(OFF)
@@ -1087,7 +1089,7 @@ Function SendDataToServer()
     If aWeapon(player\weapon, WPNF_AMMO) > 0 Then ammoExists = True
     // Tutkitaan voidaanko l‰hett‰‰ tieto ampumisesta
     shootNow = 0
-    If (MouseDown(1) = True Or KeyDown(cbKeySpace) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gSessionComplete = False And player\spawnTime = 0 Then
+    If (aControls(KEY_SHOOT, KEYF_PRESSED) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gSessionComplete = False And player\spawnTime = 0 Then
         // Onko ase latingissa
         If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() And player\health > 0 Then
             // Onko ammuksia
