@@ -117,17 +117,17 @@ aControls( KEY_TOGGLEFLOOR,     KEYF_CODE )        = cbKeyB
 
 Function UpdateInput()
     For i = 1 To KEY_AMOUNT
-        Select aControls(i, KEYF_MODE)
-            Case KEYM_KEYBOARD
-                aControls(i, KEYF_PRESSED) = KeyDown(aControls(i, KEYF_CODE))
-            Case KEYM_MOUSE
-                aControls(i, KEYF_PRESSED) = MouseDown(aControls(i, KEYF_CODE))
-            Case KEYM_SCROLL
-                aControls(i, KEYF_PRESSED) = (aControls(i, KEYF_CODE) = gMouseRoll)
-            Case KEYM_KEYBOARD_ONCE
-                aControls(i, KEYF_PRESSED) = KeyHit(aControls(i, KEYF_CODE))
-            Case KEYM_MOUSE_ONCE
-                aControls(i, KEYF_PRESSED) = MouseHit(aControls(i, KEYF_CODE))
-        EndSelect
+        mode = aControls(i, KEYF_MODE)
+        If mode = KEYM_KEYBOARD Then
+            aControls(i, KEYF_PRESSED) = KeyDown(aControls(i, KEYF_CODE))
+        ElseIf mode = KEYM_MOUSE Then
+            aControls(i, KEYF_PRESSED) = MouseDown(aControls(i, KEYF_CODE))
+        ElseIf mode = KEYM_SCROLL Then
+            aControls(i, KEYF_PRESSED) = (aControls(i, KEYF_CODE) = gMouseRoll)
+        ElseIf mode = KEYM_KEYBOARD_ONCE Then
+            aControls(i, KEYF_PRESSED) = KeyHit(aControls(i, KEYF_CODE))
+        ElseIf mode = KEYM_MOUSE_ONCE Then
+            aControls(i, KEYF_PRESSED) = MouseHit(aControls(i, KEYF_CODE))
+        EndIf
     Next i
 EndFunction
