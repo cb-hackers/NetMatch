@@ -32,3 +32,4 @@ Coding conventions
 * Before pushing always check whether your code actually compiles.
 * Please do not use colons ":" to put more code in one line. Just put the code to separate lines.
 * Do <strong>NOT</strong> use Goto's or GoSub's, they're awful coding practice. Commits that use them won't get applied.
+  - An exception to these two rules above is made in server-side coding (Server.cb file) in order to gain maximum performance. Colons are used so that the code looks cleaner.
