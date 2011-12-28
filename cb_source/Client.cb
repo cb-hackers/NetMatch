@@ -376,7 +376,7 @@ Function ClientLoop()
 //        UpdateBodyExplosion()
 //        GameUpdate()
         If gSessionComplete = False Then
-            CloneCameraPosition player\obj
+            PositionCamera ObjectX(player\obj)+(MouseX()-ScreenWidth()/2)/2.2, ObjectY(player\obj)-(MouseY()-ScreenHeight()/2)/2.2
         EndIf
         
         
