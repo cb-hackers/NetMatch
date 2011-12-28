@@ -43,6 +43,7 @@ gFXVolume = 50
 
 Global gGameMap, gGameMapName$
 gGameMap = 1
+gGameMapName = ""
 
 Global gPeriodLength
 gPeriodLength = 5
@@ -67,8 +68,16 @@ gRadarArrows = 1
 
 // Päivitystä varten oleva url
 Global gUpdateUrl$
-gUpdateUrl = "http://netmatch.vesq.org/updater/updater.php"
-If NM_DEVBUILD Then gUpdateUrl = "http://vesq.viuhka.fi/nm/devbuild/updater.php"
+gUpdateUrl = "http://nm.vesq.org/release/updater.php"
+If NM_DEVBUILD Then gUpdateUrl = "http://nm.vesq.org/devbuild/updater.php"
+
+// Osoite, josta ladataan kartta sen puuttuessa clientiltä.
+Global gMapServerUrl$
+gMapServerUrl = "http://netmatch.vesq.org/maps/"
+
+// Speedhackin tarkistuksen poistaminen
+Global gDisableSpeedhackTest
+gDisableSpeedhackTest = False
 
 ReadConfig()
 //--------------------------------------------------------------------------------
@@ -99,6 +108,8 @@ Function ReadConfig()
             If key = "ADMINPASSWORD" Then gServerAdminPassword = value
             If key = "RADARARROWS" Then gRadarArrows = (value = "1")
             If key = "UPDATEURL" Then gUpdateUrl = value
+            If key = "MAPSERVER" Then gMapServerUrl = value
+            If key = "DISABLESPEEDHACKTEST" Then gDisableSpeedhackTest = value
         Wend
         CloseFile f
     EndIf
@@ -114,7 +125,7 @@ Function SaveConfig()
     WriteLine f, "Address=" + Replace(gAddress, "=", "&#61;")
     WriteLine f, "Port=" + Replace(gPort, "=", "&#61;")
     WriteLine f, "ServerName=" + Replace(gServerName, "=", "&#61;")
-    WriteLine f, "Map=" + gMapNames(gGameMap, 1)
+    WriteLine f, "Map=" + gGameMapName
     WriteLine f, "ServerPort=" + Replace(gServerPort, "=", "&#61;")
     WriteLine f, "Statistics=" + gStatus
     WriteLine f, "MusicVolume=" + gMusicVolume
@@ -123,8 +134,10 @@ Function SaveConfig()
     WriteLine f, "GameMode=" + gPlayMode
     WriteLine f, "ControlMode=" + gControlMode
     WriteLine f, "DisableBots=" + gDisableBots
-    WriteLine f, "AdminPassword=" + gServerAdminPassword
+    WriteLine f, "AdminPassword=" + Replace( gServerAdminPassword, "=", "&#61;" )
     WriteLine f, "RadarArrows=" + gRadarArrows
-    WriteLine f, "UpdateUrl=" + gUpdateUrl
+    WriteLine f, "UpdateUrl=" + Replace( gUpdateUrl, "=", "&#61;" )
+    WriteLine f, "MapServer=" + Replace( gMapServerUrl, "=", "&#61;" )
+    WriteLine f, "DisableSpeedhackTest=" + gDisableSpeedhackTest
     CloseFile f
 EndFunction

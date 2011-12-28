@@ -24,12 +24,8 @@ gLanguages = ""
 
 If IsDirectory("glossary") = False Then
     // Puuttuu glossary, pakotetaan päivitys.
-    updMsgTxt$ = GetText("update_missing_file", "glossary")
-    If MsgBox(updMsgTxt, "NetMatch", MSG_INFO) = 13 Then
-        gForceUpdate = True
-    Else
-        End
-    EndIf
+    gForceUpdate = True
+    gForceUpdateMsg = GetText("update_missing_file", "glossary")
 Else
     ChDir "glossary"
     // Käydään läpi kaikki tiedostot kansiossa
@@ -68,7 +64,11 @@ Else
     EndSearch
     ChDir ".."
     // Tarkistetaan vielä että ainakin yksi kieli on olemassa
-    If gLanguages = "" Then MakeError "No glossary found!"
+    If gLanguages = "" Then
+        // Puuttuu glossary, pakotetaan päivitys.
+        gForceUpdate = True
+        gForceUpdateMsg = GetText("update_missing_file", "glossary")
+    EndIf
 EndIf
 
 // Valittu kieli
@@ -94,11 +94,13 @@ Function GetText$(_key$, _param1$ = "", _param2$ = "")
             Return ret$
         EndIf
     Next gls
-    If gForceUpdate = True Then //Jos glossaryja ei löydy, niin pakotetaan päivitys, jolloin käytetään näitä.
-        If _key = "update_failed"  Then Return "Update failed!"
-        If _key = "update_restart" Then Return "Restarting NetMatch"
-        If _key = "doing_update"   Then Return "Updating NetMatch..."
-    EndIf
+    
+    //Jos arvoja ei ole löytynyt, niin käytetään näitä päivityksessä.
+    If _key = "update_missing_file" Then Return "You are missing " + _param1 + "!|NetMatch can't be played without it.|Press Enter to download all the latest game files."
+    If _key = "update_failed"  Then Return "Update failed!"
+    If _key = "update_restart" Then Return "Restarting NetMatch"
+    If _key = "doing_update"   Then Return "Updating NetMatch..."
+
     Return ""
 EndFunction
 

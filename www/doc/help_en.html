@@ -49,6 +49,7 @@ ul ul
 			<li><a href="#register">Registration and execution of the server</a></li>
 			<li><a href="#serverstart">Execution of the server without registration</a></li>
 			<li><a href="#playingserver">Playing on a server</a></li>
+            <li><a href="#servercommands">Controlling the server in game</a></li>
 		</ul>
 	<li><a href="#playing">Playing</a></li>
 		<ul>
@@ -68,7 +69,7 @@ ul ul
 </ul>
 
 <h2><a name="netmatch">NetMatch - The End</h2>
-<b>NetMatch - The End</b> is a multiplayer online DeathMatch-game.<br>
+<strong>NetMatch - The End</strong> is a multiplayer online DeathMatch-game.<br>
 There are weapons available with differences in characteristics: Double hand guns, a sub-machine gun (SMG), bazooka, shotgun, grenade launcher and chainsaw.<br>
 You can collect extra ammo and medical kits from the field to be more efficient on the battle field.<br>
 Only the pistols carry infinite ammunition.<br>
@@ -84,7 +85,7 @@ In addition to human players, computer controlled AI-characters are found on the
 <h2><a name="settings">Settings</h2>
 
 <h4><a name="language">Language selection</h4>
-<b>NetMatch - The End</b> supports two in-game languages: english and finnish. The language can be selected under SETTINGS - LANGUAGE.
+<strong>NetMatch - The End</strong> supports two in-game languages: english and finnish. The language can be selected under SETTINGS - LANGUAGE.
 
 <h4><a name="stats">Game statistics</h4>
 Statistics show the players kills, deaths and kill/death -ratio during gameplay.<br> 
@@ -136,6 +137,37 @@ While the server is running the screen is blue.<br>
 If the same computer that is running a server is wished to be used to join a game, another program must be launched by double clicking the game's exe-file.<br>
 However, running two programs simultaneously may cause unstability in the server program, especially shown as lag.
 
+<h4><a name="servercommands">Controlling the server in game</a></h4>
+Server can be controlled by using chat commands. Commands take the form of <code>/&lt;command&gt; [parameters]</code>.<br>
+Underneath you will find all of the available commands. Compulsory parameters are listed like <code>&lt;this&gt;</code><br>
+and optional parameters are listed like <code>[this]</code>.<br><br>
+
+<table>
+<tr>
+    <td><code>/admin &lt;password&gt;</code></td>
+    <td>Autentikoi pelaajan hallinnoijaksi.</td>
+</tr><tr>
+    <td><code>/kick &lt;player&gt; [reason]</code></td>
+    <td>Kicks player <code>&lt;player&gt;</code> from the server.</td>
+</tr><tr>
+    <td><code>/team &lt;player&gt; &lt;team&gt;</code></td>
+    <td>Moves player <code>&lt;player&gt;</code> to team <code>&lt;team&gt;</code>. <code>&lt;team&gt;</code> can be <code>1</code> or <code>Green</code> thus moving
+    the player to the green team tai or it can be <code>2</code> or <code>Red</code> thus moving the player to the red team.</td>
+</tr><tr>
+    <td><code>/radars [ON|OFF|0|1]</code></td>
+    <td>Toggles the radar arrows. When radar is toggled off in Team Deathmatch mode, only enemies' radars are hidden.</td>
+</tr><tr>
+    <td><code>/timelimit &lt;min&gt;</code> or <code>/roundlength &lt;min&gt;</code></td>
+    <td>Resets the map timer to start ticking from minutes <code>&lt;min&gt;</code>.</td>
+</tr><tr>
+    <td><code>/bot limit [quantity]</code></td>
+    <td>Sets the amount of spots for bots to fill.</td>
+</tr><tr>
+    <td><code>/bot freeze [toggleOn]</code></td>
+    <td>Toggles brain activity of bots. If parameter <code>[toggleOn]</code> is given a value other than 0 then bots are frozen.</td>
+</tr>
+</table>
+
 <br><br><a href="#top">Back to top</a>
 
 <h2><a name="playing">Playing</h2>
@@ -158,7 +190,7 @@ If so, the servers port must be known (see also Address).
 When the IP-address and port are known, the server is joined directly.
 
 <h4><a name="playing2">Playing</h4>
-<b>NetMatch - The End</b> supports two styles of controlling the character: mouse or keyboard control.<br>
+<strong>NetMatch - The End</strong> supports two styles of controlling the character: mouse or keyboard control.<br>
 <br>
 There are two options available for character control.<br>
 This setting effects on how the character moves when using keys WASD.<br>
@@ -191,20 +223,17 @@ There can be several songs and the program will draw the next song after the pre
 Supported formats are asf, it, mid, mo3, mod, mp2, mp3, ogg, raw, rmi, s3m, wav, wma and xm.
 
 <h4><a name="maps">Maps</h4>
-Maps used by <b>NetMatch - The End</b> are in the game's "map"-folder. 
+Maps used by <strong>NetMatch - The End</strong> are in the game's "map"-folder. 
 More maps can be downloaded to the map folder from the website of NetMatch. 
 The maps will be available when creating a server or joining a server that uses the same map.
 
 <br><br><a href="#top">Back to top</a>
 
 <h2><a name="credits">Game creation team</h2>
-<table>
-<tr><td><b>Marko Hiltunen</b>:</td><td>game design, programming</td></tr>
-<tr><td><b>Kari Tervo</b>:</td><td>game design, graphics</td></tr>
-<tr><td><b>Vesa Laakso</b>:</td><td>game design, programming</td></tr>
-<tr><td><b>Jasse Lahdenperä</b>:</td><td>game design, programming</td></tr>
-<tr><td><b>Vesa Viljakainen</b>:</td><td>music</td></tr>
-</table>
+<p>game design, programming:<br />
+<strong>Marko Hiltunen, Vesa Laakso, Jasse Lahdenperä, Ville Lahdenvuo, Viltzu, Valtzu</strong></p>
+<p>game design, graphics: <strong>Kari Tervo</strong></p>
+<p>music: <strong>Vesa Viljakainen</strong></p>
 
 <br><br><a href="#top">Back to top</a>
 

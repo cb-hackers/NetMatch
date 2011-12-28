@@ -3,11 +3,12 @@
 //
 // P‰‰ohjelma
 //********************************************************************************
-Global gFullScreen, gDirectServer, gDirectReg, gForceUpdate
+Global gFullScreen, gDirectServer, gDirectReg, gForceUpdate, gForceUpdateMsg$
 gFullScreen = False
 gDirectServer = False
 gDirectReg = False
 gForceUpdate = False
+gForceUpdateMsg = ""
 
 cmdLine$ = CommandLine()
 For i = 1 To CountWords(cmdLine)
@@ -47,7 +48,6 @@ Include "Menu.cb"
 Include "Utils.cb"
 Include "cbGSS.cb"
 Include "cbNetwork.cb"
-Include "Server.cb"
 Include "Client.cb"
 Include "Player.cb"
 Include "Game.cb"
@@ -58,6 +58,8 @@ Include "Sound.cb"
 Include "Effect.cb"
 Include "Items.cb"
 Include "Log.cb"
+Include "Server.cb"
+Include "Controls.cb" ' KOKEELLINEN
 
 //gDebug = SERVER
 
@@ -76,7 +78,7 @@ GetTimeSync(True)
 If gDirectServer = False Then
     DrawMenu(MNU_MAIN) // Menu.cb
 Else
-    CreateServer(gDirectReg)
+    Gosub CreateServer
 EndIf
 
 

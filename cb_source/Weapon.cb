@@ -57,7 +57,7 @@ Dim aWeaponAmmos(WPN_COUNT)
 
 
 // Pistooli
-aWeapon(WPN_PISTOL, WPNF_RELOADTIME)    = 500
+aWeapon(WPN_PISTOL, WPNF_RELOADTIME)    = 250
 aWeapon(WPN_PISTOL, WPNF_BULLETSPEED)   = 1200
 aWeapon(WPN_PISTOL, WPNF_BULLET_FORTH)  = 33
 aWeapon(WPN_PISTOL, WPNF_BULLET_YAW)    = 10
@@ -208,13 +208,13 @@ aWeapon(WPN_LAUNCHER, WPNF_WEIGHT)      = 110
 // Ilmassa lent‰v‰t ammukset
 //--------------------------------------------------------------------------------
 Type BULLETS
-    Field bulletId  As Integer  // Ammuksen tunnus
+    Field bulletId  As Short    // Ammuksen tunnus
     Field playerId  As Integer  // Kuka ampui
-    Field weapon    As Integer  // Mill‰ aseella t‰m‰ on ammuttu
+    Field weapon    As Byte     // Mill‰ aseella t‰m‰ on ammuttu
     Field obj       As Integer  // Objekti
     Field prevPosX  As Float    // Ammuksen edellinan paikka
     Field prevPosY  As Float    // Ammuksen edellinan paikka
-    Field moved     As Integer  // Onko ammusta viel‰ liikutettu yht‰‰n
+    Field moved     As Byte     // Onko ammusta viel‰ liikutettu yht‰‰n
     Field shooted   As Integer  // Koska ammuttu
 EndType
 
@@ -272,7 +272,14 @@ Function CreateServerBullet(_playerId, _doubleBullet = 0)
     CloneObjectPosition bullet\obj, player\obj
     // Mist‰ ammus l‰htee pelaajaan n‰hden
     bPos = aWeapon(player\weapon, WPNF_BULLET_YAW)
-    If _doubleBullet = True And player\weapon = WPN_PISTOL Then bPos = bPos * -1
+    If player\weapon = WPN_PISTOL Then
+        If player\handShooted = 0 Then
+            bPos = bPos * -1
+            player\handShooted = 1
+        Else
+            player\handShooted = 0
+        EndIf
+    EndIf
     MoveObject bullet\obj, aWeapon(player\weapon, WPNF_BULLET_FORTH), bPos
     bullet\prevPosX = ObjectX(bullet\obj)
     bullet\prevPosY = ObjectY(bullet\obj)
@@ -316,11 +323,12 @@ Function CreateServerBullet(_playerId, _doubleBullet = 0)
             nmsg\playerId   = _playerId
             nmsg\x          = ObjectX(bullet\obj)
             nmsg\y          = ObjectY(bullet\obj)
+            nmsg\handShooted= player\handShooted
         EndIf
     Next plr
-    If (player\weapon = WPN_PISTOL Or player\weapon = WPN_LAUNCHER) And _doubleBullet = False Then
-        // Jos t‰m‰ on ammuttu pistoolilla niin tehd‰‰n viel‰ toinen ammus koska
-        // pistooleja on kaksi ja molemmat ampuu samaan aikaan.
+    If player\weapon = WPN_LAUNCHER And _doubleBullet = False Then
+        // Jos t‰m‰ on ammuttu kranaatinheittimell‰ niin tehd‰‰n viel‰
+        // toinen ammus koska 2 kranaattia
         CreateServerBullet(_playerId, True)
     EndIf
     
