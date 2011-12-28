@@ -399,7 +399,7 @@ Function ClientLoop()
 //        UpdateBodyExplosion()
 //        GameUpdate()
         If gSessionComplete = False Then
-            PositionCamera ObjectX(player\obj)+(MouseX()-ScreenWidth()/2)/2.2, ObjectY(player\obj)-(MouseY()-ScreenHeight()/2)/2.2
+            PositionCamera ObjectX(player\obj)+(MouseX()-ScreenWidth()/2)/1.2, ObjectY(player\obj)-(MouseY()-ScreenHeight()/2)/1.2
         EndIf
         
         
