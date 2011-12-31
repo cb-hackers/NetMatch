@@ -23,6 +23,7 @@ serverlog.txt
 
 # J‰tet‰‰ jokasen omaks valinnaks, millaset configit tekee :P
 NetMatch.cfg
+Controls.cfg
 
 # cbResourcella t‰ytyy itse compilata NetMatch.dat filu. S‰‰stet‰‰n repon tilaa.
 NetMatch.dat

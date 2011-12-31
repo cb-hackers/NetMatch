@@ -9,6 +9,7 @@ gDirectServer = False
 gDirectReg = False
 gForceUpdate = False
 gForceUpdateMsg = ""
+gForceDefaultControls = False
 
 cmdLine$ = CommandLine()
 For i = 1 To CountWords(cmdLine)
@@ -16,6 +17,7 @@ For i = 1 To CountWords(cmdLine)
     If Upper(GetWord2(cmdLine, i)) = "-P" Then gDirectServer = True
     If Upper(GetWord2(cmdLine, i)) = "-S" Then gDirectServer = True : gDirectReg = True
     If Upper(GetWord2(cmdLine, i)) = "-U" Then gForceUpdate = True
+    If Upper(GetWord2(cmdline, i)) = "-C" Then gForceDefaultControls = True
 Next i
 If gDirectServer = True Then gFullScreen = False
 
@@ -29,7 +31,12 @@ SAFEEXIT OFF
 
 Const NM_VERSION$   = "2.4"
 Const NM_REVISION$  = ""
-Const NM_PATCH      = 0
+Const NM_PATCH      = 1
+
+// NM_PATCH voisi toimia vaikkapa semmoisena juttuna joka n‰ytt‰‰ kivat
+// muutokset jotka eiv‰t vaadi serverin p‰ivityst‰? Nollataan aina kun
+// tulee uus versio.
+// M‰ k‰yt‰n nyt ainakin sit‰ niin, valittakaa jos ei sais -Esa
 
 // T‰m‰ pit‰‰ AINA laittaa 1, jos kyseess‰ ei ole virallinen julkaisu.
 // T‰llˆin palvelin n‰kyy vain muille NM_DEVBUILD = 1 omaaville clienteille.
@@ -59,18 +66,29 @@ Include "Effect.cb"
 Include "Items.cb"
 Include "Log.cb"
 Include "Server.cb"
-Include "Controls.cb" ' KOKEELLINEN
+Include "Controls.cb"
 
 //gDebug = SERVER
 
 GSSInit("NetMatch", "v" + NM_VERSION + NM_REVISION) // cbGSS.cb
+patchn$ = ""
+If NM_PATCH > 0 Then
+    patchn$ = " Patch " + Str(NM_PATCH)
+EndIf
 If NM_DEVBUILD = False Then
-    SetWindow "NetMatch " + gGSSVersion
+    SetWindow "NetMatch " + gGSSVersion + patchn$
 Else
-    SetWindow "NetMatch " + gGSSVersion + "-dev"
+    SetWindow "NetMatch " + gGSSVersion + "-dev" + patchn$
 EndIf
 
 GetTimeSync(True)
+
+//--------------------------------------------------------------------------------
+// Kirjoitetaan peruskontrollit filuun
+//--------------------------------------------------------------------------------
+If Not FileExists("Controls.cfg") Or gForceDefaultControls = True Then
+    SaveControls()
+EndIf
 
 //--------------------------------------------------------------------------------
 // K‰ynnistet‰‰n p‰‰valikko

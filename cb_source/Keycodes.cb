@@ -1,0 +1,147 @@
+// IHAN VITUN SISÄINEN
+
+// Täytyy wrappia jotenkin hiirikoodit
+// 256 ollee hyvä aloituspaikka
+// CB ei määrittele näppäimiä kuin 221 asti
+// Zero on feikkinäppäin, katso SaveControls
+Const MOUSECODE_ZERO        = 255
+Const MOUSECODE_BUTTON_1    = 256
+Const MOUSECODE_BUTTON_2    = 257
+Const MOUSECODE_BUTTON_3    = 258
+
+// Zero on pakko olla välissä
+// Tämä siksi että alas = -1
+Const SCROLLCODE_DOWN       = 259
+Const SCROLLCODE_ZERO       = 260
+Const SCROLLCODE_UP         = 261
+
+Const MOUSE_BUTTON_1    = 1
+Const MOUSE_BUTTON_2    = 2
+Const MOUSE_BUTTON_3    = 3
+Const MOUSE_SCROLL_UP   = 1
+Const MOUSE_SCROLL_DOWN = -1
+
+// Jos MOUSEPREFIX niin mennään yli 255
+Const KEYPREFIX   =  "key_"
+Const MOUSEPREFIX =  "mouse_"
+Const SCROLLPREFIX = "scroll_"
+
+Const CODETABLE_SIZE = 261
+Dim aKeyCodeNames(CODETABLE_SIZE) As String
+For i = 0 To CODETABLE_SIZE
+    aKeyCodeNames(i) = "UNKNOWN"
+Next i
+
+aKeyCodeNames(cbkeyesc)        = "esc"
+aKeyCodeNames(cbkey1)          = "1"
+aKeyCodeNames(cbkey2)          = "2"
+aKeyCodeNames(cbkey3)          = "3"
+aKeyCodeNames(cbkey4)          = "4"
+aKeyCodeNames(cbkey5)          = "5"
+aKeyCodeNames(cbkey6)          = "6"
+aKeyCodeNames(cbkey7)          = "7"
+aKeyCodeNames(cbkey8)          = "8"
+aKeyCodeNames(cbkey9)          = "9"
+aKeyCodeNames(cbkey0)          = "0"
+aKeyCodeNames(cbkeyminus)      = "minus"
+aKeyCodeNames(cbkeyequals)     = "equals"
+aKeyCodeNames(cbkeybackspace)  = "backspace"
+aKeyCodeNames(cbkeytab)        = "tab"
+aKeyCodeNames(cbkeyq)          = "q"
+aKeyCodeNames(cbkeyw)          = "w"
+aKeyCodeNames(cbkeye)          = "e"
+aKeyCodeNames(cbkeyr)          = "r"
+aKeyCodeNames(cbkeyt)          = "t"
+aKeyCodeNames(cbkeyy)          = "y"
+aKeyCodeNames(cbkeyu)          = "u"
+aKeyCodeNames(cbkeyi)          = "i"
+aKeyCodeNames(cbkeyo)          = "o"
+aKeyCodeNames(cbkeyp)          = "p"
+aKeyCodeNames(cbkey])          = "]"
+aKeyCodeNames(cbkey[)          = "["
+aKeyCodeNames(cbkeyreturn)     = "return"
+aKeyCodeNames(cbkeylcontrol)   = "lcontrol"
+aKeyCodeNames(cbkeya)          = "a"
+aKeyCodeNames(cbkeys)          = "s"
+aKeyCodeNames(cbkeyd)          = "d"
+aKeyCodeNames(cbkeyf)          = "f"
+aKeyCodeNames(cbkeyg)          = "g"
+aKeyCodeNames(cbkeyh)          = "h"
+aKeyCodeNames(cbkeyj)          = "j"
+aKeyCodeNames(cbkeyk)          = "k"
+aKeyCodeNames(cbkeyl)          = "l"
+aKeyCodeNames(cbkeysemicolon)  = "semicolon"
+aKeyCodeNames(cbkeyapostrophe) = "apostrophe"
+aKeyCodeNames(cbkeygrave)      = "grave"
+aKeyCodeNames(cbkeylshift)     = "lshift"
+aKeyCodeNames(cbkeybackslash)  = "backslash"
+aKeyCodeNames(cbkeyz)          = "z"
+aKeyCodeNames(cbkeyx)          = "x"
+aKeyCodeNames(cbkeyc)          = "c"
+aKeyCodeNames(cbkeyv)          = "v"
+aKeyCodeNames(cbkeyb)          = "b"
+aKeyCodeNames(cbkeyn)          = "n"
+aKeyCodeNames(cbkeym)          = "m"
+aKeyCodeNames(cbkeycomma)      = "comma"
+aKeyCodeNames(cbkeyperiod)     = "period"
+aKeyCodeNames(cbkeyslash)      = "slash"
+aKeyCodeNames(cbkeyrshift)     = "rshift"
+aKeyCodeNames(cbkeymultiply)   = "multiply"
+aKeyCodeNames(cbkeylalt)       = "lalt"
+aKeyCodeNames(cbkeyspace)      = "space"
+aKeyCodeNames(cbkeycapslock)   = "capslock"
+aKeyCodeNames(cbkeyf1)         = "f1"
+aKeyCodeNames(cbkeyf2)         = "f2"
+aKeyCodeNames(cbkeyf3)         = "f3"
+aKeyCodeNames(cbkeyf4)         = "f4"
+aKeyCodeNames(cbkeyf5)         = "f5"
+aKeyCodeNames(cbkeyf6)         = "f6"
+aKeyCodeNames(cbkeyf7)         = "f7"
+aKeyCodeNames(cbkeyf8)         = "f8"
+aKeyCodeNames(cbkeyf9)         = "f9"
+aKeyCodeNames(cbkeyf10)        = "f10"
+aKeyCodeNames(cbkeynumlock)    = "numlock"
+aKeyCodeNames(cbkeyscroll)     = "scroll"
+aKeyCodeNames(cbkeynum7)       = "num7"
+aKeyCodeNames(cbkeynum8)       = "num8"
+aKeyCodeNames(cbkeynum9)       = "num9"
+aKeyCodeNames(cbkeysubtract)   = "subtract"
+aKeyCodeNames(cbkeynum4)       = "num4"
+aKeyCodeNames(cbkeynum5)       = "num5"
+aKeyCodeNames(cbkeynum6)       = "num6"
+aKeyCodeNames(cbkeyadd)        = "add"
+aKeyCodeNames(cbkeynum1)       = "num1"
+aKeyCodeNames(cbkeynum2)       = "num2"
+aKeyCodeNames(cbkeynum3)       = "num3"
+aKeyCodeNames(cbkeynum0)       = "num0"
+aKeyCodeNames(cbkeydecimal)    = "decimal"
+aKeyCodeNames(cbkeyoem102)     = "oem102"
+aKeyCodeNames(cbkeyf11)        = "f11"
+aKeyCodeNames(cbkeyf12)        = "f12"
+aKeyCodeNames(cbkeyenter)      = "enter"
+aKeyCodeNames(cbkeyrcontrol)   = "rcontrol"
+aKeyCodeNames(cbkeydivide)     = "divide"
+aKeyCodeNames(cbkeyprint)      = "print"
+aKeyCodeNames(cbkeyralt)       = "ralt"
+aKeyCodeNames(cbkeypause)      = "pause"
+aKeyCodeNames(cbkeyhome)       = "home"
+aKeyCodeNames(cbkeyup)         = "up"
+aKeyCodeNames(cbkeypgup)       = "pgup"
+aKeyCodeNames(cbkeyleft)       = "left"
+aKeyCodeNames(cbkeyright)      = "right"
+aKeyCodeNames(cbkeyend)        = "end"
+aKeyCodeNames(cbkeydown)       = "down"
+aKeyCodeNames(cbkeypgdown)     = "pgdown"
+aKeyCodeNames(cbkeyinsert)     = "insert"
+aKeyCodeNames(cbkeydel)        = "del"
+aKeyCodeNames(cbkeylwin)       = "lwin"
+aKeyCodeNames(cbkeyrwin)       = "rwin"
+aKeyCodeNames(cbkeyapps)       = "apps"
+// apps on 221
+
+aKeyCodeNames(MOUSECODE_BUTTON_1)    = "button1"
+aKeyCodeNames(MOUSECODE_BUTTON_2)    = "button2"
+aKeyCodeNames(MOUSECODE_BUTTON_3)    = "button3"
+
+aKeycodenames(SCROLLCODE_UP)   = "up"
+aKeyCodeNames(SCROLLCODE_DOWN) = "down"
