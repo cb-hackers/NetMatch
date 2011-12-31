@@ -22,9 +22,9 @@ Const MOUSE_SCROLL_UP   = 1
 Const MOUSE_SCROLL_DOWN = -1
 
 // Jos MOUSEPREFIX niin menn‰‰n yli 255
-Const KEYPREFIX   =  "key_"
-Const MOUSEPREFIX =  "mouse_"
-Const SCROLLPREFIX = "scroll_"
+Const KEYPREFIX   =  "key"
+Const MOUSEPREFIX =  "mouse"
+Const SCROLLPREFIX = "scroll"
 
 Const CODETABLE_SIZE = 261
 Dim aKeyCodeNames(CODETABLE_SIZE) As String

@@ -84,11 +84,12 @@ EndIf
 GetTimeSync(True)
 
 //--------------------------------------------------------------------------------
-// Kirjoitetaan peruskontrollit filuun
+// Kirjoitetaan peruskontrollit filuun / ladataan kontrollit
 //--------------------------------------------------------------------------------
 If Not FileExists("Controls.cfg") Or gForceDefaultControls = True Then
     SaveControls()
 EndIf
+LoadControls()
 
 //--------------------------------------------------------------------------------
 // K‰ynnistet‰‰n p‰‰valikko
