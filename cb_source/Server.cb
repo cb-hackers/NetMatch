@@ -147,9 +147,9 @@ CreateServer:
     Next item
     
     If NM_DEVBUILD = False Then
-        SetWindow "NetMatch " + gGSSVersion
+        SetWindow "NetMatch " + gGSSVersion + gPatchString
     Else
-        SetWindow "NetMatch " + gGSSVersion + "-dev"
+        SetWindow "NetMatch " + gGSSVersion + "-dev" + gPatchString
     EndIf
     
     returnCreateServer:

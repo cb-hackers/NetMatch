@@ -31,12 +31,15 @@ SAFEEXIT OFF
 
 Const NM_VERSION$   = "2.4"
 Const NM_REVISION$  = ""
+// Jos palvelinta ei tarvitse päivittää muutosten yhteydessä, nostetaan vain NM_PATCH 
+// muuttujan arvoa. Tämä nollataan aina kun tulee uusi revision tai versio.
 Const NM_PATCH      = 1
 
-// NM_PATCH voisi toimia vaikkapa semmoisena juttuna joka näyttää kivat
-// muutokset jotka eivät vaadi serverin päivitystä? Nollataan aina kun
-// tulee uus versio.
-// Mä käytän nyt ainakin sitä niin, valittakaa jos ei sais -Esa
+Global gPatchString$
+gPatchString = ""
+If NM_PATCH > 0 Then
+    gPatchString = " Patch " + Str(NM_PATCH)
+EndIf
 
 // Tämä pitää AINA laittaa 1, jos kyseessä ei ole virallinen julkaisu.
 // Tällöin palvelin näkyy vain muille NM_DEVBUILD = 1 omaaville clienteille.
@@ -71,14 +74,11 @@ Include "Controls.cb"
 //gDebug = SERVER
 
 GSSInit("NetMatch", "v" + NM_VERSION + NM_REVISION) // cbGSS.cb
-patchn$ = ""
-If NM_PATCH > 0 Then
-    patchn$ = " Patch " + Str(NM_PATCH)
-EndIf
+
 If NM_DEVBUILD = False Then
-    SetWindow "NetMatch " + gGSSVersion + patchn$
+    SetWindow "NetMatch " + gGSSVersion + gPatchString
 Else
-    SetWindow "NetMatch " + gGSSVersion + "-dev" + patchn$
+    SetWindow "NetMatch " + gGSSVersion + "-dev" + gPatchString
 EndIf
 
 GetTimeSync(True)

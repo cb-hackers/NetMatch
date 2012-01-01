@@ -169,9 +169,9 @@ Function JoinGame(_host$, _port)
     EndIf
     
     If NM_DEVBUILD = False Then
-        SetWindow "NetMatch " + gGSSVersion
+        SetWindow "NetMatch " + gGSSVersion + gPatchString
     Else
-        SetWindow "NetMatch " + gGSSVersion + "-dev"
+        SetWindow "NetMatch " + gGSSVersion + "-dev" + gPatchString
     EndIf
     ShowMouse ON
 EndFunction

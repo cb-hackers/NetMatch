@@ -1,4 +1,8 @@
-// IHAN VITUN SISÄINEN
+//********************************************************************************
+// Keycodes.cb
+// 
+// Näppäinten SCAN-koodit ja niiden asettaminen taulukkoon.
+//********************************************************************************
 
 // Täytyy wrappia jotenkin hiirikoodit
 // 256 ollee hyvä aloituspaikka
