@@ -4,6 +4,8 @@
 // Pelin hallinta näppäimistöllä ja hiirellä.
 //********************************************************************************
 
+Include "Keycodes.cb"
+
 //--------------------------------------------------------------------------------
 // Vakiot taulukkoa varten.
 //--------------------------------------------------------------------------------
@@ -28,6 +30,31 @@ Const KEY_TOGGLEFLOOR    = 18
 // Näppäinten määrä yhteensä
 Const KEY_AMOUNT         = 18
 
+//-------------------------------------------------------------------------------
+// Nimet
+//-------------------------------------------------------------------------------
+Const CONTROLPREFIX = "bind"
+Dim aControlNames(KEY_AMOUNT) As String
+
+aControlNames(KEY_SHOOT)         = "shoot"
+aControlNames(KEY_SWITCHWEAPON)  = "switchweapon"
+aControlNames(KEY_WEAPON_UP)     = "weaponup"
+aControlNames(KEY_WEAPON_DOWN)   = "weapondown"
+aControlNames(KEY_MOVE_LEFT)     = "moveleft"
+aControlNames(KEY_MOVE_UP)       = "moveup"
+aControlNames(KEY_MOVE_RIGHT)    = "moveright"
+aControlNames(KEY_MOVE_DOWN)     = "movedown"
+aControlNames(KEY_STRAFE_LEFT)   = "strafeleft"
+aControlNames(KEY_STRAFE_RIGHT)  = "straferight"
+aControlNames(KEY_MOVE_FORWARD)  = "moveforward"
+aControlNames(KEY_MOVE_BACKWARD) = "movebackward"
+aControlNames(KEY_CHAT)          = "chat"
+aControlNames(KEY_MUSICVOLUME)   = "musicvolume"
+aControlNames(KEY_SFXVOLUME)     = "sfxvolume"
+aControlNames(KEY_STATS)         = "stats"
+aControlNames(KEY_SHOWFPS)       = "showfps"
+aControlNames(KEY_TOGGLEFLOOR)   = "togglefloor"
+
 //--------------------------------------------------------------------------------
 // Mitä tietoa haetaan, taulukon aControls toinen ulottuvuus.
 //--------------------------------------------------------------------------------
@@ -45,8 +72,9 @@ Const KEYM_MOUSE         = 2
 Const KEYM_SCROLL        = 3
 Const KEYM_KEYBOARD_ONCE = 4
 Const KEYM_MOUSE_ONCE    = 5
+Const KEYM_MOUSE_CHARGE  = 6 // MouseUp
 
-Const KEYM_AMOUNT        = 5
+Const KEYM_AMOUNT        = 6
 
 //--------------------------------------------------------------------------------
 // Näppäintaulukko ja sen alustus oletusarvoilla.
@@ -128,6 +156,81 @@ Function UpdateInput()
             aControls(i, KEYF_PRESSED) = KeyHit(aControls(i, KEYF_CODE))
         ElseIf mode = KEYM_MOUSE_ONCE Then
             aControls(i, KEYF_PRESSED) = MouseHit(aControls(i, KEYF_CODE))
+        ElseIf mode = KEYM_MOUSE_CHARGE Then
+            aControls(i, KEYF_PRESSED) = MouseUp(aControls(i, KEYF_CODE))
         EndIf
     Next i
+EndFunction
+
+Function SaveControls()
+    f = OpenToWrite("Controls.cfg")
+    For i = 1 To KEY_AMOUNT
+        keyc$ = ""
+        mode = aControls(i, KEYF_MODE)
+        code = aControls(i, KEYF_CODE)
+        If mode = KEYM_KEYBOARD Or mode = KEYM_KEYBOARD_ONCE Then
+                keyc$ = KEYPREFIX + "_" + aKeyCodeNames(code)
+        ElseIf mode = KEYM_MOUSE Or mode = KEYM_MOUSE_ONCE Or mode = KEYM_MOUSE_CHARGE Then
+            For j = MOUSECODE_BUTTON_1 To MOUSECODE_BUTTON_3
+                If (j - MOUSECODE_ZERO) = code Then keyc$ = MOUSEPREFIX + "_" + aKeyCodeNames(j) : Exit
+            Next j
+        ElseIf mode = KEYM_SCROLL Then
+             For j = SCROLLCODE_DOWN To SCROLLCODE_UP
+                If (j - SCROLLCODE_ZERO) = code Then keyc$ = SCROLLPREFIX + "_" + aKeyCodeNames(j) : Exit
+            Next j
+        EndIf
+        WriteLine f, CONTROLPREFIX + "_" + aControlNames(i) + "=" + keyc$
+    Next i
+    CloseFile f
+EndFunction
+
+Function LoadControls()
+    f = OpenToRead("Controls.cfg")
+       While Not EOF(f)
+            l$ = ReadLine(f)
+            fkey$ = GetWord2(l$, 1, "=")
+            keyprefix$ = GetWord2(fkey$, 1, "_")
+            If keyprefix$ = CONTROLPREFIX Then
+                key$ = GetWord2(fkey$, 2, "_")
+                val$ = GetWord2(l$, 2, "=")
+                code$ = GetWord2(val$, 2, "_")
+                prefix$ = GetWord2(val$, 1, "_")
+                For k = 1 To KEY_AMOUNT
+                    If key$ = aControlNames(k) Then
+                        range0 = 1
+                        range1 = 255
+                        zero = 0
+                        validprefix = False
+                        keym = KEYM_KEYBOARD
+                        If prefix$ = MOUSEPREFIX Then
+                            validprefix = True
+                            range0 = MOUSECODE_BUTTON_1
+                            range1 = MOUSECODE_BUTTON_3
+                            zero = MOUSECODE_ZERO
+                            keym = KEYM_MOUSE // TODO: Voi olla myös MOUSE_ONCE!!!!
+                        ElseIf prefix$ = SCROLLPREFIX Then
+                            validprefix = True
+                            range0 = SCROLLCODE_DOWN
+                            range1 = SCROLLCODE_UP
+                            zero = SCROLLCODE_ZERO
+                            keym = KEYM_SCROLL
+                        ElseIf prefix$ = KEYPREFIX Then
+                            validprefix = True
+                        EndIf
+                        If validprefix = False Then
+                            Exit
+                        EndIf
+                        For i = range0 To range1
+                            If code$ = aKeyCodeNames(i) Then
+                                aControls(k, KEYF_MODE) = keym
+                                aControls(k, KEYF_CODE) = i - zero
+                                Exit
+                            EndIf
+                        Next i
+                        Exit
+                    EndIf
+                Next k
+            EndIf
+       Wend
+    CloseFile f
 EndFunction
