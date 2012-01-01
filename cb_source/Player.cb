@@ -129,6 +129,14 @@ Const PLR_KILLS     = 2
 Const PLR_DEATHS    = 3
 Dim gPlayersProt(MAX_PLAYERS, 3)
 
+If gDirectServer = False Then
+    player.PLAYERS      = New(PLAYERS)
+    player\active       = False
+    player\team         = 1
+    player\name         = "server"
+    gPlayers(0)         = ConvertToInteger(player)
+EndIf
+
 // Alustetaan taulukko ja kokoelma
 For i = 1 To MAX_PLAYERS
     player.PLAYERS      = New(PLAYERS)
