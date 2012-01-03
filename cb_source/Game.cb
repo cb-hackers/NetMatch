@@ -1199,6 +1199,9 @@ Function UpdateRadar(_obj)
     If _obj = 0 Then Return False
     px = ObjectX(_obj)
     py = ObjectY(_obj)
+    // Otetaan huomioon myös kameran liikkuminen pois pelaajasta
+    px = px - (px - CameraX())
+    py = py - (py - CameraY())
     sLeft = px - 390
     sRight = px + 390
     sTop = py + 290
