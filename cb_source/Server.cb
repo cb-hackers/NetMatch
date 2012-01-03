@@ -516,8 +516,8 @@ ServerLoop:
             y1 = ObjectY(player\obj)
             x2 = ObjectX(plr\obj)
             y2 = ObjectY(plr\obj)
-            If Abs(x1 - x2) > 450 Then visible = False
-            If Abs(y1 - y2) > 350 Then visible = False
+            If Abs(x1 - x2) > 750 Then visible = False
+            If Abs(y1 - y2) > 650 Then visible = False
             
             // Onko n‰kyviss‰ tai voidaanko muuten l‰hett‰‰
             If sendNames = True Or visible = True Or plr\health <= 0 Then
