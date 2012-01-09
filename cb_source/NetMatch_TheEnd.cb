@@ -70,6 +70,8 @@ Include "Items.cb"
 Include "Log.cb"
 Include "Server.cb"
 Include "Controls.cb"
+Include "Console.cb"
+Include "Input2.cb"
 
 //gDebug = SERVER
 

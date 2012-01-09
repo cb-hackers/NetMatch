@@ -181,7 +181,7 @@ EndFunction
 // Clientin vaatimia muuttujia
 //--------------------------------------------------------------------------------
 Global gClientDataSended, gNetFPS, gNetFPSCounter, gNetFPSTimer, gFirstLoop
-Global gConsoleMessage$, gConsoleText$, gConsoleMode
+Global gConsoleMessage$, gConsoleText$, gConsoleMode, gDevConsole
 Global gBbsIn, gBbsInCount, gBbsInTimer
 Global gBbsOut, gBbsOutCount, gBbsOutTimer
 Global gShowFloor
@@ -218,6 +218,7 @@ Function ClientLoop()
     gNetFPSCounter      = 0
     gNetFPSTimer        = Timer()
     gConsoleMode        = False
+	gDevConsole         = False
     gConsoleText$       = ""
     gBbsInCount         = 0
     gBbsIn              = 0
@@ -271,7 +272,7 @@ Function ClientLoop()
         DrawClientMessages()
         UpdateExplodeAnimation()
 
-        If gConsoleMode = False Then
+        If gConsoleMode = False And gDevConsole = False Then
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // CONSOLE OFF >>>
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -363,7 +364,7 @@ Function ClientLoop()
 //                EndIf
             EndIf
             
-            If gConsoleMode = False Then
+            If gConsoleMode = False And gDevConsole = False Then
                 // Vaihdetaan console-tilaan
                 If gKeyC or gKeyY Then 
                     gConsoleText = ""
@@ -430,7 +431,7 @@ Function ClientLoop()
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         EndIf
         
-        If gConsoleMode = False Then
+        If gConsoleMode = False And gDevConsole = False Then
             If KeyDown(cbKeyV) = True And KeyDown(cbKeyM) = False Then 
                 If DownKey() Then AdjustVolume(-1, 0)
                 If UpKey() Then AdjustVolume(1, 0)
@@ -454,6 +455,14 @@ Function ClientLoop()
                 Text 10, 550, "PacketLimit: " + gPacketWait + "ms"
             EndIf
         EndIf
+		
+		If KeyHit(41) Then
+			gDevConsole = Not gDevConsole
+			ClearKeys
+		EndIf
+        DrawToWorld ON
+        UpdateParticleEffects()
+        DrawToWorld OFF
         
         If gKeyEsc Then 
             If gConsoleMode = True Then 
@@ -461,13 +470,15 @@ Function ClientLoop()
                 gConsoleText = ""
                 gEsc = False
                 ClearKeys
+			ElseIf gDevConsole = True Then
+                gDevConsole = False
+                gEsc = False
+                ClearKeys
             Else
                 Exit
             EndIf
         EndIf
-        DrawToWorld ON
-        UpdateParticleEffects()
-        DrawToWorld OFF
+		If gDevConsole = True Then DrawConsole()
         ClearKeys2()
         If Abs(GetTimeSync()) > 3 Then
             Error(GetText("speedhack"))
@@ -478,6 +489,7 @@ Function ClientLoop()
             Exit
         EndIf
         If gKickedOut Then Exit
+		
 
         If player\loggedIn Then DrawScreen
         UpdateGame2()
@@ -809,12 +821,14 @@ Function ReadDataFromServer()
             msgText$ = _Net_GetString()
             player.PLAYERS  = ConvertToType(gPlayers(playerId))
             AddClientMessage(msgText, netmsg, player\name)
+			WriteConsole("<%1> %2", player\name, msgText)
         
         ElseIf netmsg = NET_SERVERMSG Then
             
             // Palvelimelta tulee jotain infoa tekstin‰
             msgText$ = _Net_GetString()
             AddClientMessage(msgText$, netmsg)
+			WriteConsole("[SERVER] %1", msgText)
             
         ElseIf netmsg = NET_BULLETHIT Then
         
@@ -888,7 +902,7 @@ Function ReadDataFromServer()
             plr\kills       = k2
             plr\deaths      = d2
             cmsg\img        = aWeapon(weapon, WPNF_ICON)
-        
+			WriteConsole("Player "+cmsg\name1+" killed player "+cmsg\name2)
         ElseIf netmsg = NET_SESSIONTIME Then
         
             // Pelisession aikatiedot
@@ -1089,7 +1103,7 @@ Function SendDataToServer()
     If aWeapon(player\weapon, WPNF_AMMO) > 0 Then ammoExists = True
     // Tutkitaan voidaanko l‰hett‰‰ tieto ampumisesta
     shootNow = 0
-    If (aControls(KEY_SHOOT, KEYF_PRESSED) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gSessionComplete = False And player\spawnTime = 0 Then
+    If (aControls(KEY_SHOOT, KEYF_PRESSED) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gDevConsole = False And gSessionComplete = False And player\spawnTime = 0 Then
         // Onko ase latingissa
         If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() And player\health > 0 Then
             // Onko ammuksia

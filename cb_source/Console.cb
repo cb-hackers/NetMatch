@@ -1,0 +1,216 @@
+//********************************************************************************
+// Console.cb
+//
+// Clientin pelinaikainen konsoli.
+//********************************************************************************
+
+//--------------------------------------------------------------------------------
+// Kokoelma viesteille
+//--------------------------------------------------------------------------------
+Type CONSOLE_MESSAGES
+    Field message   As String
+EndType
+
+//--------------------------------------------------------------------------------
+// Konsoli-ikkunan koko
+//--------------------------------------------------------------------------------
+Const CONSOLE_WIDTH  = 600
+Const CONSOLE_ROWS   = 25
+
+
+//--------------------------------------------------------------------------------
+// Komennot
+// Komentojen toiminnallisuus tapahtuu RunCommand-funktiossa
+//--------------------------------------------------------------------------------
+Const COMMAND_HELP  = 0
+Const COMMAND_QUIT  = 1
+Const COMMAND_COUNT = 1
+
+Const CMD_NAME  = 0 // Name
+Const CMD_ARGS  = 1 // Arguments
+Const CMD_DESC  = 2 // Description
+Const CMD_COUNT = 2
+
+Dim aCommands(COMMAND_COUNT, CMD_COUNT) As String
+
+//--------------------------------------------------------------------------------
+// Parametrien m‰‰r‰‰ ei ole rajoitettu; ne erotetaan toisistaan v‰lilyˆnnein.
+// Hakasulkeet parametrin ymp‰rill‰ tarkoittavat valinnaista parametri‰
+//--------------------------------------------------------------------------------
+
+aCommands(COMMAND_HELP, CMD_NAME) = "help"
+aCommands(COMMAND_HELP, CMD_ARGS) = "[command]"
+aCommands(COMMAND_HELP, CMD_DESC) = "Prints the description of a command"
+
+aCommands(COMMAND_QUIT, CMD_NAME) = "quit"
+aCommands(COMMAND_QUIT, CMD_ARGS) = ""
+aCommands(COMMAND_QUIT, CMD_DESC) = "Quits the game"
+
+Global gDevConsoleText$, gDevConsoleInput
+
+//================================================================================
+// Lis‰t‰‰n viesti konsoliin
+// Viestiss‰ voi k‰ytt‰‰ muuttujia %1-4 ja antaa ne parametrein‰
+//================================================================================
+Function WriteConsole(_message$, var1$ = "", var2$ = "", var3$ = "", var4$ = "")
+	_message = Replace(Replace(_message, "%1", var1), "%2", var2)
+	_message = Replace(Replace(_message, "%3", var3), "%4", var4)
+	lineCount = CountWords(_message, "\n")
+	For i = 1 To lineCount
+		msg.CONSOLE_MESSAGES = New(CONSOLE_MESSAGES)
+		msg\message     = Replace(GetWord2(_message, i, "\n"),"\t","    ")
+	Next i
+EndFunction
+
+//================================================================================
+// Suoritetaan komento
+// Parametrit: komento$, tulostetaanko output konsoliin
+//================================================================================
+Function RunCommand(_command$, _output = 1)
+
+	_command = Trim(_command)
+	
+	// Poistutaan, jos ei ole komentoa
+	If Len(_command) = 0 Then Return False
+	
+	cmd$  = Lower(GetWord2(_command$, 1))
+	cmdId = -1
+	
+	For i = 0 To COMMAND_COUNT
+		If cmd = aCommands(i, CMD_NAME) Then
+			cmdId = i
+			Exit
+		EndIf
+	Next i
+	out$ = ""
+	
+	
+	If Not cmdId = -1 Then
+		If CheckArguments(_command, cmdId) = True Then
+		
+			// Syntax: help [command]
+			If cmdId = COMMAND_HELP Then
+				helpAbout$ = GetArgument("command", _command, cmdId)
+				If helpAbout = "" Then
+					out = out + "This is the NetMatch console.\nAvailable commands:\n"
+					For i = 0 To COMMAND_COUNT
+						out = out + "\t"+aCommands(i, CMD_NAME)+"\n"
+					Next i
+				Else
+					helpAbout = Lower(helpAbout)
+					helpCmdId = -1	
+					For i = 0 To COMMAND_COUNT
+						If helpAbout = aCommands(i, CMD_NAME) Then
+							helpCmdId = i
+							Exit
+						EndIf
+					Next i
+					If helpCmdId = -1 Then
+						out = out + "Unknown command '"+helpAbout+"'"
+					Else
+						out = out + "Syntax: " + aCommands(helpCmdId, CMD_NAME) + " " + aCommands(helpCmdId, CMD_ARGS) + "\n"
+						out = out + "\t" + aCommands(helpCmdId, CMD_DESC)+"\n"
+					EndIf
+				EndIf
+				
+				
+			// Syntax: quit
+			ElseIf cmdId = COMMAND_QUIT Then
+				End
+			EndIf
+		Else
+			out = out + "Invalid syntax!"
+		EndIf
+	Else
+		out = out + "Unknown command '" + cmd + "'."
+	EndIf
+	If _output = True Then
+		WriteConsole(out)
+	EndIf
+EndFunction
+
+
+//================================================================================
+// N‰ytet‰‰n jonossa olevat viestit ruudulla
+//================================================================================
+Function DrawConsole()
+	If gDevConsoleInput = 0 Then gDevConsoleInput = NewInput()
+	SetFont gFonts(FNT_MSG)
+    sw = ScreenWidth()
+    sh = ScreenHeight()
+    rowHeight = TextHeight("|")
+    margin = 10
+    cHeight = (CONSOLE_ROWS+1)*rowHeight+margin*2
+    Color 100, 80, 70
+    Box sw/2-CONSOLE_WIDTH/2, sh/2-cHeight/2, CONSOLE_WIDTH, cHeight
+    Color 50,40,35
+    Box sw/2-CONSOLE_WIDTH/2+margin/2, sh/2-cHeight/2+margin/2, CONSOLE_WIDTH-margin, cHeight-margin-rowheight
+    Color 70,60,55
+    Box sw/2-CONSOLE_WIDTH/2+margin/2, sh/2+cHeight/2-margin/2-rowHeight+1, CONSOLE_WIDTH-margin, rowheight
+    msgCount = 0
+    msg.CONSOLE_MESSAGES = Last(CONSOLE_MESSAGES)
+    While msg <> NULL
+        If msgCount >= CONSOLE_ROWS Then
+            msg_.CONSOLE_MESSAGES=msg
+            msg = Before(msg)
+            Delete msg_
+        Else
+            Color cbwhite
+            msgCount + 1
+            Text sw/2-CONSOLE_WIDTH/2+margin, sh/2+cHeight/2-margin-rowHeight*(msgCount+1), msg\message
+            msg = Before(msg)
+        EndIf
+    Wend
+	
+	Color 255,255,255
+	maxLen = RoundDown((CONSOLE_WIDTH-margin)/Float(TextWidth("_")))
+	If Len(gDevConsoleText) > maxLen Then gDevConsoleText = Left(gDevConsoleText, maxLen)
+	gDevConsoleText = Input2(gDevConsoleInput, gDevConsoleText, sw/2-CONSOLE_WIDTH/2+margin/2+1, sh/2+cHeight/2-margin/2-rowHeight+1)
+	If gKeyReturn Then
+		WriteConsole("$ " + gDevConsoleText)
+		RunCommand(gDevConsoleText)
+		gDevConsoleText = ""
+		gKeyReturn = False
+	EndIf
+EndFunction
+
+
+// Tarkistaa, onko komennolle annettu oikea m‰‰r‰ parametrej‰
+Function CheckArguments(_command$, _cmdId)
+	arguments$ = aCommands(_cmdId, CMD_ARGS)
+	argCount   = CountWords(arguments)
+	wordCount  = CountWords(_command)
+	
+	// Jos on liikaa parametrej‰, hyl‰t‰‰n komento
+	If wordCount - 1 > argCount Then Return False
+	
+	// Poistetaan laskuista valinnaiset parametrit
+	i = InStr(arguments, "[")
+	If i > 0 Then
+		argCount = CountWords(Left(arguments, i-1))
+	EndIf
+	
+	// ...ja tarkistetaan onko pakollisia parametrej‰ riitt‰v‰sti
+	If wordCount < argCount Then Return False
+	
+	// T‰nne saakka p‰‰stiin, eli kaikki parametrit on OK!
+	Return True
+EndFunction
+
+Function GetArgument(_arg$, _command$, _cmdId, _default$ = "")
+	If Len(aCommands(_cmdId, CMD_ARGS)) = 0 Or Len(_arg) = 0 Then Return _default
+	_arg = Lower(_arg)
+	
+	arguments$ = aCommands(_cmdId, CMD_ARGS)
+	argCount = Min(CountWords(arguments), Int(CountWords(_command)) - 1)
+	
+	For i = 1 To argCount
+		word$ = GetWord2(arguments, i)
+		If word = _arg Or word = "["+_arg+"]" Then
+			Return GetWord2(_command, i + 1)
+		EndIf
+	Next i
+	
+	// T‰nne saakka p‰‰stiin eik‰ lˆytynyt, mit‰ etsittiin -> palautetaan oletus
+	Return _default
+EndFunction
