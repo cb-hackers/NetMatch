@@ -218,7 +218,7 @@ Function ClientLoop()
     gNetFPSCounter      = 0
     gNetFPSTimer        = Timer()
     gConsoleMode        = False
-	gDevConsole         = False
+    gDevConsole         = False
     gConsoleText$       = ""
     gBbsInCount         = 0
     gBbsIn              = 0
@@ -455,11 +455,11 @@ Function ClientLoop()
                 Text 10, 550, "PacketLimit: " + gPacketWait + "ms"
             EndIf
         EndIf
-		
-		If KeyHit(41) Then
-			gDevConsole = Not gDevConsole
-			ClearKeys
-		EndIf
+        
+        If KeyHit(41) Then
+            gDevConsole = Not gDevConsole
+            ClearKeys
+        EndIf
         DrawToWorld ON
         UpdateParticleEffects()
         DrawToWorld OFF
@@ -470,7 +470,7 @@ Function ClientLoop()
                 gConsoleText = ""
                 gEsc = False
                 ClearKeys
-			ElseIf gDevConsole = True Then
+            ElseIf gDevConsole = True Then
                 gDevConsole = False
                 gEsc = False
                 ClearKeys
@@ -478,7 +478,7 @@ Function ClientLoop()
                 Exit
             EndIf
         EndIf
-		If gDevConsole = True Then DrawConsole()
+        If gDevConsole = True Then DrawConsole()
         ClearKeys2()
         If Abs(GetTimeSync()) > 3 Then
             Error(GetText("speedhack"))
@@ -489,7 +489,7 @@ Function ClientLoop()
             Exit
         EndIf
         If gKickedOut Then Exit
-		
+        
 
         If player\loggedIn Then DrawScreen
         UpdateGame2()
@@ -821,14 +821,14 @@ Function ReadDataFromServer()
             msgText$ = _Net_GetString()
             player.PLAYERS  = ConvertToType(gPlayers(playerId))
             AddClientMessage(msgText, netmsg, player\name)
-			WriteConsole("<%1> %2", player\name, msgText)
+            WriteConsole("<%1> %2", player\name, msgText)
         
         ElseIf netmsg = NET_SERVERMSG Then
             
             // Palvelimelta tulee jotain infoa tekstinä
             msgText$ = _Net_GetString()
             AddClientMessage(msgText$, netmsg)
-			WriteConsole("[SERVER] %1", msgText)
+            WriteConsole("[SERVER] %1", msgText)
             
         ElseIf netmsg = NET_BULLETHIT Then
         
@@ -902,7 +902,7 @@ Function ReadDataFromServer()
             plr\kills       = k2
             plr\deaths      = d2
             cmsg\img        = aWeapon(weapon, WPNF_ICON)
-			WriteConsole("Player "+cmsg\name1+" killed player "+cmsg\name2)
+            WriteConsole("Player "+cmsg\name1+" killed player "+cmsg\name2)
         ElseIf netmsg = NET_SESSIONTIME Then
         
             // Pelisession aikatiedot

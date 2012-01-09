@@ -53,13 +53,13 @@ Global gDevConsoleText$, gDevConsoleInput
 // Viestissä voi käyttää muuttujia %1-4 ja antaa ne parametreinä
 //================================================================================
 Function WriteConsole(_message$, var1$ = "", var2$ = "", var3$ = "", var4$ = "")
-	_message = Replace(Replace(_message, "%1", var1), "%2", var2)
-	_message = Replace(Replace(_message, "%3", var3), "%4", var4)
-	lineCount = CountWords(_message, "\n")
-	For i = 1 To lineCount
-		msg.CONSOLE_MESSAGES = New(CONSOLE_MESSAGES)
-		msg\message     = Replace(GetWord2(_message, i, "\n"),"\t","    ")
-	Next i
+    _message = Replace(Replace(_message, "%1", var1), "%2", var2)
+    _message = Replace(Replace(_message, "%3", var3), "%4", var4)
+    lineCount = CountWords(_message, "\n")
+    For i = 1 To lineCount
+        msg.CONSOLE_MESSAGES = New(CONSOLE_MESSAGES)
+        msg\message     = Replace(GetWord2(_message, i, "\n"),"\t","    ")
+    Next i
 EndFunction
 
 //================================================================================
@@ -68,65 +68,65 @@ EndFunction
 //================================================================================
 Function RunCommand(_command$, _output = 1)
 
-	_command = Trim(_command)
-	
-	// Poistutaan, jos ei ole komentoa
-	If Len(_command) = 0 Then Return False
-	
-	cmd$  = Lower(GetWord2(_command$, 1))
-	cmdId = -1
-	
-	For i = 0 To COMMAND_COUNT
-		If cmd = aCommands(i, CMD_NAME) Then
-			cmdId = i
-			Exit
-		EndIf
-	Next i
-	out$ = ""
-	
-	
-	If Not cmdId = -1 Then
-		If CheckArguments(_command, cmdId) = True Then
-		
-			// Syntax: help [command]
-			If cmdId = COMMAND_HELP Then
-				helpAbout$ = GetArgument("command", _command, cmdId)
-				If helpAbout = "" Then
-					out = out + "This is the NetMatch console.\nAvailable commands:\n"
-					For i = 0 To COMMAND_COUNT
-						out = out + "\t"+aCommands(i, CMD_NAME)+"\n"
-					Next i
-				Else
-					helpAbout = Lower(helpAbout)
-					helpCmdId = -1	
-					For i = 0 To COMMAND_COUNT
-						If helpAbout = aCommands(i, CMD_NAME) Then
-							helpCmdId = i
-							Exit
-						EndIf
-					Next i
-					If helpCmdId = -1 Then
-						out = out + "Unknown command '"+helpAbout+"'"
-					Else
-						out = out + "Syntax: " + aCommands(helpCmdId, CMD_NAME) + " " + aCommands(helpCmdId, CMD_ARGS) + "\n"
-						out = out + "\t" + aCommands(helpCmdId, CMD_DESC)+"\n"
-					EndIf
-				EndIf
-				
-				
-			// Syntax: quit
-			ElseIf cmdId = COMMAND_QUIT Then
-				End
-			EndIf
-		Else
-			out = out + "Invalid syntax!"
-		EndIf
-	Else
-		out = out + "Unknown command '" + cmd + "'."
-	EndIf
-	If _output = True Then
-		WriteConsole(out)
-	EndIf
+    _command = Trim(_command)
+    
+    // Poistutaan, jos ei ole komentoa
+    If Len(_command) = 0 Then Return False
+    
+    cmd$  = Lower(GetWord2(_command$, 1))
+    cmdId = -1
+    
+    For i = 0 To COMMAND_COUNT
+        If cmd = aCommands(i, CMD_NAME) Then
+            cmdId = i
+            Exit
+        EndIf
+    Next i
+    out$ = ""
+    
+    
+    If Not cmdId = -1 Then
+        If CheckArguments(_command, cmdId) = True Then
+        
+            // Syntax: help [command]
+            If cmdId = COMMAND_HELP Then
+                helpAbout$ = GetArgument("command", _command, cmdId)
+                If helpAbout = "" Then
+                    out = out + "This is the NetMatch console.\nAvailable commands:\n"
+                    For i = 0 To COMMAND_COUNT
+                        out = out + "\t"+aCommands(i, CMD_NAME)+"\n"
+                    Next i
+                Else
+                    helpAbout = Lower(helpAbout)
+                    helpCmdId = -1    
+                    For i = 0 To COMMAND_COUNT
+                        If helpAbout = aCommands(i, CMD_NAME) Then
+                            helpCmdId = i
+                            Exit
+                        EndIf
+                    Next i
+                    If helpCmdId = -1 Then
+                        out = out + "Unknown command '"+helpAbout+"'"
+                    Else
+                        out = out + "Syntax: " + aCommands(helpCmdId, CMD_NAME) + " " + aCommands(helpCmdId, CMD_ARGS) + "\n"
+                        out = out + "\t" + aCommands(helpCmdId, CMD_DESC)+"\n"
+                    EndIf
+                EndIf
+                
+                
+            // Syntax: quit
+            ElseIf cmdId = COMMAND_QUIT Then
+                End
+            EndIf
+        Else
+            out = out + "Invalid syntax!"
+        EndIf
+    Else
+        out = out + "Unknown command '" + cmd + "'."
+    EndIf
+    If _output = True Then
+        WriteConsole(out)
+    EndIf
 EndFunction
 
 
@@ -134,8 +134,8 @@ EndFunction
 // Näytetään jonossa olevat viestit ruudulla
 //================================================================================
 Function DrawConsole()
-	If gDevConsoleInput = 0 Then gDevConsoleInput = NewInput()
-	SetFont gFonts(FNT_MSG)
+    If gDevConsoleInput = 0 Then gDevConsoleInput = NewInput()
+    SetFont gFonts(FNT_MSG)
     sw = ScreenWidth()
     sh = ScreenHeight()
     rowHeight = TextHeight("|")
@@ -161,56 +161,56 @@ Function DrawConsole()
             msg = Before(msg)
         EndIf
     Wend
-	
-	Color 255,255,255
-	maxLen = RoundDown((CONSOLE_WIDTH-margin)/Float(TextWidth("_")))
-	If Len(gDevConsoleText) > maxLen Then gDevConsoleText = Left(gDevConsoleText, maxLen)
-	gDevConsoleText = Input2(gDevConsoleInput, gDevConsoleText, sw/2-CONSOLE_WIDTH/2+margin/2+1, sh/2+cHeight/2-margin/2-rowHeight+1)
-	If gKeyReturn Then
-		WriteConsole("$ " + gDevConsoleText)
-		RunCommand(gDevConsoleText)
-		gDevConsoleText = ""
-		gKeyReturn = False
-	EndIf
+    
+    Color 255,255,255
+    maxLen = RoundDown((CONSOLE_WIDTH-margin)/Float(TextWidth("_")))
+    If Len(gDevConsoleText) > maxLen Then gDevConsoleText = Left(gDevConsoleText, maxLen)
+    gDevConsoleText = Input2(gDevConsoleInput, gDevConsoleText, sw/2-CONSOLE_WIDTH/2+margin/2+1, sh/2+cHeight/2-margin/2-rowHeight+1)
+    If gKeyReturn Then
+        WriteConsole("$ " + gDevConsoleText)
+        RunCommand(gDevConsoleText)
+        gDevConsoleText = ""
+        gKeyReturn = False
+    EndIf
 EndFunction
 
 
 // Tarkistaa, onko komennolle annettu oikea määrä parametrejä
 Function CheckArguments(_command$, _cmdId)
-	arguments$ = aCommands(_cmdId, CMD_ARGS)
-	argCount   = CountWords(arguments)
-	wordCount  = CountWords(_command)
-	
-	// Jos on liikaa parametrejä, hylätään komento
-	If wordCount - 1 > argCount Then Return False
-	
-	// Poistetaan laskuista valinnaiset parametrit
-	i = InStr(arguments, "[")
-	If i > 0 Then
-		argCount = CountWords(Left(arguments, i-1))
-	EndIf
-	
-	// ...ja tarkistetaan onko pakollisia parametrejä riittävästi
-	If wordCount < argCount Then Return False
-	
-	// Tänne saakka päästiin, eli kaikki parametrit on OK!
-	Return True
+    arguments$ = aCommands(_cmdId, CMD_ARGS)
+    argCount   = CountWords(arguments)
+    wordCount  = CountWords(_command)
+    
+    // Jos on liikaa parametrejä, hylätään komento
+    If wordCount - 1 > argCount Then Return False
+    
+    // Poistetaan laskuista valinnaiset parametrit
+    i = InStr(arguments, "[")
+    If i > 0 Then
+        argCount = CountWords(Left(arguments, i-1))
+    EndIf
+    
+    // ...ja tarkistetaan onko pakollisia parametrejä riittävästi
+    If wordCount < argCount Then Return False
+    
+    // Tänne saakka päästiin, eli kaikki parametrit on OK!
+    Return True
 EndFunction
 
 Function GetArgument(_arg$, _command$, _cmdId, _default$ = "")
-	If Len(aCommands(_cmdId, CMD_ARGS)) = 0 Or Len(_arg) = 0 Then Return _default
-	_arg = Lower(_arg)
-	
-	arguments$ = aCommands(_cmdId, CMD_ARGS)
-	argCount = Min(CountWords(arguments), Int(CountWords(_command)) - 1)
-	
-	For i = 1 To argCount
-		word$ = GetWord2(arguments, i)
-		If word = _arg Or word = "["+_arg+"]" Then
-			Return GetWord2(_command, i + 1)
-		EndIf
-	Next i
-	
-	// Tänne saakka päästiin eikä löytynyt, mitä etsittiin -> palautetaan oletus
-	Return _default
+    If Len(aCommands(_cmdId, CMD_ARGS)) = 0 Or Len(_arg) = 0 Then Return _default
+    _arg = Lower(_arg)
+    
+    arguments$ = aCommands(_cmdId, CMD_ARGS)
+    argCount = Min(CountWords(arguments), Int(CountWords(_command)) - 1)
+    
+    For i = 1 To argCount
+        word$ = GetWord2(arguments, i)
+        If word = _arg Or word = "["+_arg+"]" Then
+            Return GetWord2(_command, i + 1)
+        EndIf
+    Next i
+    
+    // Tänne saakka päästiin eikä löytynyt, mitä etsittiin -> palautetaan oletus
+    Return _default
 EndFunction
