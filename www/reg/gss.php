@@ -192,7 +192,11 @@ function RegisterServer()
     $version = $mysqli->real_escape_string( $_GET['ver'] );
     $desc = $mysqli->real_escape_string( $_GET['desc'] );
     $port = (int) $_GET['port'];
-    $ip = $_SERVER['REMOTE_ADDR'];
+    if( isset($_GET['addr']) && !empty($_GET['addr']) ) {
+        $ip = $mysqli->real_escape_string( $_GET['addr'] );
+    } else {
+        $ip = $_SERVER['REMOTE_ADDR'];
+    }
     $devbuild = 0;
     if( !empty( $_GET['devbuild'] ) && $_GET['devbuild'] == true )
     {
@@ -307,7 +311,11 @@ function UnRegisterServer()
     }
     
     // Vähän helpompi käsitellä näitäkin. Tehdään portistakin turvallinen.
-    $ip = $_SERVER['REMOTE_ADDR'];
+    if( isset($_GET['addr']) && !empty($_GET['addr']) ) {
+        $ip = $mysqli->real_escape_string( $_GET['addr'] );
+    } else {
+        $ip = $_SERVER['REMOTE_ADDR'];
+    }
     $port = (int) $_GET['port'];
     
     // Poistetaan palvelin listalta, JOS se on siellä.
@@ -359,7 +367,11 @@ function UpdateServer()
     }
     
     // Otetaan IP ja portti talteen
-    $ip = $_SERVER['REMOTE_ADDR'];
+    if( isset($_GET['addr']) && !empty($_GET['addr']) ) {
+        $ip = $mysqli->real_escape_string( $_GET['addr'] );
+    } else {
+        $ip = $_SERVER['REMOTE_ADDR'];
+    }
     $port = (int) $_GET['port'];
     
     // Parsitaan data MySQL-turvallisiin muuttujiin
@@ -415,8 +427,11 @@ function StringConvert( $str, $decode=0 )
 }
 
 // Loggaaminen
-function CreateLog( $logfile = "info.txt" )
+function CreateLog( $logfile = "" )
 {
+    if( $logfile == "" ) {
+        $logfile = "infos/" . date("d-m-y") . '.txt';
+    }
     if( !empty( $_GET ) )
     {
         $str = date( "d-m-y, G:i:s" ) . " - " . $_SERVER['REMOTE_ADDR'] . " |";
@@ -427,7 +442,7 @@ function CreateLog( $logfile = "info.txt" )
         }
         $str .= "\n";
 
-        $filehandle = fopen("info.txt", "a");
+        $filehandle = fopen($logfile, "a");
         fwrite( $filehandle, $str );
         fclose( $filehandle );
     }
