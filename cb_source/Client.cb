@@ -400,7 +400,11 @@ Function ClientLoop()
 //        UpdateBodyExplosion()
 //        GameUpdate()
         If gSessionComplete = False Then
-            PositionCamera ObjectX(player\obj)+(MouseX()-ScreenWidth()/2)/1.2, ObjectY(player\obj)-(MouseY()-ScreenHeight()/2)/1.2
+            If gCameraMode =< 1 Then 
+                CloneCameraPosition player\obj
+            ElseIf gCameraMode => 2 Then 
+                PositionCamera ObjectX(player\obj)+(MouseX()-ScreenWidth()/2)/1.2, ObjectY(player\obj)-(MouseY()-ScreenHeight()/2)/1.2
+            EndIf
         EndIf
         
         
@@ -600,6 +604,25 @@ Function ReadDataFromServer()
             player\y        = _Net_GetShort()   // Sijainti
             player\angle    = _Net_GetShort()   // Kulma
             b               = _Net_GetByte()    // Sisältää useamman muuttujan (alla)
+            
+                
+            // Serveri lähettää pelaajasta tiedon kun pelaaja voisi nähdä toisen pelaajan kamera moodin ollessa 2
+            // Tästä syystä kamera moodilla 1 pelaajalta katoaisi tutkanuoli paljon ennen kuin näkee pelaajan,
+            // joten vaikka pelaaja data saataisiin, tarkistetaan vielä etäisyydet ja lisätään tutkanuoli tarvittaessa           
+            If gCameraMode = 1 Then 
+                plr.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerId))
+                visible = True
+                x1 = ObjectX(player\obj)
+                y1 = ObjectY(player\obj)
+                x2 = ObjectX(plr\obj)
+                y2 = ObjectY(plr\obj)
+                If Abs(x1 - x2) > 400 Then visible = False
+                If Abs(y1 - y2) > 300 Then visible = False
+                If visible = False Then 
+                    ang# = GetAngle2(plr\obj, player\obj)
+                    AddRadar(player\obj, ang#, player\team)
+                EndIf
+            EndIf
             
             // Jos halutaan esim. lukea 4 bittiä kohdasta 0, menee lauseke seuraavasti:
             // value= (b Shl (32-0-4)) Shr (32-4)

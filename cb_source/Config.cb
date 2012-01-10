@@ -79,6 +79,10 @@ gMapServerUrl = "http://netmatch.vesq.org/maps/"
 Global gDisableSpeedhackTest
 gDisableSpeedhackTest = False
 
+// Seuraako kamera pelaajaa vai tähtäintä, oletuksena pelaajaa
+Global gCameraMode
+gCameraMode = 1
+
 ReadConfig()
 //--------------------------------------------------------------------------------
 // Luetaan asetukset jos tiedosto on olemassa
@@ -110,6 +114,7 @@ Function ReadConfig()
             If key = "UPDATEURL" Then gUpdateUrl = value
             If key = "MAPSERVER" Then gMapServerUrl = value
             If key = "DISABLESPEEDHACKTEST" Then gDisableSpeedhackTest = value
+            If key = "CAMERAMODE" Then gCameraMode = value
         Wend
         CloseFile f
     EndIf
@@ -139,5 +144,6 @@ Function SaveConfig()
     WriteLine f, "UpdateUrl=" + Replace( gUpdateUrl, "=", "&#61;" )
     WriteLine f, "MapServer=" + Replace( gMapServerUrl, "=", "&#61;" )
     WriteLine f, "DisableSpeedhackTest=" + gDisableSpeedhackTest
+    WriteLine f, "CameraMode=" + gCameraMode
     CloseFile f
 EndFunction
