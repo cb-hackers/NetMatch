@@ -31,6 +31,7 @@ Const NET_NICKNAMEINUSE     = 21    // Liittyess‰ ei saa olla sama nimimerkki jo
 Const NET_SERVERCLOSING     = 22    // L‰hetet‰‰n kaikille tieto ett‰ palvelin sammutetaan.
 Const NET_TEAMINFO          = 23    // Pelaajan joukkueesta tieto.
 Const NET_SPEEDHACK         = 24    // Nopeuden huijaus havaittu
+Const NET_DEBUGDRAWING      = 25    // Piirtelyj‰ debug-tarkoituksia varten tulossa
 Const NET_END               = 255   // Viestin loppu
 
 

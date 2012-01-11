@@ -1,0 +1,61 @@
+//********************************************************************************
+// DebugDrawing.cb
+//
+// Hoitaa palvelimelta saatujen debug-piirtoviestien piirron.
+//********************************************************************************
+
+
+//--------------------------------------------------------------------------------
+// Kokoelma piirroksille
+//--------------------------------------------------------------------------------
+Type DRAWINGS
+    Field drawType As Byte
+    Field var1
+    Field var2
+    Field var3
+    Field var4
+    Field var5
+EndType
+
+//--------------------------------------------------------------------------------
+// Piirrett‰vien tavaroiden tyypit
+//--------------------------------------------------------------------------------
+Const DRAW_LINE = 1     // Viiva
+Const DRAW_CIRCLE = 2   // Origokeskinen ympyr‰
+Const DRAW_BOX = 3      // Laatikko
+
+
+//--------------------------------------------------------------------------------
+// Hoitaa piirtelyt
+//--------------------------------------------------------------------------------
+Function DrawDebugDrawings()
+    // Piirret‰‰n maailmaan
+    DrawToWorld ON
+    For d.DRAWINGS = Each DRAWINGS
+        If d\drawType = DRAW_LINE Then
+            // Piirret‰‰n viiva
+            Line d\var1, d\var2, d\var3, d\var4
+        ElseIf d\drawType = DRAW_CIRCLE Then
+            // Piirret‰‰n origokeskinen ympyr‰
+            Circle2(d\var1, d\var2, d\var3, d\var4)
+        ElseIf d\drawType = DRAW_BOX Then
+            // Piirret‰‰n laatikko
+            Box d\var1, d\var2, d\var3, d\var4, d\var5
+        EndIf
+    Next d
+    // Palautetaan piirto ruudulle
+    DrawToWorld OFF
+EndFunction
+
+//--------------------------------------------------------------------------------
+// Tyhj‰‰ kaikki piirrokset muistista
+//--------------------------------------------------------------------------------
+Function DeleteDebugDrawings()
+    For d.DRAWINGS = Each DRAWINGS
+        Delete d
+    Next d
+EndFunction
+
+Function Circle2(x, y, r, fill=0)
+    Circle x-r,y+r,r*2,fill
+EndFunction 

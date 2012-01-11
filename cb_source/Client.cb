@@ -271,6 +271,7 @@ Function ClientLoop()
         DrawGameStatus()
         DrawClientMessages()
         UpdateExplodeAnimation()
+        DrawDebugDrawings()
 
         If gConsoleMode = False And gDevConsole = False Then
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -580,6 +581,9 @@ Function ReadDataFromServer()
         ShowObject aRadar(i), OFF
     Next i
     gRadarId = 0
+    
+    // Tyhjennet‰‰n debug-piirtelyt
+    DeleteDebugDrawings()
     
     // Muistipalan alussa on aina saapuneen datan pituus joka luetaan t‰ss‰ pois
     gBbsInCount = gBbsInCount + _Net_GetInt()
@@ -1043,6 +1047,22 @@ Function ReadDataFromServer()
                     weaponObj = gObjects(aWeapon(player\weapon, WPNF_CHARACTER))
                 EndIf
                 PaintObject player\obj, weaponObj
+            EndIf
+        ElseIf netmsg = NET_DEBUGDRAWING Then
+            // Tulossa piirtelytietoja debuggailua varten
+            drawType = _Net_GetByte()
+            If drawType = DRAW_LINE Or drawType = DRAW_CIRCLE Or drawType = DRAW_BOX Then
+                // Validia tavaraa tulossa
+                d.DRAWINGS = New(DRAWINGS)
+                d\drawType = drawType
+                d\var1 = _Net_GetInt()
+                d\var2 = _Net_GetInt()
+                d\var3 = _Net_GetInt()
+                d\var4 = _Net_GetInt()
+                // Jos oli boksi niin tuli viel‰ yksi kokonaisluku lis‰‰
+                If drawType = DRAW_BOX Then
+                    d\var5 = _Net_GetInt()
+                EndIf
             EndIf
         Else
             // Tuntematon viesti tai viestit loppui
