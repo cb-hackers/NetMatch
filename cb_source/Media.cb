@@ -25,7 +25,8 @@ Const FNT_MSG           = 7     // Viestit
 Const FNT_MSGBOLD       = 8     // Viestit lihavoituna
 Const FNT_STAT          = 9     // Er‰n lopputulokset
 Const FNT_STATBOLD      = 10    // Er‰n lopputulokset
-Const FNT_COUNT         = 10    // Fonttien lukum‰‰r‰
+Const FNT_DEVCONSOLE    = 11    // Clientin devconsole
+Const FNT_COUNT         = 11    // Fonttien lukum‰‰r‰
 
 //--------------------------------------------------------------------------------
 // Ladataan fontit
@@ -41,6 +42,7 @@ gFonts(FNT_MSG)         = LoadFont("Arial", 15)
 gFonts(FNT_MSGBOLD)     = LoadFont("Arial", 15, ON)
 gFonts(FNT_STAT)        = LoadFont("Arial", 30)
 gFonts(FNT_STATBOLD)    = LoadFont("Arial", 30, ON)
+gFonts(FNT_DEVCONSOLE)  = LoadFont("fixedsys", 13)
 
 
 //--------------------------------------------------------------------------------
