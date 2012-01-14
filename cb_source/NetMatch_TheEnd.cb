@@ -30,10 +30,10 @@ EndIf
 SAFEEXIT OFF
 
 Const NM_VERSION$   = "2.4"
-Const NM_REVISION$  = ""
+Const NM_REVISION$  = "a"
 // Jos palvelinta ei tarvitse p‰ivitt‰‰ muutosten yhteydess‰, nostetaan vain NM_PATCH 
 // muuttujan arvoa. T‰m‰ nollataan aina kun tulee uusi revision tai versio.
-Const NM_PATCH      = 4
+Const NM_PATCH      = 0
 
 Global gPatchString$
 gPatchString = ""

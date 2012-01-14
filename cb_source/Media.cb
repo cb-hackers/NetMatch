@@ -505,7 +505,7 @@ Function CheckUpdates()
         msg$ = ""
         If Float(latestVersion) > Float(NM_VERSION) Or (Float(latestVersion) = Float(NM_VERSION) And latestRevision > NM_REVISION) Then
             newVersion = True
-        ElseIf latestPatch > NM_PATCH Then
+        ElseIf latestRevision = NM_REVISION And latestPatch > NM_PATCH Then
             newVersion = True
         EndIf
         If newVersion Then

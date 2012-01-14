@@ -102,6 +102,9 @@ Function JoinGame(_host$, _port)
     // Kirjaudutaan ulos
     Login(False)
     
+    // Poistetaan debuggailupiirrokset
+    DeleteDebugDrawings()
+    
     gGameMode = MENU
     ShowObject gMap, OFF
 
@@ -582,9 +585,6 @@ Function ReadDataFromServer()
     Next i
     gRadarId = 0
     
-    // Tyhjennet‰‰n debug-piirtelyt
-    DeleteDebugDrawings()
-    
     // Muistipalan alussa on aina saapuneen datan pituus joka luetaan t‰ss‰ pois
     gBbsInCount = gBbsInCount + _Net_GetInt()
     If gBbsInTimer + 1000 < Timer() Then
@@ -1051,7 +1051,10 @@ Function ReadDataFromServer()
         ElseIf netmsg = NET_DEBUGDRAWING Then
             // Tulossa piirtelytietoja debuggailua varten
             drawType = _Net_GetByte()
-            If drawType = DRAW_LINE Or drawType = DRAW_CIRCLE Or drawType = DRAW_BOX Then
+            If drawType = DRAW_CLEAR Then
+                // Tyhjennet‰‰n debug-piirtelyt
+                DeleteDebugDrawings()
+            ElseIf drawType = DRAW_LINE Or drawType = DRAW_CIRCLE Or drawType = DRAW_BOX Then
                 // Validia tavaraa tulossa
                 d.DRAWINGS = New(DRAWINGS)
                 d\drawType = drawType

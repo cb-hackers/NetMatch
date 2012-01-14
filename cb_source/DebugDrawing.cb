@@ -23,6 +23,7 @@ EndType
 Const DRAW_LINE = 1     // Viiva
 Const DRAW_CIRCLE = 2   // Origokeskinen ympyrä
 Const DRAW_BOX = 3      // Laatikko
+Const DRAW_CLEAR = 127  // Käsky tyhjätä piirrokset
 
 
 //--------------------------------------------------------------------------------
@@ -58,4 +59,4 @@ EndFunction
 
 Function Circle2(x, y, r, fill=0)
     Circle x-r,y+r,r*2,fill
-EndFunction 
+EndFunction
