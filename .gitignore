@@ -41,6 +41,9 @@ debug.txt
 # Perhanan Windows
 Thumbs.db
 
+# Unohdetaan myös tmp-kansio, jonka maaginen battitiedosto tekee
+tmp/
+
 ######
 ## Mitä laitetaan ignoreen webbikansiosta
 ######
