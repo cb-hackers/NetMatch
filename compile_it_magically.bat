@@ -35,7 +35,7 @@ IF EXIST "%~dp0tmp" (
 )
 
 :: Tarkistetaan, l”ytyyk” NetMatch.dat tiedostoa ja luodaan se tarvittaessa
-IF NOT EXIST %~dp0NetMatch.dat (
+IF NOT EXIST "%~dp0NetMatch.dat" (
   echo Mediatiedostoa NetMatch.dat ei l”ytynyt.
   echo Pakataanpa siis mokoma tiedosto nyt!
   "%~dp0media\CBRC.exe" "%~dp0media\template.cbrs"
