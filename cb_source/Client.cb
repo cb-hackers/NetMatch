@@ -1058,13 +1058,13 @@ Function ReadDataFromServer()
                 // Validia tavaraa tulossa
                 d.DRAWINGS = New(DRAWINGS)
                 d\drawType = drawType
-                d\var1 = _Net_GetInt()
-                d\var2 = _Net_GetInt()
-                d\var3 = _Net_GetInt()
-                d\var4 = _Net_GetInt()
-                // Jos oli boksi niin tuli viel‰ yksi kokonaisluku lis‰‰
+                d\var1 = _Net_GetShort()
+                d\var2 = _Net_GetShort()
+                d\var3 = _Net_GetShort()
+                d\var4 = _Net_GetShort()
+                // Jos oli boksi niin tuli viel‰ yksi shortti lis‰‰
                 If drawType = DRAW_BOX Then
-                    d\var5 = _Net_GetInt()
+                    d\var5 = _Net_GetShort()
                 EndIf
             EndIf
         Else
