@@ -1062,9 +1062,9 @@ Function ReadDataFromServer()
                 d\var2 = _Net_GetShort()
                 d\var3 = _Net_GetShort()
                 d\var4 = _Net_GetShort()
-                // Jos oli boksi niin tuli viel‰ yksi shortti lis‰‰
+                // Jos oli boksi niin tuli viel‰ yksi byte lis‰‰
                 If drawType = DRAW_BOX Then
-                    d\var5 = _Net_GetShort()
+                    d\var5 = _Net_GetByte()
                 EndIf
             EndIf
         Else
