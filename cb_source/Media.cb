@@ -42,7 +42,7 @@ gFonts(FNT_MSG)         = LoadFont("Arial", 15)
 gFonts(FNT_MSGBOLD)     = LoadFont("Arial", 15, ON)
 gFonts(FNT_STAT)        = LoadFont("Arial", 30)
 gFonts(FNT_STATBOLD)    = LoadFont("Arial", 30, ON)
-gFonts(FNT_DEVCONSOLE)  = LoadFont("fixedsys", 13)
+gFonts(FNT_DEVCONSOLE)  = LoadFont("Arial", 15)
 
 
 //--------------------------------------------------------------------------------
