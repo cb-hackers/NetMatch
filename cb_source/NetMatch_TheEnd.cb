@@ -9,7 +9,6 @@ gDirectServer = False
 gDirectReg = False
 gForceUpdate = False
 gForceUpdateMsg = ""
-gForceDefaultControls = False
 
 cmdLine$ = CommandLine()
 For i = 1 To CountWords(cmdLine)
@@ -17,7 +16,6 @@ For i = 1 To CountWords(cmdLine)
     If Upper(GetWord2(cmdLine, i)) = "-P" Then gDirectServer = True
     If Upper(GetWord2(cmdLine, i)) = "-S" Then gDirectServer = True : gDirectReg = True
     If Upper(GetWord2(cmdLine, i)) = "-U" Then gForceUpdate = True
-    If Upper(GetWord2(cmdline, i)) = "-C" Then gForceDefaultControls = True
 Next i
 If gDirectServer = True Then gFullScreen = False
 
@@ -69,7 +67,7 @@ Include "Effect.cb"
 Include "Items.cb"
 Include "Log.cb"
 Include "Server.cb"
-Include "Controls.cb"
+Include "Controls.cb" ' KOKEELLINEN
 Include "Console.cb"
 Include "DebugDrawing.cb"
 
@@ -84,13 +82,6 @@ Else
 EndIf
 
 GetTimeSync(True)
-
-//--------------------------------------------------------------------------------
-// Kirjoitetaan peruskontrollit filuun
-//--------------------------------------------------------------------------------
-If Not FileExists("Controls.cfg") Or gForceDefaultControls = True Then
-    SaveControls()
-EndIf
 
 //--------------------------------------------------------------------------------
 // K‰ynnistet‰‰n p‰‰valikko

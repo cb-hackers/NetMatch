@@ -4,8 +4,6 @@
 // Pelin hallinta näppäimistöllä ja hiirellä.
 //********************************************************************************
 
-Include "Keycodes.cb"
-
 //--------------------------------------------------------------------------------
 // Vakiot taulukkoa varten.
 //--------------------------------------------------------------------------------
@@ -30,31 +28,6 @@ Const KEY_TOGGLEFLOOR    = 18
 // Näppäinten määrä yhteensä
 Const KEY_AMOUNT         = 18
 
-//-------------------------------------------------------------------------------
-// Nimet
-//-------------------------------------------------------------------------------
-Const CONTROLPREFIX = "bind_"
-Dim aControlNames(KEY_AMOUNT) As String
-
-aControlNames(KEY_SHOOT)         = "shoot"
-aControlNames(KEY_SWITCHWEAPON)  = "switchweapon"
-aControlNames(KEY_WEAPON_UP)     = "weapon_up"
-aControlNames(KEY_WEAPON_DOWN)   = "weapon_down"
-aControlNames(KEY_MOVE_LEFT)     = "move_left"
-aControlNames(KEY_MOVE_UP)       = "move_up"
-aControlNames(KEY_MOVE_RIGHT)    = "move_right"
-aControlNames(KEY_MOVE_DOWN)     = "move_down"
-aControlNames(KEY_STRAFE_LEFT)   = "strafe_left"
-aControlNames(KEY_STRAFE_RIGHT)  = "strafe_right"
-aControlNames(KEY_MOVE_FORWARD)  = "move_forward"
-aControlNames(KEY_MOVE_BACKWARD) = "move_backward"
-aControlNames(KEY_CHAT)          = "chat"
-aControlNames(KEY_MUSICVOLUME)   = "musicvolume"
-aControlNames(KEY_SFXVOLUME)     = "sfxvolume"
-aControlNames(KEY_STATS)         = "stats"
-aControlNames(KEY_SHOWFPS)       = "showfps"
-aControlNames(KEY_TOGGLEFLOOR)   = "togglefloor"
-
 //--------------------------------------------------------------------------------
 // Mitä tietoa haetaan, taulukon aControls toinen ulottuvuus.
 //--------------------------------------------------------------------------------
@@ -72,9 +45,8 @@ Const KEYM_MOUSE         = 2
 Const KEYM_SCROLL        = 3
 Const KEYM_KEYBOARD_ONCE = 4
 Const KEYM_MOUSE_ONCE    = 5
-Const KEYM_MOUSE_CHARGE  = 6 // MouseUp
 
-Const KEYM_AMOUNT        = 6
+Const KEYM_AMOUNT        = 5
 
 //--------------------------------------------------------------------------------
 // Näppäintaulukko ja sen alustus oletusarvoilla.
@@ -156,30 +128,6 @@ Function UpdateInput()
             aControls(i, KEYF_PRESSED) = KeyHit(aControls(i, KEYF_CODE))
         ElseIf mode = KEYM_MOUSE_ONCE Then
             aControls(i, KEYF_PRESSED) = MouseHit(aControls(i, KEYF_CODE))
-        ElseIf mode = KEYM_MOUSE_CHARGE Then
-            aControls(i, KEYF_PRESSED) = MouseUp(aControls(i, KEYF_CODE))
         EndIf
     Next i
-EndFunction
-
-Function SaveControls()
-    f = OpenToWrite("Controls.cfg")
-    For i = 1 To KEY_AMOUNT
-        keyc$ = ""
-        mode = aControls(i, KEYF_MODE)
-        code = aControls(i, KEYF_CODE)
-        If mode = KEYM_KEYBOARD Or mode = KEYM_KEYBOARD_ONCE Then
-                keyc$ = KEYPREFIX + aKeyCodeNames(code)
-        ElseIf mode = KEYM_MOUSE Or mode = KEYM_MOUSE_ONCE Or mode = KEYM_MOUSE_CHARGE Then
-            For j = MOUSECODE_BUTTON_1 To MOUSECODE_BUTTON_3
-                If (j - MOUSECODE_ZERO) = code Then keyc$ = MOUSEPREFIX + aKeyCodeNames(j)
-            Next j
-        ElseIf mode = KEYM_SCROLL Then
-             For j = SCROLLCODE_DOWN To SCROLLCODE_UP
-                If (j - SCROLLCODE_ZERO) = code Then keyc$ = SCROLLPREFIX + aKeyCodeNames(j)
-            Next j
-        EndIf
-        WriteLine f, CONTROLPREFIX + aControlNames(i) + "=" + keyc$
-    Next i
-    CloseFile f
 EndFunction
