@@ -1288,43 +1288,24 @@ Function InScreen(_x, _y, _margin = 0)
 EndFunction
 
 
-Global gKeyEsc, gKeyReturn, gKeyb, gKeyC, gKeyF, gKeyG, gKeyU, gKeyY, gKeyTab
-Global gMouseHit1, gMouseHit2, gMouseHit3, gMouseRoll
-
 // Eihän olla vielä ammuttu vaikka hiiren 1-näppäin tai space on pohjassa
 Global gNotShotYet
 
-Function UpdateGame2(_updateGame = 1)
-    If _updateGame Then UpdateGame
-    If KeyHit(cbKeyEsc) Then gKeyEsc = True
-    If KeyHit(cbKeyReturn) Then gKeyReturn = True
-    If KeyHit(cbKeyB) Then gKeyB = True
-    If KeyHit(cbKeyC) Then gKeyC = True
-    If KeyHit(cbKeyF) Then gKeyF = True
-    If KeyHit(cbKeyG) Then gKeyG = True
-    If KeyHit(cbKeyU) Then gKeyU = True
-    If KeyHit(cbKeyY) Then gKeyY = True
-    If KeyHit(cbKeyTab) Then gKeyTab = True
-    If MouseHit(1) Then gMouseHit1 = True
-    If MouseHit(2) Then gMouseHit2 = True
-    If MouseHit(3) Then gMouseHit3 = True
-    If gNotShotYet = False And (MouseUp(1) Or KeyUp(cbkeyspace)) Then gNotShotYet = True
-    mz = MouseMoveZ() 
-    If mz <> 0 Then gMouseRoll = mz
-EndFunction
-
-Function ClearKeys2()
-    gKeyEsc     = False
-    gKeyReturn  = False
-    gKeyB       = False
-    gKeyC       = False
-    gKeyF       = False
-    gKeyG       = False
-    gKeyU       = False
-    gKeyY       = False
-    gKeyTab     = False
-    gMouseHit1  = False
-    gMouseHit2  = False
-    gMouseHit3  = False
-    gMouseRoll  = 0
+Function UpdateGame2()
+    UpdateGame
+    UpdateInput()
+    If gNotShotYet = False Then
+        If KeyUp(cbKeySpace) Then
+            gNotShotYet = True
+        Else
+            shootMode = aControls(KEY_SHOOT, KEYF_MODE)
+            If shootMode = KEYM_MOUSE Or shootMode = KEYM_MOUSE_ONCE Then
+                If MouseUp(aControls(KEY_SHOOT, KEYF_CODE)) Then gNotShotYet = True
+            ElseIf shootMode = KEYM_KEYBOARD Or shootMode = KEYM_KEYBOARD_ONCE Then
+                If KeyUp(aControls(KEY_SHOOT, KEYF_CODE)) Then gNotShotYet = True
+            ElseIf shootMode = KEYM_SCROLL Then
+                If aControls(KEY_SHOOT, KEYF_PRESSED) = False Then gNotShotYet = True
+            EndIf
+        EndIf
+    EndIf
 EndFunction

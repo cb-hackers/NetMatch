@@ -186,7 +186,7 @@ Function DrawConsole()
     If Len(gDevConsoleText) > maxLen Then gDevConsoleText = Left(gDevConsoleText, maxLen)
     
     // Tab-complete
-    If gKeyTab Then
+    If KeyHit(cbKeyTab) Then
         For i = 0 To COMMAND_COUNT
             id = (gDevConsoleACId + 1 + i) Mod (COMMAND_COUNT + 1)
             If InStr(aCommands(id, CMD_NAME), gDevConsoleText) = 1 Then
@@ -194,7 +194,6 @@ Function DrawConsole()
                 Exit
             EndIf
         Next i
-        gKeyTab = False
     EndIf
     If gDevConsoleACId > -1 Then
         consoleText$ = aCommands(gDevConsoleACId, CMD_NAME) + " "
@@ -208,12 +207,11 @@ Function DrawConsole()
         gDevConsoleText = consoleText
         gDevConsoleACId = -1
     EndIf
-    If gKeyReturn Then
+    If aControls(KEY_SUBMIT, KEYF_PRESSED) Then
         WriteConsole("$ " + consoleText)
         RunCommand(consoleText)
         gDevConsoleText = ""
         gDevConsoleACId = -1
-        gKeyReturn = False
     EndIf
 EndFunction
 

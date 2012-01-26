@@ -233,7 +233,7 @@ Function ClientLoop()
     gKickReason         = ""
     gKickerName         = ""
     gReadDataTimestamp  = 0
-    ClearKeys2()
+    ClearInput()
     gShowFloor          = True
 
     ClsColor 0, 0, 0
@@ -369,27 +369,28 @@ Function ClientLoop()
             EndIf
             
             If gConsoleMode = False And gDevConsole = False Then
-                // Vaihdetaan console-tilaan
-                If gKeyC or gKeyY Then 
+                // Vaihdetaan chat-tilaan
+//aCn                If gKeyC or gKeyY Then
+                If aControls(KEY_STATS, KEYF_PRESSED) Then
                     gConsoleText = ""
                     gConsoleMode = True
                     ClearKeys
                 EndIf
-                If gKeyU Then
-                    gConsoleText = "*"
-                    gConsoleMode = True
-                    ClearKeys
-                EndIf
+//aCn                If gKeyU Then
+//aCn                    gConsoleText = "*"
+//aCn                    gConsoleMode = True
+//aCn                    ClearKeys
+//aCn                EndIf
             EndIf
             
-            If gKeyG Then 
+            If aControls(KEY_STATS, KEYF_PRESSED) Then
                 gStatus = Not gStatus
                 SaveConfig()
             EndIf
-            If gKeyF Then 
+            If aControls(KEY_SHOWFPS, KEYF_PRESSED) Then
                 gShowFPS = Not gShowFPS
             EndIf
-            If gFloor <> 0 And gKeyB Then 
+            If gFloor <> 0 And aControls(KEY_TOGGLEFLOOR, KEYF_PRESSED) Then
                 gShowFloor = Not gShowFloor
                 ShowObject gFloor, gShowFloor
             EndIf
@@ -425,7 +426,7 @@ Function ClientLoop()
             SetFont gFonts(FNT_SETUP)
             Color 255, 255, 0
             gConsoleText = InputText(10, 565, 780, 25, gConsoleText)
-            If gKeyReturn Then
+            If aControls(KEY_SUBMIT, KEYF_PRESSED) Then
                 gConsoleText = Trim(gConsoleText)
                 If Len(gConsoleText) > 0 And gConsoleText<>"*" Then
                     gConsoleMessage = gConsoleText
@@ -472,22 +473,20 @@ Function ClientLoop()
         UpdateParticleEffects()
         DrawToWorld OFF
         
-        If gKeyEsc Then 
+        If aControls(KEY_CLOSE, KEYF_PRESSED) Then
             If gConsoleMode = True Then 
                 gConsoleMode = False
                 gConsoleText = ""
-                gEsc = False
                 ClearKeys
             ElseIf gDevConsole = True Then
                 gDevConsole = False
-                gEsc = False
                 ClearKeys
             Else
                 Exit
             EndIf
         EndIf
         If gDevConsole = True Then DrawConsole()
-        ClearKeys2()
+        ClearInput()
         If Abs(GetTimeSync()) > 3 Then
             Error(GetText("speedhack"))
             Exit
@@ -501,7 +500,6 @@ Function ClientLoop()
 
         If player\loggedIn Then DrawScreen
         UpdateGame2()
-        UpdateInput()
         PlayMusic()
     Forever
     PlayMusic(OFF)
