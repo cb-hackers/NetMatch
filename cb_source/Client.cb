@@ -769,6 +769,7 @@ Function ReadDataFromServer()
             player\admin    = 0
             player\statName = CheckPlayerName(player\name)
             AddClientMessage(Replace(GetText("player_login"), "%1", name), netmsg)
+            WriteConsole(GetText("player_login"), name)
 //COM1            gPlayerCount + 1
             
         ElseIf netmsg = NET_NOLOGIN Then
@@ -785,6 +786,7 @@ Function ReadDataFromServer()
             player\loggedIn = False
             If player\name <> "" Then
                 AddClientMessage(Replace(GetText("player_logout"), "%1", player\name), netmsg)
+                WriteConsole(GetText("player_logout"), player\name)
             EndIf
 //COM1            gPlayerCount - 1
             
@@ -928,7 +930,7 @@ Function ReadDataFromServer()
             plr\kills       = k2
             plr\deaths      = d2
             cmsg\img        = aWeapon(weapon, WPNF_ICON)
-            WriteConsole("Player "+cmsg\name1+" killed player "+cmsg\name2)
+            //WriteConsole("Player %1 killed player %2"+, cmsg\name1, cmsg\name2)
         ElseIf netmsg = NET_SESSIONTIME Then
         
             // Pelisession aikatiedot
@@ -965,6 +967,7 @@ Function ReadDataFromServer()
             mapName$ = _Net_GetString()
             crc = _Net_GetInt()
             If gServerMap <> mapName And gTimeLeft < -5 Then
+                WriteConsole("Changing map to %1", mapName)
                 // Siivotaan ruumiinpalaset
                 For bexpl.BODY_EXPLOSION = Each BODY_EXPLOSION
                     DeleteObject bexpl\obj
@@ -1024,6 +1027,7 @@ Function ReadDataFromServer()
                 player\active = False
                 player\loggedin = False
                 AddClientMessage(Replace( Replace(GetText("player_kicked"), "%1", player\name), "%2", reason$), netmsg)
+                WriteConsole(GetText("player_kicked"), player\name, reason$)
             EndIf
             
         ElseIf netmsg = NET_SERVERCLOSING Then

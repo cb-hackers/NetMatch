@@ -54,8 +54,8 @@ gDevConsoleACId = -1
 // Viestiss‰ voi k‰ytt‰‰ muuttujia %1-4 ja antaa ne parametrein‰
 //================================================================================
 Function WriteConsole(_message$, var1$ = "", var2$ = "", var3$ = "", var4$ = "")
-    _message = Replace(Replace(_message, "%0", var1), "%1", var2)
-    _message = Replace(Replace(_message, "%2", var3), "%3", var4)
+    _message = Replace(Replace(_message, "%1", var1), "%2", var2)
+    _message = Replace(Replace(_message, "%3", var3), "%4", var4)
     lineCount = CountWords(_message, "\n")
     For i = 1 To lineCount
         msg.CONSOLE_MESSAGES = New(CONSOLE_MESSAGES)
@@ -92,7 +92,7 @@ Function RunCommand(_command$, _output = 1)
     
         // Tarkistetaan, annettiinko oikea m‰‰r‰ parametrej‰
         If CheckArguments(_command, cmdId) = False Then
-            WriteConsole("Invalid syntax for '%0'.", cmd)
+            WriteConsole("Invalid syntax for '%1'.", cmd)
             Return False
         EndIf
         
