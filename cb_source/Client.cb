@@ -464,9 +464,10 @@ Function ClientLoop()
             EndIf
         EndIf
         
-        If KeyHit(41) Then
+        If gKeyGrave Then
             gDevConsole = Not gDevConsole
             ClearKeys
+            gKeyGrave = False
         EndIf
         DrawToWorld ON
         UpdateParticleEffects()
