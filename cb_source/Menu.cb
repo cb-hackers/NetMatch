@@ -27,11 +27,12 @@ Const MNU_CLIENT        = 2
 Const MNU_SERVER        = 3
 Const MNU_SETTINGS      = 4
 Const MNU_CLIENTCFG     = 5
-Const MNU_SERVERCFG     = 6
-Const MNU_SERVERLIST    = 7
-Const MNU_MAPSETUP      = 8
-Const MNU_MAP           = 9
-Const MNU_COUNT         = 9
+Const MNU_CLIENTCFG2    = 6
+Const MNU_SERVERCFG     = 7
+Const MNU_SERVERLIST    = 8
+Const MNU_MAPSETUP      = 9
+Const MNU_MAP           = 10
+Const MNU_COUNT         = 10
 
 // Valikoiden otsikot
 Dim aMenuTitles$(MNU_COUNT)
@@ -40,6 +41,7 @@ aMenuTitles(MNU_CLIENT)     = "mi_join_game"
 aMenuTitles(MNU_SERVER)     = "mi_host_game"
 aMenuTitles(MNU_SETTINGS)   = "mi_settings"
 aMenuTitles(MNU_CLIENTCFG)  = "mi_client_settings"
+aMenuTitles(MNU_CLIENTCFG2) = "mi_client_settings2"
 aMenuTitles(MNU_SERVERCFG)  = "mi_server_settings"
 aMenuTitles(MNU_SERVERLIST) = "mi_findserver"
 aMenuTitles(MNU_MAPSETUP)   = "mi_mapsetup"
@@ -55,23 +57,25 @@ Const MI_PORT           = 7
 Const MI_START          = 8
 Const MI_BACK           = 9
 Const MI_LANGUAGE       = 10
-Const MI_CLIENTCGF      = 11
-Const MI_SERVERCFG      = 12
-Const MI_DESCRIPTION    = 13
-Const MI_REGISTER       = 14
-Const MI_STATISTICS     = 15
-Const MI_FX_VOL         = 16
-Const MI_MUSIC_VOL      = 17
-Const MI_HELP           = 18
-Const MI_MAPSETUP       = 19
-Const MI_PERIODLEN      = 20
-Const MI_CONTROLMODE    = 21
-Const MI_MAP            = 22
-Const MI_PLAYERCOUNT    = 23    // Ei käytössä
-Const MI_BOTCOUNT       = 24    // Ei käytössä
-Const MI_BOTWEAPONS     = 25    // Ei käytössä
-Const MI_GAMEMODE       = 26
-Const MI_ADMINPASSWORD  = 27
+Const MI_CLIENTCFG      = 11
+Const MI_CLIENTCFG2     = 12    // Ei käytössä. Ainakaan vielä.
+Const MI_SERVERCFG      = 13
+Const MI_DESCRIPTION    = 14
+Const MI_REGISTER       = 15
+Const MI_STATISTICS     = 16
+Const MI_FX_VOL         = 17
+Const MI_MUSIC_VOL      = 18
+Const MI_HELP           = 19
+Const MI_MAPSETUP       = 20
+Const MI_PERIODLEN      = 21
+Const MI_CONTROLMODE    = 22
+Const MI_MAP            = 23
+Const MI_PLAYERCOUNT    = 24    // Ei käytössä
+Const MI_BOTCOUNT       = 25    // Ei käytössä
+Const MI_BOTWEAPONS     = 26    // Ei käytössä
+Const MI_GAMEMODE       = 27
+Const MI_ADMINPASSWORD  = 28
+Const MI_CAMERAMODE     = 29
 
 
 //--------------------------------------------------------------------------------
@@ -126,7 +130,13 @@ AddMenuItem(MNU_CLIENTCFG,  MI_STATISTICS,  "show_stats")
 AddMenuItem(MNU_CLIENTCFG,  MI_FX_VOL,      "fx_vol")
 AddMenuItem(MNU_CLIENTCFG,  MI_MUSIC_VOL,   "music_vol")
 AddMenuItem(MNU_CLIENTCFG,  MI_CONTROLMODE, "control")
+//AddMenuItem(MNU_CLIENTCFG,  MI_CLIENTCFG2,  "client_settings2", MNU_CLIENTCFG2)
+AddMenuItem(MNU_CLIENTCFG, MI_CAMERAMODE,  "cameramode")
 AddMenuItem(MNU_CLIENTCFG,  MI_BACK,        "back")
+
+// Peliasetukset, sivu 2 (jos tulee vielä yksikin asetus lisää niin tätä tarvitaan)
+//AddMenuItem(MNU_CLIENTCFG2, MI_CAMERAMODE,  "cameramode")
+//AddMenuItem(MNU_CLIENTCFG2, MI_BACK,        "back")
 
 //================================================================================
 // Näytetään valikko
@@ -451,6 +461,10 @@ Function DrawMenu(_menu)
                 If mi\itemId = MI_CONTROLMODE Then
                     Text cfgX, sy, gControlMode
                 EndIf
+                // Kameramoodi
+                If mi\itemId = MI_CAMERAMODE Then
+                    Text cfgX, sy, gCameraMode
+                EndIf
                 
 
                 bImage = IMG_MENUBULLET
@@ -533,6 +547,12 @@ Function DrawMenu(_menu)
             ElseIf miSelected = MI_CONTROLMODE Then
                 gControlMode + 1
                 If gControlMode > 2 Then gControlMode = 1
+                SaveConfig()  // Config.cb
+                
+            // Vaihdetaan kameramoodia
+            ElseIf miSelected = MI_CAMERAMODE Then
+                gCameraMode + 1
+                If gCameraMode > 2 Then gCameraMode = 1
                 SaveConfig()  // Config.cb
 
             // Vaihdetaan karttaa

@@ -50,6 +50,8 @@ mi_language = Kieli
 mih_language = Valitse käytettävä kieli painamalla Enter.|
 mi_client_settings = Peliasetukset
 mih_client_settings = Muuta pelin asetuksia.|
+mi_client_settings2 = Peliasetukset 2
+mih_client_settings2 = Muuta vielä lisää pelin asetuksia.|
 mi_server_settings = Palvelinasetukset
 mih_server_settings = Muuta palvelimen asetuksia.|
 mi_show_stats = Näytä tilastot
@@ -60,6 +62,8 @@ mi_music_vol = Musiikin voimakkuus
 mih_music_vol = Taustamusiikin voimakkuus.|Pikanäppäin: M + Ylösnuoli - Alasnuoli|
 mi_control = Pelaajan ohjaus
 mih_control = Valitse pelaajan ohjaustapa.|
+mi_cameramode = Kameramoodi
+mih_cameramode = Valitse kameramoodi.|1 = Normaali|2 = Liikkuu pelaajan hiiren mukaan
 loading = Ladataan... Odota hetki.
 lang_name = Suomi
 error = Virhe!

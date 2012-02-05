@@ -50,6 +50,8 @@ mi_language = Language
 mih_language = Press Return to change active language.|
 mi_client_settings = Game settings
 mih_client_settings = Change game settings.|
+mi_client_settings2 = Game settings 2
+mih_client_settings2 = Change even more game settings.|
 mi_server_settings = Server settings
 mih_server_settings = Change server settings.|
 mi_show_stats = Show statistics
@@ -60,6 +62,8 @@ mi_music_vol = Music volume
 mih_music_vol = Background music volume.|Change this value during gameplay by holding M-button and pressing arrow keys (up/down).|
 mi_control = Character control
 mih_control = Select character control mode.|
+mi_cameramode = Camera mode
+mih_cameramode = Choose camera mode.|1 = Normal|2 = Moves according to the players mouse
 loading = Loading... Please wait.
 lang_name = English
 error = Error!
