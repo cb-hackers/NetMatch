@@ -46,7 +46,8 @@ aCommands(COMMAND_QUIT, CMD_NAME) = "quit"
 aCommands(COMMAND_QUIT, CMD_ARGS) = ""
 aCommands(COMMAND_QUIT, CMD_DESC) = "Quits the game"
 
-Global gDevConsoleText$, gDevConsoleInput
+Global gDevConsoleText$, gDevConsoleInput, gDevConsoleACId
+gDevConsoleACId = -1
 
 //================================================================================
 // Lis‰t‰‰n viesti konsoliin
@@ -86,40 +87,58 @@ Function RunCommand(_command$, _output = 1)
     
     
     If Not cmdId = -1 Then
-        If CheckArguments(_command, cmdId) = True Then
+        // Mik‰li t‰nne asti p‰‰st‰‰n, on syˆtetty komento varmasti olemassa;
+        // sit‰ ei siis tarvitse en‰‰ tarkistaa.
+    
+        // Tarkistetaan, annettiinko oikea m‰‰r‰ parametrej‰
+        If CheckArguments(_command, cmdId) = False Then
+            WriteConsole("Invalid syntax for '%1'.", cmd)
+            Return False
+        EndIf
         
-            // Syntax: help [command]
-            If cmdId = COMMAND_HELP Then
-                helpAbout$ = GetArgument("command", _command, cmdId)
-                If helpAbout = "" Then
-                    out = out + "This is the NetMatch console.\nAvailable commands:\n"
-                    For i = 0 To COMMAND_COUNT
-                        out = out + "\t"+aCommands(i, CMD_NAME)+"\n"
-                    Next i
-                Else
-                    helpAbout = Lower(helpAbout)
-                    helpCmdId = -1    
-                    For i = 0 To COMMAND_COUNT
-                        If helpAbout = aCommands(i, CMD_NAME) Then
-                            helpCmdId = i
-                            Exit
-                        EndIf
-                    Next i
-                    If helpCmdId = -1 Then
-                        out = out + "Unknown command '"+helpAbout+"'"
-                    Else
-                        out = out + "Syntax: " + aCommands(helpCmdId, CMD_NAME) + " " + aCommands(helpCmdId, CMD_ARGS) + "\n"
-                        out = out + "\t" + aCommands(helpCmdId, CMD_DESC)+"\n"
+        // Syntax: help [command]
+        If cmdId = COMMAND_HELP Then
+            helpAbout$ = GetArgument("command", _command, cmdId)
+            If helpAbout = "" Then
+                out = out + "This is the NetMatch console.\nAvailable commands:\n"
+                For i = 0 To COMMAND_COUNT
+                    out = out + "\t"+aCommands(i, CMD_NAME)+"\n"
+                Next i
+            Else
+                helpAbout = Lower(helpAbout)
+                helpCmdId = -1    
+                For i = 0 To COMMAND_COUNT
+                    If helpAbout = aCommands(i, CMD_NAME) Then
+                        helpCmdId = i
+                        Exit
                     EndIf
+                Next i
+                If helpCmdId = -1 Then
+                    out = out + "Unknown command '"+helpAbout+"'"
+                Else
+                    out = out + "Syntax: " + aCommands(helpCmdId, CMD_NAME) + " " + aCommands(helpCmdId, CMD_ARGS) + "\n"
+                    out = out + "\t" + aCommands(helpCmdId, CMD_DESC)+"\n"
                 EndIf
-                
-                
-            // Syntax: quit
-            ElseIf cmdId = COMMAND_QUIT Then
-                End
             EndIf
-        Else
-            out = out + "Invalid syntax!"
+            
+            
+        // Syntax: quit
+        ElseIf cmdId = COMMAND_QUIT Then
+            // Kirjaudutaan ulos servulta (kopioitu Player.cb:st‰)
+            // Odotellaan max 2 sekuntia ett‰ linja on "vapaa"
+            t = Timer()
+            While ClientState() = 1
+                If t + 2000 < Timer() Then Exit
+            Wend
+            If ClientState() = 2 Then ClientRead()
+            // L‰hetet‰‰n poistumisviesti jos ei kyseess‰ ollut potkut
+            _Net_InitMemBlock()
+            _Net_PutByte(NET_LOGOUT)
+            _Net_PutByte(gCurrentPlayerId)
+            ClientSend()
+            // Odotellaan viel‰ puoli sekuntia
+            Wait 500 - (Timer() - t)
+            End
         EndIf
     Else
         out = out + "Unknown command '" + cmd + "'."
@@ -135,7 +154,7 @@ EndFunction
 //================================================================================
 Function DrawConsole()
     If gDevConsoleInput = 0 Then gDevConsoleInput = NewInput()
-    SetFont gFonts(FNT_MSG)
+    SetFont gFonts(FNT_DEVCONSOLE)
     sw = ScreenWidth()
     sh = ScreenHeight()
     rowHeight = TextHeight("|")
@@ -165,11 +184,35 @@ Function DrawConsole()
     Color 255,255,255
     maxLen = RoundDown((CONSOLE_WIDTH-margin)/Float(TextWidth("_")))
     If Len(gDevConsoleText) > maxLen Then gDevConsoleText = Left(gDevConsoleText, maxLen)
-    gDevConsoleText = Input2(gDevConsoleInput, gDevConsoleText, sw/2-CONSOLE_WIDTH/2+margin/2+1, sh/2+cHeight/2-margin/2-rowHeight+1)
+    
+    // Tab-complete
+    If gKeyTab Then
+        For i = 0 To COMMAND_COUNT
+            id = (gDevConsoleACId + 1 + i) Mod (COMMAND_COUNT + 1)
+            If InStr(aCommands(id, CMD_NAME), gDevConsoleText) = 1 Then
+                gDevConsoleACId = id
+                Exit
+            EndIf
+        Next i
+        gKeyTab = False
+    EndIf
+    If gDevConsoleACId > -1 Then
+        consoleText$ = aCommands(gDevConsoleACId, CMD_NAME) + " "
+        SetInput2Position(gDevConsoleInput, Len(consoleText))
+    Else
+        consoleText$ = gDevConsoleText
+    EndIf
+    prevText$ = consoleText
+    consoleText = Input2(gDevConsoleInput, consoleText, sw/2-CONSOLE_WIDTH/2+margin/2+1, sh/2+cHeight/2-margin/2-rowHeight+1)
+    If prevText <> consoleText Then
+        gDevConsoleText = consoleText
+        gDevConsoleACId = -1
+    EndIf
     If gKeyReturn Then
-        WriteConsole("$ " + gDevConsoleText)
-        RunCommand(gDevConsoleText)
+        WriteConsole("$ " + consoleText)
+        RunCommand(consoleText)
         gDevConsoleText = ""
+        gDevConsoleACId = -1
         gKeyReturn = False
     EndIf
 EndFunction

@@ -304,18 +304,18 @@ Function ClientLoop()
                 
                 If LeftKey() Or RightKey() Then ShowMouse OFF
                 If gControlMode = 1 Then
-                    If aControls(KEY_MOVE_UP, KEYF_PRESSED) Or UpKey() Then MoveObject obj, PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If aControls(KEY_MOVE_DOWN, KEYF_PRESSED) Or DownKey() Then MoveObject obj, -PxPerSec(BACKWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If aControls(KEY_STRAFE_LEFT, KEYF_PRESSED) Then MoveObject obj, 0, -PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If aControls(KEY_STRAFE_RIGHT, KEYF_PRESSED) Then MoveObject obj, 0, PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyW) Or UpKey() Then MoveObject obj, PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyS) Or DownKey() Then MoveObject obj, -PxPerSec(BACKWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyA) Then MoveObject obj, 0, -PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyD) Then MoveObject obj, 0, PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
                 EndIf
                 If gControlMode = 2 Then
                     moveX = 0
                     moveY = 0
-                    If aControls(KEY_MOVE_UP, KEYF_PRESSED) Then moveY = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If aControls(KEY_MOVE_DOWN, KEYF_PRESSED) Then moveY = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If aControls(KEY_MOVE_LEFT, KEYF_PRESSED) Then moveX = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                    If aControls(KEY_MOVE_RIGHT, KEYF_PRESSED) Then moveX = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyW) Then moveY = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyS) Then moveY = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyA) Then moveX = -PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
+                    If KeyDown(cbKeyD) Then moveX = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
                     TranslateObject obj, moveX, moveY
                 EndIf
                 
@@ -334,14 +334,13 @@ Function ClientLoop()
                 // Voidaan yleens‰ edes vaihtaa
                 If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() Then
                     onlyLoaded = False
-                    If aControls(KEY_SWITCHWEAPON, KEYF_PRESSED) Then
+                    If gMouseHit2 = True Or gKeyTab = True Then
                         onlyLoaded = True
-                        aControls(KEY_WEAPON_UP, KEYF_PRESSED) = True
+                        gMouseRoll = 1
                     EndIf
-                    _wepchange_am = aControls(KEY_WEAPON_UP, KEYF_PRESSED) - aControls(KEY_WEAPON_DOWN, KEYF_PRESSED)
-                    If _wepchange_am <> 0 Then 
+                    If gMouseRoll <> 0 Then 
                         While True
-                            player\weapon = player\weapon + _wepchange_am
+                            player\weapon = player\weapon + gMouseRoll
                             If player\weapon > WPN_COUNT Then player\weapon = 1
                             If player\weapon < 1 Then player\weapon = WPN_COUNT
                             player\lastShoot = 0
@@ -404,6 +403,7 @@ Function ClientLoop()
 //        UpdateBodyExplosion()
 //        GameUpdate()
         If gSessionComplete = False Then
+            CloneCameraPosition player\obj
             If gCameraMode =< 1 Then 
                 CloneCameraPosition player\obj
             ElseIf gCameraMode => 2 Then 
@@ -464,9 +464,10 @@ Function ClientLoop()
             EndIf
         EndIf
         
-        If KeyHit(41) Then
+        If gKeyGrave Then
             gDevConsole = Not gDevConsole
             ClearKeys
+            gKeyGrave = False
         EndIf
         DrawToWorld ON
         UpdateParticleEffects()
@@ -497,11 +498,9 @@ Function ClientLoop()
             Exit
         EndIf
         If gKickedOut Then Exit
-        
 
         If player\loggedIn Then DrawScreen
         UpdateGame2()
-        UpdateInput()
         PlayMusic()
     Forever
     PlayMusic(OFF)
@@ -608,26 +607,8 @@ Function ReadDataFromServer()
             player\y        = _Net_GetShort()   // Sijainti
             player\angle    = _Net_GetShort()   // Kulma
             b               = _Net_GetByte()    // Sis‰lt‰‰ useamman muuttujan (alla)
-            
-                
-            // Serveri l‰hett‰‰ pelaajasta tiedon kun pelaaja voisi n‰hd‰ toisen pelaajan kamera moodin ollessa 2
-            // T‰st‰ syyst‰ kamera moodilla 1 pelaajalta katoaisi tutkanuoli paljon ennen kuin n‰kee pelaajan,
-            // joten vaikka pelaaja data saataisiin, tarkistetaan viel‰ et‰isyydet ja lis‰t‰‰n tutkanuoli tarvittaessa           
-            If gCameraMode = 1 Then 
-                plr.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerId))
-                visible = True
-                x1 = ObjectX(player\obj)
-                y1 = ObjectY(player\obj)
-                x2 = ObjectX(plr\obj)
-                y2 = ObjectY(plr\obj)
-                If Abs(x1 - x2) > 400 Then visible = False
-                If Abs(y1 - y2) > 300 Then visible = False
-                If visible = False Then 
-                    ang# = GetAngle2(plr\obj, player\obj)
-                    AddRadar(player\obj, ang#, player\team)
-                EndIf
-            EndIf
-            
+
+
             // Jos halutaan esim. lukea 4 bitti‰ kohdasta 0, menee lauseke seuraavasti:
             // value= (b Shl (32-0-4)) Shr (32-4)
             weapon          = (b Shl 28) Shr 28     // Ase (bitit 0-3)
@@ -673,6 +654,24 @@ Function ReadDataFromServer()
 //                    //ShowObject player\rightLegObj, OFF
 //                EndIf
 
+                // Serveri l‰hett‰‰ pelaajasta tiedon kun pelaaja voisi n‰hd‰ toisen pelaajan kamera moodin ollessa 2
+                // T‰st‰ syyst‰ kamera moodilla 1 pelaajalta katoaisi tutkanuoli paljon ennen kuin n‰kee pelaajan,
+                // joten vaikka pelaaja data saataisiin, tarkistetaan viel‰ et‰isyydet ja lis‰t‰‰n tutkanuoli tarvittaessa.
+                // Tosin vain silloin, kun pelaaja on myˆs hengiss‰.
+                If gCameraMode = 1 Then 
+                    plr.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerId))
+                    visible = True
+                    x1 = ObjectX(player\obj)
+                    y1 = ObjectY(player\obj)
+                    x2 = ObjectX(plr\obj)
+                    y2 = ObjectY(plr\obj)
+                    If Abs(x1 - x2) > 400 Then visible = False
+                    If Abs(y1 - y2) > 300 Then visible = False
+                    If visible = False Then 
+                        ang# = GetAngle2(plr\obj, player\obj)
+                        AddRadar(player\obj, ang#, player\team)
+                    EndIf
+                EndIf
             Else
                 If player\death = False Then
                     PlayGameSound(Rand(SND_DIE1, SND_DIE9), player\x, player\y)
@@ -770,6 +769,7 @@ Function ReadDataFromServer()
             player\admin    = 0
             player\statName = CheckPlayerName(player\name)
             AddClientMessage(Replace(GetText("player_login"), "%1", name), netmsg)
+            WriteConsole(GetText("player_login"), name)
 //COM1            gPlayerCount + 1
             
         ElseIf netmsg = NET_NOLOGIN Then
@@ -786,6 +786,7 @@ Function ReadDataFromServer()
             player\loggedIn = False
             If player\name <> "" Then
                 AddClientMessage(Replace(GetText("player_logout"), "%1", player\name), netmsg)
+                WriteConsole(GetText("player_logout"), player\name)
             EndIf
 //COM1            gPlayerCount - 1
             
@@ -929,7 +930,7 @@ Function ReadDataFromServer()
             plr\kills       = k2
             plr\deaths      = d2
             cmsg\img        = aWeapon(weapon, WPNF_ICON)
-            WriteConsole("Player "+cmsg\name1+" killed player "+cmsg\name2)
+            //WriteConsole("Player %1 killed player %2"+, cmsg\name1, cmsg\name2)
         ElseIf netmsg = NET_SESSIONTIME Then
         
             // Pelisession aikatiedot
@@ -966,6 +967,7 @@ Function ReadDataFromServer()
             mapName$ = _Net_GetString()
             crc = _Net_GetInt()
             If gServerMap <> mapName And gTimeLeft < -5 Then
+                WriteConsole("Changing map to %1", mapName)
                 // Siivotaan ruumiinpalaset
                 For bexpl.BODY_EXPLOSION = Each BODY_EXPLOSION
                     DeleteObject bexpl\obj
@@ -1025,6 +1027,7 @@ Function ReadDataFromServer()
                 player\active = False
                 player\loggedin = False
                 AddClientMessage(Replace( Replace(GetText("player_kicked"), "%1", player\name), "%2", reason$), netmsg)
+                WriteConsole(GetText("player_kicked"), player\name, reason$)
             EndIf
             
         ElseIf netmsg = NET_SERVERCLOSING Then
@@ -1062,9 +1065,9 @@ Function ReadDataFromServer()
                 d\var2 = _Net_GetShort()
                 d\var3 = _Net_GetShort()
                 d\var4 = _Net_GetShort()
-                // Jos oli boksi niin tuli viel‰ yksi shortti lis‰‰
+                // Jos oli boksi niin tuli viel‰ yksi byte lis‰‰
                 If drawType = DRAW_BOX Then
-                    d\var5 = _Net_GetShort()
+                    d\var5 = _Net_GetByte()
                 EndIf
             EndIf
         Else
@@ -1149,7 +1152,7 @@ Function SendDataToServer()
     If aWeapon(player\weapon, WPNF_AMMO) > 0 Then ammoExists = True
     // Tutkitaan voidaanko l‰hett‰‰ tieto ampumisesta
     shootNow = 0
-    If (aControls(KEY_SHOOT, KEYF_PRESSED) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gDevConsole = False And gSessionComplete = False And player\spawnTime = 0 Then
+    If (MouseDown(1) = True Or KeyDown(cbKeySpace) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gDevConsole = False And gSessionComplete = False And player\spawnTime = 0 Then
         // Onko ase latingissa
         If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() And player\health > 0 Then
             // Onko ammuksia
