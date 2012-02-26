@@ -1,0 +1,1117 @@
+//=============================================================================
+// CoolBasic API
+// by Marcoder
+//=============================================================================
+
+Const API_DLL_FILE$  = "cbAPI.dll"
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Vakioita
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// MessageBox - painikkeet
+Const MB_OK                 = 0
+Const MB_OKCANCEL           = 1
+Const MB_ABORTRETRYIGNORE   = 2
+Const MB_YESNOCANCEL        = 3
+Const MB_YESNO              = 4
+Const MB_RETRYCANCEL        = 5
+Const MB_CANCELTRYCONTINUE  = 6
+
+// MessageBox - ikonit
+Const MB_ICONSTOP           = 16
+Const MB_ICONERROR          = 16
+Const MB_ICONHAND           = 16
+Const MB_ICONQUESTION       = 32
+Const MB_ICONEXCLAMATION    = 48
+Const MB_ICONWARNING        = 48
+Const MB_ICONINFORMATION    = 64
+Const MB_ICONASTERISK       = 64
+
+// MessageBox - oletuspainikkeet
+Const MB_DEFBUTTON1         = 0
+Const MB_DEFBUTTON2         = 256
+Const MB_DEFBUTTON3         = 512
+
+// DialogResult
+Const IDOK       = 1
+Const IDCANCEL   = 2
+Const IDABORT    = 3
+Const IDRETRY    = 4
+Const IDIGNORE   = 5
+Const IDYES      = 6
+Const IDNO       = 7
+Const IDTRYAGAIN = 10
+Const IDCONTINUE = 11
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Vakioita
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Muistipalojen käsittely.
+// Kirjaston sisäiseen käyttöön.
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+Global gAPIMemBlock, gApiMemBlockOffset
+
+Function _API_InitMemBlock(_size = 0)
+    gAPIMemBlock = MakeMEMBlock(_size + 4)
+    PokeInt gAPIMemBlock, 0, 0
+    gApiMemBlockOffset = 4
+EndFunction
+
+Function _API_DeleteMemBlock()
+    DeleteMEMBlock gAPIMemBlock
+    gApiMemBlockOffset = 0
+EndFunction
+
+Function _API_CallDll(_method$)
+    lMemSize = MEMBlockSize(gAPIMemBlock)
+    PokeInt gAPIMemBlock, 0, lMemSize
+    CallDLL API_DLL_FILE, _method, gAPIMemBlock
+    gApiMemBlockOffset = 0
+EndFunction
+
+Function _API_MemBlockResize(_length)
+    lMemSize = MEMBlockSize(gAPIMemBlock)
+    If gApiMemBlockOffset + _length > lMemSize Then
+        ResizeMEMBlock gAPIMemBlock, gApiMemBlockOffset + _length
+    EndIf
+EndFunction
+
+Function _API_PutInt(_value)
+    _API_MemBlockResize(4)
+    PokeInt gAPIMemBlock, gApiMemBlockOffset, _value
+    gApiMemBlockOffset + 4
+EndFunction
+
+Function _API_GetInt()
+    lRetVal = PeekInt(gAPIMemBlock, gApiMemBlockOffset)
+    gApiMemBlockOffset + 4
+    Return lRetVal
+EndFunction
+
+Function _API_PutFloat(_value#)
+    _API_MemBlockResize(4)
+    PokeFloat gAPIMemBlock, gApiMemBlockOffset, _value
+    gApiMemBlockOffset + 4
+EndFunction
+
+Function _API_GetFloat#()
+    lRetVal# = PeekFloat(gAPIMemBlock, gApiMemBlockOffset)
+    gApiMemBlockOffset + 4
+    Return lRetVal
+EndFunction
+
+Function _API_PutByte(_value)
+    _API_MemBlockResize(1)
+    PokeByte gAPIMemBlock, gApiMemBlockOffset, _value
+    gApiMemBlockOffset + 1
+EndFunction
+
+Function _API_GetByte()
+    lRetVal = PeekByte(gAPIMemBlock, gApiMemBlockOffset)
+    gApiMemBlockOffset + 1
+    Return lRetVal
+EndFunction
+
+Function _API_PutString(_value$)
+    lStrLen = Len(_value)
+    _API_MemBlockResize(lStrLen + 4)
+    PokeInt gAPIMemBlock, gApiMemBlockOffset, lStrLen
+    gApiMemBlockOffset + 4
+    For i = 1 To lStrLen
+        PokeByte gAPIMemBlock, gApiMemBlockOffset, Asc(Mid(_value, i, 1))
+        gApiMemBlockOffset + 1
+    Next i
+EndFunction
+
+Function _API_GetString$()
+    lStrLen = _API_GetInt()
+    lRetVal$ = ""
+    For i = 1 To lStrLen
+        c = _API_GetByte()
+        If c > 0 Then lRetVal = lRetVal + Chr(c)
+    Next i
+    Return lRetVal
+EndFunction
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Muistipalojen käsittely.
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+//==============================================================================
+// API_DLL_Version
+//==============================================================================
+Global gApiDllVersion$
+gApiDllVersion = API_DLL_Version()
+If gApiDllVersion = 0 Then
+    MakeError "File cbAPI.dll not be found!"
+EndIf
+If gApiDllVersion <> 1.1 Then
+    MakeError "Incorrect library version (cbAPI.dll)!"
+EndIf
+
+Function API_DLL_Version#()
+    _API_InitMemBlock(4)
+    _API_PutFloat(0)
+    _API_CallDll("_Version")
+    lRetVal# = _API_GetFloat()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// API_DLL_Version
+//------------------------------------------------------------------------------
+
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// CommonDialog
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+//==============================================================================
+// MessageBox
+//==============================================================================
+Function MessageBox(_message$, _caption$ = "", _type = 0, _icon = 0, _defButton = 0)
+    _API_InitMemBlock()
+    _API_PutInt(_type)
+    _API_PutInt(_icon)
+    _API_PutInt(_defButton)
+    _API_PutString(_message)
+    _API_PutString(_caption)
+    _API_CallDll("_MessageBox")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// MessageBox
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// InputBox
+//==============================================================================
+Global gInputBoxText As String
+gInputBoxText = ""
+
+Function InputBox(_label$, _caption$, _txt$ = "", _passwordChar$ = "")
+    _API_InitMemBlock(1024)
+    _API_PutString(_label)
+    _API_PutString(_caption)
+    _API_PutString(_txt)
+    If Len(_passwordChar) > 0 Then
+        _API_PutByte(Asc(Mid(_passwordChar, 1, 1)))
+    Else
+        _API_PutByte(0)
+    EndIf
+    _API_CallDll("_InputBox")
+    lRetVal = _API_GetInt()
+    gInputBoxText = ""
+    If lRetVal = IDOK Then
+        gInputBoxText = _API_GetString()
+    EndIf
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+
+Function InputBoxText$()
+    Return gInputBoxText
+End Function
+//------------------------------------------------------------------------------
+// InputBox
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ColorDialog
+//==============================================================================
+Global gColorDialogR As Integer
+Global gColorDialogG As Integer
+Global gColorDialogB As Integer
+gColorDialogR = 0
+gColorDialogG = 0
+gColorDialogB = 0
+
+Function ColorDialog()
+    _API_InitMemBlock()
+    _API_PutByte(0)
+    _API_PutByte(0)
+    _API_PutByte(0)
+    _API_CallDll("_ColorDialog")
+    lRetVal = _API_GetInt()
+    If lRetVal = IDOK Then
+        gColorDialogR = _API_GetByte()
+        gColorDialogG = _API_GetByte()
+        gColorDialogB = _API_GetByte()
+    EndIf
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+
+Function ColorDialogRGB(_colorElement)
+    If _colorElement = RED Then Return gColorDialogR
+    If _colorElement = GREEN Then Return gColorDialogG
+    If _colorElement = BLUE Then Return gColorDialogB
+    Return 0
+End Function
+//------------------------------------------------------------------------------
+// ColorDialog
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// FileDialog
+//==============================================================================
+Const OPEN_FILE_DLG = 1
+Const SAVE_FILE_DLG = 0
+
+Global gFileDialogExt As String
+Global gFileDialogFileName$ As String
+Global gFileDialogFullName As String
+gFileDialogExt = ""
+gFileDialogFileName = ""
+gFileDialogFullName = ""
+
+Function FileDialog(_dialogType, _defaultExt$, _fileName$, _filter$)
+    gFileDialogExt = ""
+    gFileDialogFileName = ""
+    gFileDialogFullName = ""
+    
+    _API_InitMemBlock(10240)
+    _API_PutInt(_dialogType)
+    _API_PutString(_defaultExt)
+    _API_PutString(_fileName)
+    _API_PutString(_filter)
+    _API_CallDll("_FileDialog")
+    
+    lRetVal = _API_GetInt()
+    If lRetVal = IDOK Then
+        gFileDialogExt      = _API_GetString()
+        gFileDialogFileName = _API_GetString()
+        gFileDialogFullName = _API_GetString()
+    EndIf
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+
+Const FD_EXTENSION  = 1
+Const FD_FILENAME   = 2
+Const FD_FULLNAME   = 3
+
+Function FileDialogData$(_dataType)
+    If _dataType = FD_EXTENSION Then Return gFileDialogExt
+    If _dataType = FD_FILENAME Then Return gFileDialogFileName
+    If _dataType = FD_FULLNAME Then Return gFileDialogFullName
+    Return ""
+End Function
+//==============================================================================
+// FileDialog
+//------------------------------------------------------------------------------
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// CommonDialog
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Window
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+//==============================================================================
+// SetTopMost
+//==============================================================================
+Function SetTopMost(_topMost)
+    _API_InitMemBlock()
+    _API_PutInt(_topMost)
+    _API_CallDll("_SetTopMost")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// SetTopMost
+//------------------------------------------------------------------------------
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Window
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// INI-tiedosto
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+//==============================================================================
+// GetIniInt
+//==============================================================================
+Function GetIniInt(_iniFile$, _sectionName$, _keyName$, _defaultValue = 0)
+    _API_InitMemBlock(1024)
+    _API_PutString(_iniFile)
+    _API_PutString(_sectionName)
+    _API_PutString(_keyName)
+    _API_PutInt(_defaultValue)
+    _API_CallDll("_GetIniInt")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// GetIniInt
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// SetIniInt
+//==============================================================================
+Function SetIniInt(_iniFile$, _sectionName$, _keyName$, _writeValue)
+    _API_InitMemBlock(1024)
+    _API_PutString(_iniFile)
+    _API_PutString(_sectionName)
+    _API_PutString(_keyName)
+    _API_PutInt(_writeValue)
+    _API_CallDll("_SetIniInt")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// SetIniInt
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// GetIniString
+//==============================================================================
+Function GetIniString$(_iniFile$, _sectionName$, _keyName$, _defaultValue$ = "")
+    _API_InitMemBlock(1024)
+    _API_PutString(_iniFile)
+    _API_PutString(_sectionName)
+    _API_PutString(_keyName)
+    _API_PutString(_defaultValue)
+    _API_CallDll("_GetIniString")
+    lRetVal$ = _API_GetString()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// GetIniString
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// SetIniString
+//==============================================================================
+Function SetIniString(_iniFile$, _sectionName$, _keyName$, _writeValue$)
+    _API_InitMemBlock(1024)
+    _API_PutString(_iniFile)
+    _API_PutString(_sectionName)
+    _API_PutString(_keyName)
+    _API_PutString(_writeValue)
+    _API_CallDll("_SetIniString")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// SetIniString
+//------------------------------------------------------------------------------
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// INI-tiedosto
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Leikepöytä
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+//==============================================================================
+// GetClipboardTextSize
+//==============================================================================
+Function GetClipboardTextSize()
+    _API_InitMemBlock()
+    _API_CallDll("_GetClipboardTextSize")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// GetClipboardTextSize
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// GetClipboardText
+//==============================================================================
+Function GetClipboardText$()
+    lStrLen = GetClipboardTextSize()
+    If lStrLen = 0 Then Return ""
+    _API_InitMemBlock(lStrLen + 8)
+    _API_CallDll("_GetClipboardText")
+    lRetVal$ = _API_GetString()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// GetClipboardText
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// SetClipboardText
+//==============================================================================
+Function SetClipboardText(_txt$)
+    _API_InitMemBlock()
+    _API_PutString(_txt)
+    _API_CallDll("_SetClipboardText")
+    _API_DeleteMemBlock()
+    Return True
+End Function
+//------------------------------------------------------------------------------
+// SetClipboardText
+//------------------------------------------------------------------------------
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Leikepöytä
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Valikot
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+Const MF_STRING     = 0
+Const MF_ENABLED    = 0
+Const MF_GRAYED     = 1
+Const MF_UNCHECKED  = 0
+Const MF_CHECKED    = 8
+Const MF_SEPARATOR  = 2048
+
+//==============================================================================
+// CreatePopupMenu
+//==============================================================================
+Function CreatePopupMenu()
+    _API_InitMemBlock()
+    _API_CallDll("_CreatePopupMenu")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// CreatePopupMenu
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// AddPopupSubMenu
+//==============================================================================
+Function AddPopupSubMenu(_menuID, _subMenuID, _menuCaption$)
+    _API_InitMemBlock()
+    _API_PutInt(_menuID)
+    _API_PutInt(_subMenuID)
+    _API_PutString(_menuCaption)
+    _API_CallDll("_AddPopupSubMenu")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// AddPopupSubMenu
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// _AddPopupMenuItem
+// Kirjaston sisäiseen käyttön
+//==============================================================================
+Function _AddPopupMenuItem(_menuID, _flags, _itemID, _menuCaption$)
+    _API_InitMemBlock()
+    _API_PutInt(_menuID)
+    _API_PutInt(_flags)
+    _API_PutInt(_itemID)
+    _API_PutString(_menuCaption)
+    _API_CallDll("_AddPopupMenuItem")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// _AddPopupMenuItem
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// AddPopupMenuItem
+//==============================================================================
+Function AddPopupMenuItem(_menuID, _itemID, _menuCaption$)
+    Return _AddPopupMenuItem(_menuID, MF_STRING, _itemID, _menuCaption)
+End Function
+//------------------------------------------------------------------------------
+// AddPopupMenuItem
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// AddPopupMenuSeparator
+//==============================================================================
+Function AddPopupMenuSeparator(_menuID)
+    Return _AddPopupMenuItem(_menuID, MF_SEPARATOR, 0, "")
+End Function
+//------------------------------------------------------------------------------
+// AddPopupMenuSeparator
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ShowPopupMenu
+//==============================================================================
+Function ShowPopupMenu(_menuID, _x, _y)
+    _API_InitMemBlock()
+    _API_putInt(_menuID)
+    _API_putInt(_x)
+    _API_putInt(_y)
+    _API_CallDll("_ShowPopupMenu")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// ShowPopupMenu
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// EnablePopupMenuItem
+//==============================================================================
+Function EnablePopupMenuItem(_menuID, _itemID, _enabled)
+    _API_InitMemBlock()
+    _API_putInt(_menuID)
+    _API_putInt(_itemID)
+    _API_putInt(_enabled)
+    _API_CallDll("_EnablePopupMenuItem")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    If lRetVal = MF_ENABLED Then Return True
+    If lRetVal = MF_GRAYED Then Return False
+    Return -1
+End Function
+//------------------------------------------------------------------------------
+// EnablePopupMenuItem
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// IsPopupMenuItemEnabled
+//==============================================================================
+Function IsPopupMenuItemEnabled(_menuID, _itemID)
+    _API_InitMemBlock()
+    _API_putInt(_menuID)
+    _API_putInt(_itemID)
+    _API_CallDll("_IsPopupMenuItemEnabled")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// IsPopupMenuItemEnabled
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// CheckPopupMenuItem
+//==============================================================================
+Function CheckPopupMenuItem(_menuID, _itemID, _checked)
+    _API_InitMemBlock()
+    _API_putInt(_menuID)
+    _API_putInt(_itemID)
+    _API_putInt(_checked)
+    _API_CallDll("_CheckPopupMenuItem")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    If lRetVal = MF_CHECKED Then Return True
+    If lRetVal = MF_UNCHECKED Then Return False
+    Return -1
+End Function
+//------------------------------------------------------------------------------
+// CheckPopupMenuItem
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// IsPopupMenuItemChecked
+//==============================================================================
+Function IsPopupMenuItemChecked(_menuID, _itemID)
+    _API_InitMemBlock()
+    _API_putInt(_menuID)
+    _API_putInt(_itemID)
+    _API_CallDll("_IsPopupMenuItemChecked")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// IsPopupMenuItemChecked
+//------------------------------------------------------------------------------
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Valikot
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Rekisteri
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+//==============================================================================
+// Rekisterin vakioita
+//==============================================================================
+Const HKEY_CLASSES_ROOT     = 1
+Const HKEY_CURRENT_USER     = 2
+Const HKEY_LOCAL_MACHINE    = 3
+Const HKEY_USERS            = 4
+Const HKEY_CURRENT_CONFIG   = 5
+
+Const REG_SZ                = 1
+Const REG_DWORD             = 4
+Const REG_MULTI_SZ          = 7
+
+//==============================================================================
+// _GetRegistryDataInfo
+// Kirjaston sisäiseen käyttöön
+//==============================================================================
+Function _GetRegistryDataInfo(_typeOrLen, _hKey, _subKey$, _valueName$)
+    _API_InitMemBlock()
+    _API_PutInt(_hKey)
+    _API_PutString(_subKey)
+    _API_PutString(_valueName)
+    _API_CallDll("_GetRegistryDataInfo")
+    lRetVal = _API_GetInt()
+    If _typeOrLen = False Then lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// _GetRegistryDataInfo
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// _GetRegistryDataType
+// Kirjaston sisäiseen käyttöön
+//==============================================================================
+Function _GetRegistryDataType(_hKey, _subKey$, _valueName$)
+    Return _GetRegistryDataInfo(True, _hKey, _subKey, _valueName)
+End Function
+//------------------------------------------------------------------------------
+// _GetRegistryDataType
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// _GetRegistryDataLength
+// Kirjaston sisäiseen käyttöön
+//==============================================================================
+Function _GetRegistryDataLength(_hKey, _subKey$, _valueName$)
+    Return _GetRegistryDataInfo(False, _hKey, _subKey, _valueName)
+End Function
+//------------------------------------------------------------------------------
+// _GetRegistryDataLength
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// GetRegistryString
+//==============================================================================
+Function GetRegistryString$(_hKey, _subKey$, _valueName$)
+    lRegDataType = _GetRegistryDataType(_hKey, _subKey, _valueName)
+    If lRegDataType <> REG_SZ And lRegDataType <> REG_DWORD And lRegDataType <> REG_MULTI_SZ Then Return ""
+    
+    lRegDataLen = _GetRegistryDataLength(_hKey, _subKey, _valueName)
+    If lRegDataLen = 0 Then Return ""
+    
+    _API_InitMemBlock(lRegDataLen + 4)
+    _API_PutInt(_hKey)
+    _API_PutString(_subKey)
+    _API_PutString(_valueName)
+    _API_PutInt(lRegDataLen)
+    _API_CallDll("_GetRegistryData")
+    lRetVal$ = ""
+    If lRegDataType = REG_SZ Or lRegDataType = REG_MULTI_SZ Then
+        lRetVal = _API_GetString()
+    EndIf
+    If lRegDataType = REG_DWORD Then
+        _API_GetInt()
+        lRetVal = Str(_API_GetInt())
+    EndIf
+    _API_DeleteMemBlock()
+    Return lRetVal
+End Function
+//------------------------------------------------------------------------------
+// GetRegistryString
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// GetRegistryInt
+//==============================================================================
+Function GetRegistryInt(_hKey, _subKey$, _valueName$)
+    Return Int(GetRegistryString(_hKey, _subKey, _valueName))
+End Function
+//------------------------------------------------------------------------------
+// GetRegistryInt
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// SetRegistryString
+//==============================================================================
+Function SetRegistryString(_hKey, _subKey$, _valueName$, _value$)
+    _API_InitMemBlock()
+    _API_PutInt(_hKey)
+    _API_PutString(_subKey)
+    _API_PutString(_valueName)
+    _API_PutInt(REG_SZ)
+    _API_PutString(_value)
+    _API_CallDll("_SetRegistryData")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    If lRetVal = 0 Then Return True
+    Return False
+End Function
+//------------------------------------------------------------------------------
+// SetRegistryString
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// SetRegistryInt
+//==============================================================================
+Function SetRegistryInt(_hKey, _subKey$, _valueName$, _value)
+    _API_InitMemBlock()
+    _API_PutInt(_hKey)
+    _API_PutString(_subKey)
+    _API_PutString(_valueName)
+    _API_PutInt(REG_DWORD)
+    _API_PutInt(_value)
+    _API_CallDll("_SetRegistryData")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    If lRetVal = 0 Then Return True
+    Return False
+End Function
+//------------------------------------------------------------------------------
+// SetRegistryInt
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// CreateRegistryKey
+//==============================================================================
+Function CreateRegistryKey(_hKey, _subKey$)
+    _API_InitMemBlock()
+    _API_PutInt(_hKey)
+    _API_PutString(_subKey)
+    _API_CallDll("_CreateRegistryKey")
+    Dim mem
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    If lRetVal = 0 Then Return True
+    Return False
+End Function
+//------------------------------------------------------------------------------
+// CreateRegistryKey
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// DeleteRegistryValue
+//==============================================================================
+Function DeleteRegistryValue(_hKey, _subKey$, _valueName$)
+    _API_InitMemBlock()
+    _API_PutInt(_hKey)
+    _API_PutString(_subKey)
+    _API_PutString(_valueName)
+    _API_CallDll("_DeleteRegistryValue")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    If lRetVal = 0 Then Return True
+    Return False
+End Function
+//------------------------------------------------------------------------------
+// DeleteRegistryValue
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// DeleteRegistryKey
+//==============================================================================
+Function DeleteRegistryKey(_hKey, _subKey$)
+    _API_InitMemBlock()
+    _API_PutInt(_hKey)
+    _API_PutString(_subKey)
+    _API_CallDll("_DeleteRegistryKey")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    If lRetVal = 0 Then Return True
+    Return False
+End Function
+//------------------------------------------------------------------------------
+// DeleteRegistryKey
+//------------------------------------------------------------------------------
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Rekisteri
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Collections
+//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+Const DT_NONE       = 0
+Const DT_INT        = 1
+Const DT_STRING     = 2
+Const DT_FLOAT      = 3
+
+Const SORT_ASC      = 1
+Const SORT_DESC     = 2
+
+//==============================================================================
+// CreateArrayList
+//==============================================================================
+Function CreateArrayList()
+    _API_InitMemBlock()
+    _API_CallDll("_CreateArrayList")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// CreateArrayList
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListSort
+//==============================================================================
+Function ArrayListSort(_listID, _sortOrder)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(_sortOrder)
+    _API_CallDll("_ArrayListSort")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListSort
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListAddInt
+//==============================================================================
+Function ArrayListAddInt(_listID, _listValue)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(DT_INT)
+    _API_PutInt(_listValue)
+    _API_CallDll("_ArrayListAdd")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListAddInt
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListAddString
+//==============================================================================
+Function ArrayListAddString(_listID, _listValue$)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(DT_STRING)
+    _API_PutString(_listValue)
+    _API_CallDll("_ArrayListAdd")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListAddString
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListAddFloat
+//==============================================================================
+Function ArrayListAddFloat(_listID, _listValue#)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(DT_FLOAT)
+    _API_PutFloat(_listValue)
+    _API_CallDll("_ArrayListAdd")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListAddFloat
+//------------------------------------------------------------------------------
+
+
+//==============================================================================
+// ArrayListSetInt
+//==============================================================================
+Function ArrayListSetInt(_listID, _elementId, _listValue)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(_elementId)
+    _API_PutInt(DT_INT)
+    _API_PutInt(_listValue)
+    _API_CallDll("_ArrayListSet")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListSetInt
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListSetString
+//==============================================================================
+Function ArrayListSetString(_listID, _elementID, _listValue$)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(_elementId)
+    _API_PutInt(DT_STRING)
+    _API_PutString(_listValue)
+    _API_CallDll("_ArrayListSet")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListSetString
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListSetFloat
+//==============================================================================
+Function ArrayListSetFloat(_listID, _elementID, _listValue#)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(_elementId)
+    _API_PutInt(DT_FLOAT)
+    _API_PutFloat(_listValue)
+    _API_CallDll("_ArrayListSet")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListSetFloat
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListGetInt
+//==============================================================================
+Function ArrayListGetInt(_listID, _elementID)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(_elementId)
+    _API_CallDll("_ArrayListGet")
+    lDataType = _API_GetInt()
+    lRetVal = 0
+    If lDataType = DT_INT Then
+        lRetVal = _API_GetInt()
+    EndIf
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListGetInt
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListGetString
+//==============================================================================
+Function ArrayListGetString$(_listID, _elementID)
+    _API_InitMemBlock(1024)
+    _API_PutInt(_listID)
+    _API_PutInt(_elementId)
+    _API_CallDll("_ArrayListGet")
+    lDataType = _API_GetInt()
+    lRetVal$ = ""
+    If lDataType = DT_STRING Then
+        lRetVal = _API_GetString()
+    EndIf
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListGetString
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListGetFloat
+//==============================================================================
+Function ArrayListGetFloat#(_listID, _elementID)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(_elementId)
+    _API_CallDll("_ArrayListGet")
+    lDataType = _API_GetInt()
+    lRetVal# = 0.0
+    If lDataType = DT_FLOAT Then
+        lRetVal = _API_GetFloat()
+    EndIf
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListGetFloat
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArraylistDatatype
+//==============================================================================
+Function ArraylistDatatype(_listID, _elementID)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(_elementId)
+    _API_CallDll("_ArrayListGet")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArraylistDatatype
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListCount
+//==============================================================================
+Function ArrayListCount(_listID)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_CallDll("_ArrayListCount")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListCount
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListClear
+//==============================================================================
+Function ArrayListClear(_listID)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_CallDll("_ArrayListClear")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListClear
+//------------------------------------------------------------------------------
+
+//==============================================================================
+// ArrayListRemove
+//==============================================================================
+Function ArrayListRemove(_listID, _elementID)
+    _API_InitMemBlock()
+    _API_PutInt(_listID)
+    _API_PutInt(_elementId)
+    _API_CallDll("_ArrayListRemove")
+    lRetVal = _API_GetInt()
+    _API_DeleteMemBlock()
+    Return lRetVal
+EndFunction
+//------------------------------------------------------------------------------
+// ArrayListRemove
+//------------------------------------------------------------------------------
+
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// Collections
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
