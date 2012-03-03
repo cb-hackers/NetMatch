@@ -29,7 +29,7 @@ SAFEEXIT OFF
 
 Const NM_VERSION$   = "2.5"
 Const NM_REVISION$  = ""
-// Jos palvelinta ei tarvitse p‰ivitt‰‰ muutosten yhteydess‰, nostetaan vain NM_PATCH 
+// Jos palvelinta ei tarvitse p‰ivitt‰‰ muutosten yhteydess‰, nostetaan vain NM_PATCH
 // muuttujan arvoa. T‰m‰ nollataan aina kun tulee uusi revision tai versio.
 Const NM_PATCH      = 0
 
@@ -41,7 +41,7 @@ EndIf
 
 // T‰m‰ pit‰‰ AINA laittaa 1, jos kyseess‰ ei ole virallinen julkaisu.
 // T‰llˆin palvelin n‰kyy vain muille NM_DEVBUILD = 1 omaaville clienteille.
-Const NM_DEVBUILD   = 0
+Const NM_DEVBUILD   = 1
 
 //--------------------------------------------------------------------------------
 // Includet
