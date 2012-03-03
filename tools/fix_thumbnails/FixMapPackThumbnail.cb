@@ -1,0 +1,438 @@
+Include "cbAPI.cb"
+
+startDir$ = CurrentDir()
+
+//-----------------------------------------------------------------------------
+// MapPack tiedoston (*.mpc) hakeminen Windowsin tiedostosysteemin avulla
+//-----------------------------------------------------------------------------
+Repeat
+    If FileDialog(OPEN_FILE_DLG, "mpc", "", "MapPack file (*.mpc)|*.mpc|All Files (*.*)|*.*|") = IDOK Then
+        origPackage$ = FileDialogData(FD_FULLNAME)
+        mapName$ = FileDialogData(FD_FILENAME)
+        If Lower(Right(mapName$, 4)) = ".mpc" Then
+            mapName$ = Left(mapName$, Len(mapName$) - 4)
+        EndIf
+        Exit
+    Else
+        CenterText 200, 60, "You need to find me a valid MapPack file."
+        CenterText 200, 75, "Without it, I can't operate."
+        
+        CenterText 200, 137, "Press ENTER to try again"
+        CenterText 200, 152, "Any other key to quit."
+        DrawScreen
+        
+        key = WaitKey()
+        If key <> cbKeyReturn And key <> cbKeyEnter Then End
+    EndIf
+    Cls
+Forever
+
+SCREEN 800, 600
+font = LoadFont("Verdana", 20)
+SetFont font
+
+//-----------------------------------------------------------------------------
+// Otetaan talteen temppikansio ja siirryt‰‰n sinne
+//-----------------------------------------------------------------------------
+tmpDir$ = origPackage$ + "-tmp"
+If FileExists(tmpDir$) Then ClearTemporaries(tmpDir, mapName)
+If FileExists(tmpDir$) Then MakeError "Can't create a temporary directory!" + Chr(10) + Chr(13) + "Please delete the file/folder at the following path:" + Chr(10) + Chr(13) + tmpDir$
+
+MakeDir tmpDir$
+ChDir tmpDir
+
+//-----------------------------------------------------------------------------
+// Kopioidaan mpc-tiedosto temppikansioon ja puretaan se
+//-----------------------------------------------------------------------------
+package$ = tmpDir + "\package.rar"
+CopyFile origPackage$, package$
+
+// Headerissa t‰ytyy olla ensimm‰iset kolme merkki‰ "Rar"
+file = OpenToEdit(package$)
+    WriteByte file, Asc("R")
+    WriteByte file, Asc("a")
+    WriteByte file, Asc("r")
+CloseFile file
+
+CopyFile startDir$ + "\Rar.exe", tmpDir$ + "\Rar.exe"
+MakeDir "extracted"
+Execute "cmd.exe /C Rar.exe x package.rar extracted\"
+
+// Odotellaan max. 5 sekuntia ett‰ kartan pikkukuva on purettu paketista
+If Not FileExists("extracted\" + mapName + "_thb.pxi") Then
+    rec = Timer()
+    Repeat
+        Wait 100
+        If FileExists("extracted\" + mapName + "_thb.pxi") Then Exit
+        
+        If rec + 5000 < Timer() Then
+            MakeError "Failed t"+"o extract map files from " + package$
+        EndIf
+    Forever
+EndIf
+
+// Ladataan alkuper‰inen pikkukuva
+oldImg = LoadDotPxi("extracted\" + mapName + "_thb.pxi")
+
+//-----------------------------------------------------------------------------
+// Ladataan kartta ja tehd‰‰n siit‰ pienempi kuva
+//-----------------------------------------------------------------------------
+map = LoadResourceMap("extracted\" + mapName)
+SetMap map, ON, ON
+
+DrawScreen OFF
+newW = ObjectSizeX(map)
+newH = ObjectSizeY(map)
+newImg = MakeImage(newW, newH)
+topleftX = (ScreenWidth() - newW) / 2
+topleftY = (ScreenHeight() - newH) / 2
+CopyBox topleftX, topleftY, newW, newH, 0, 0, SCREEN(), Image(newImg)
+SaveImage newImg, "thumbnail.bmp"
+
+bg = DrawComparison(mapName, oldImg, newImg)
+
+scrW = ScreenWidth()
+scrH = ScreenHeight()
+
+Repeat
+    DrawImage bg, 0, 0
+    
+    If Button((scrW - 250) / 2, scrH - 100, 250, 40, "Edit thumbnail") Then
+        DoHandEdit()
+        bg = DrawComparison(mapName)
+        scrW = ScreenWidth()
+        scrH = ScreenHeight()
+    EndIf
+    If Button((scrW - 250) / 2, scrH - 50, 250, 40, "Save the new thumbnail") Then Exit
+    DrawScreen
+Forever
+
+
+scrshot = MakeImage(scrW, scrH)
+DrawScreen OFF
+CopyBox 0, 0, scrW, scrH, 0, 0, SCREEN(), Image(scrshot)
+
+savingTxt$ = "Saving... Please wait"
+
+DrawImage scrshot, 0, 0
+Color 0, 128, 0
+Box 15, 15, scrW - 30, scrH - 30, ON
+Color 0, 64, 0
+Box 25, 25, scrW - 50, scrH - 50, ON
+Color 255, 255, 255
+CenterText scrW / 2, (scrH - TextHeight("H") - 10) / 2, savingTxt$
+DrawScreen OFF
+
+//-----------------------------------------------------------------------------
+// Tallennus
+//-----------------------------------------------------------------------------
+newImg = LoadImage("thumbnail.bmp")
+SaveDotPxi(newImg, mapName + "_thb.pxi")
+Execute "cmd /C Rar.exe u package.rar " + mapName + "_thb.pxi && echo OK>ready.txt || echo OK>ready.txt"
+
+rec = Timer()
+While Not FileExists("ready.txt")
+    Wait 100
+    If rec + 5000 < Timer() Then MakeError "Something went terribly wrong while saving." + Chr(10) + Chr(13) + "If you edited thumbnail.bmp manually, please be sure to back it up before starting this program again."
+Wend
+
+// Laitetaan CBR takaisin headeriin
+file = OpenToEdit(package$)
+    WriteByte file, Asc("C")
+    WriteByte file, Asc("B")
+    WriteByte file, Asc("R")
+CloseFile file
+
+// Otetaan talteen alkuper‰inen versio
+CopyFile origPackage$, Left(origPackage$, Len(origPackage$)-4) + "_original.mpc"
+
+// Kopioidaan alkuper‰isen version p‰‰lle
+DeleteFile origPackage$
+CopyFile package$, origPackage$
+
+//-----------------------------------------------------------------------------
+// Kaikki OK, kerrotaan siit‰ ja poistetaan temppikansio
+//-----------------------------------------------------------------------------
+Color 128, 255, 128
+CenterText scrW / 2, (scrH + TextHeight("H") + 10) / 2, "Saved! Click the button or hit ENTER to continue"
+Repeat
+    If Button((scrW - 250) / 2, scrH - 80, 250, 40, "Continue") Then Exit
+    DrawScreen OFF
+Until KeyHit(cbKeyEnter) Or KeyHit(cbKeyReturn)
+ChDir ".."
+If Not ClearTemporaries(tmpDir, mapName) Then
+    rec = Timer()
+    Repeat
+        Wait 100
+        If ClearTemporaries(tmpDir, mapName) Then Exit
+        
+        If rec + 1500 < Timer() Then
+            MakeError "Could not delete temporary directory. You might want to delete it manually - it is located at " + Chr(10) + Chr(13) + tmpDir
+        EndIf
+    Forever
+EndIf
+
+Execute "explorer.exe /select," + mapName + ".mpc"
+
+//#############################################################################
+// FUNKTIOT
+//#############################################################################
+
+
+//=============================================================================
+// Lataa .pxi tiedoston kuvaksi
+//=============================================================================
+Function LoadDotPxi(_fileName$)
+    file = OpenToRead(_fileName$)
+        w = ReadInt(file)
+        h = ReadInt(file)
+        img = MakeImage(w, h)
+        Lock Image(img)
+            For y = 0 To h - 1
+                For x = 0 To w - 1
+                    r = ReadByte(file)
+                    g = ReadByte(file)
+                    b = ReadByte(file)
+                    c = (r Shl 16) + (g Shl 8) + b
+                    PutPixel2 x, y, c, Image(img)
+                Next x
+            Next y
+        Unlock Image(img)
+    CloseFile file
+    Return img
+EndFunction 
+
+//=============================================================================
+// Tallentaa kuvan .pxi tiedostona
+//=============================================================================
+Function SaveDotPxi(img, _fileName$)
+    file = OpenToWrite(_fileName$)
+        w = ImageWidth(img)
+        h = ImageHeight(img)
+        WriteInt file, w
+        WriteInt file, h
+        Lock Image(img)
+            For y = 0 To h - 1
+                For x = 0 To w - 1
+                    c = GetPixel2(x, y, Image(img))
+                    r = ((c Shl (RED*8)) Shr 24)
+                    g = ((c Shl (GREEN*8)) Shr 24)
+                    b = ((c Shl (BLUE*8)) Shr 24)
+                    WriteByte file, r
+                    WriteByte file, g
+                    WriteByte file, b
+                Next x
+            Next y
+        Unlock Image(img)
+    CloseFile file
+    Return True
+EndFunction 
+
+//=============================================================================
+// Lataa kartan annetun nimen perusteella
+//=============================================================================
+Function LoadResourceMap(_fileName$)
+    file = OpenToRead(_fileName$ + ".map")
+        o = 0
+        w = ReadByte(file)
+        h = ReadByte(file)
+        tw = ReadByte(file) / 8
+        th = ReadByte(file) / 8
+        map = MakeMap(w, h, tw, th)
+        For y = 1 To h
+            For x = 1 To w
+                For l = 0 To 3
+                    EditMap map, l, x, y, ReadByte(file)
+                Next l
+            Next x
+        Next y
+        
+        img = LoadDotPxi(_fileName$ + ".pxi")
+        ResizeImage img, ImageWidth(img)/8, ImageHeight(img)/8
+        If img <> 0 Then
+            PaintObject map, img
+            DeleteImage img
+        EndIf
+    
+        maskR = ReadByte(file)
+        maskG = ReadByte(file)
+        maskB = ReadByte(file)
+        MaskObject map, maskR, maskG, maskB
+        SetMap map, OFF, OFF
+        
+        While True
+            animTile = ReadByte(file)
+            If animTile = 0 Then Exit
+            animLength = ReadByte(file)
+            animDelay = ReadByte(file)
+            SetTile animTile, animLength, animDelay
+        Wend
+    CloseFile file
+    
+    Return map
+EndFunction 
+
+//=============================================================================
+// Tyhjent‰‰ mahdollisuuksien mukaan kaikki temppifilut joita on luotu
+//=============================================================================
+Function ClearTemporaries(_tmpDir$, _mapName$)
+    If Not IsDirectory(_tmpDir) Then
+        If FileExists(_tmpDir) Then DeleteFile _tmpDir
+        Return (Not FileExists(_tmpDir))
+    EndIf
+    
+    If FileExists(_tmpDir + "\package.rar") Then DeleteFile _tmpDir + "\package.rar"
+    If FileExists(_tmpDir + "\Rar.exe") Then DeleteFile _tmpDir + "\Rar.exe"
+    
+    If IsDirectory(_tmpDir + "\extracted") Then
+        DeleteFile _tmpDir + "\extracted\" + _mapName + ".map"
+        DeleteFile _tmpDir + "\extracted\" + _mapName + ".pxi"
+        DeleteFile _tmpDir + "\extracted\" + _mapName + "_back.pxi"
+        DeleteFile _tmpDir + "\extracted\" + _mapName + "_thb.pxi"
+        DeleteFile _tmpDir + "\extracted\versioninfo.txt"
+        DeleteFile _tmpDir + "\extracted"
+    EndIf
+    
+    If FileExists(_tmpDir + "\thumbnail.bmp") Then DeleteFile _tmpDir + "\thumbnail.bmp"
+    If FileExists(_tmpDir + "\" + _mapName + "_thb.pxi") Then DeleteFile _tmpDir + "\" + _mapName + "_thb.pxi"
+    If FileExists(_tmpDir + "\ready.txt") Then DeleteFile _tmpDir + "\ready.txt"
+
+    DeleteFile _tmpDir
+    Return (Not FileExists(_tmpDir))
+EndFunction
+
+//=============================================================================
+// Piirt‰‰ vanhan ja uuden kuvan vertailun
+//=============================================================================
+Function DrawComparison(_mapName$, _oldImg = 0, _newImg = 0)
+    If _oldImg = 0 Or _newImg = 0 Then
+        oldImg = LoadDotPxi("extracted\" + _mapName + "_thb.pxi")
+        newImg = LoadImage("thumbnail.bmp")
+    Else
+        oldImg = _oldImg
+        newImg = _newImg
+    EndIf
+    
+    // Tehd‰‰n ruudusta sopivan kokoinen vanhan ja uuden pikkukuvan vertailua varten
+    w = ImageWidth(oldImg) + ImageWidth(newImg) + 21
+    middleX = ImageWidth(oldImg) + 4
+    h = ImageHeight(oldImg)
+    If h < ImageHeight(newImg) Then h = ImageHeight(newImg)
+    h = h + 150
+    SCREEN w, h
+
+    font = LoadFont("Verdana", 20)
+    SetFont font
+    
+    oldImg = LoadDotPxi("extracted\" + _mapName + "_thb.pxi")
+    newImg = LoadImage("thumbnail.bmp")
+    
+    // Pidet‰‰n kuvat tasattuna alhaalta
+    If ImageHeight(oldImg) < ImageHeight(newImg) Then
+        DrawImage oldImg, 4, (ImageHeight(newImg) - ImageHeight(oldImg)) + 4
+    Else
+        DrawImage oldImg, 4, 4
+    EndIf
+    
+    // Keskiviiva
+    Line middleX + 6, 0, middleX + 6, h - 110
+    
+    // Pidet‰‰n kuvat tasattuna alhaalta
+    If ImageHeight(newImg) < ImageHeight(oldImg) Then
+        DrawImage newImg, middleX + 13, (ImageHeight(oldImg) - ImageHeight(newImg)) + 4
+    Else
+        DrawImage newImg, middleX + 13, 4
+    EndIf
+    
+    CenterText middleX - ImageWidth(oldImg) / 2, h - 140, "Old thumbnail"
+    CenterText middleX + 17 + ImageWidth(newImg) / 2, h - 140, "New thumbnail"
+    
+    Line 0, h - 110, w, h - 110
+    
+    DrawScreen OFF
+    
+    scrW = ScreenWidth()
+    scrH = ScreenHeight()
+    
+    bg = MakeImage(scrW, scrH)
+    CopyBox 0, 0, scrW, scrH, 0, 0, SCREEN(), Image(bg)
+    
+    Return bg
+EndFunction
+
+//=============================================================================
+// Mahdollistaa thumbnail.bmp tiedoston k‰sin muokkauksen
+//=============================================================================
+Function DoHandEdit()
+    scrW = ScreenWidth()
+    scrH = ScreenHeight()
+    scrshot = MakeImage(scrW, scrH)
+    DrawScreen OFF
+    CopyBox 0, 0, scrW, scrH, 0, 0, SCREEN(), Image(scrshot)
+    
+    
+    DrawImage scrshot, 0, 0
+    Color 0, 0, 128
+    Box 15, 15, scrW - 30, scrH - 30, ON
+    Color 0, 0, 64
+    Box 25, 25, scrW - 50, scrH - 50, ON
+    Color 255, 255, 255
+    CenterText scrW / 2, (scrH - TextHeight("H") - 80) / 2, "Modify thumbnail.bmp at "
+    RowText(Chr(34) + CurrentDir() + "thumbnail.bmp" + Chr(34), 40, (scrH - TextHeight("H") - 40) / 2, scrW - 40, True)
+    ClearKeys
+    Repeat
+        If Button((scrW - 250) / 2, scrH - 130, 250, 40, "Open explorer.exe") Then Execute "explorer.exe /select,thumbnail.bmp"
+        If Button((scrW - 250) / 2, scrH - 80, 250, 40, "I'm ready") Then Exit
+        DrawScreen OFF
+    Forever
+EndFunction
+
+
+// By Jare
+Function Button(x,y,width,height, txt$)
+   width      = Max(width,   TextWidth(txt)+2)
+   height      = Max(height,   TextHeight(txt)+2)
+   result      = False
+   mouse_over   = False
+   If MouseX()>=x And MouseX()<=x+width-1 Then
+      If MouseY()>=y And MouseY()<=y+height-1 Then
+         mouse_over = True
+         If MouseHit(1) Then result = True
+      EndIf
+   EndIf
+   c = 128+mouse_over*50
+   Color c,c,c
+   Box x,y, width,height, ON
+   Color 255,255,255
+   CenterText x+width/2,y+height/2, txt, 2
+   Return result
+EndFunction 
+
+// By MetalRain, modified a bit by VesQ
+Function RowText(st$,x,y,x2,center=0)
+    If x + TextWidth(st$) < x2 Then
+        If center = ON Then Text (x+x2)/2-TextWidth(st$)/2,y,st$ Else Text x,y,st$
+    Else
+        wordcount = CountWords(st$, "\")
+        For i = 1 To wordcount
+            word$ = GetWord(st$,i, "\")
+            If x + TextWidth(sentence$) + TextWidth(word$) > x2 Then
+                If center = ON Then
+                    Text (x + x2)/2 - TextWidth(sentence$)/2, y, sentence$
+                Else
+                    Text x, y, sentence$
+                EndIf
+                sentence$ = ""
+                y = y + TextHeight("I")
+            EndIf
+            If i < wordcount Then
+                sentence$ = sentence$ + word$ + "\"
+            Else
+                sentence$ = sentence$ + word$
+            EndIf
+        Next i
+        If sentence$ <> "" Then
+            If center = ON Then Text (x+x2)/2-TextWidth(sentence$)/2,y,sentence$ Else Text x,y,sentence$
+        EndIf
+    EndIf
+EndFunction

@@ -4,6 +4,8 @@
 # ...paitsi CBRC.exe ja Rar.exe, jotka vaaditaan mediaa varten.
 !media/CBRC.exe
 !media/Rar.exe
+# Rar.exeä tarvitaan myös kartan pikkukuvien korjaamiseen
+!tools/fix_thumbnails/Rar.exe
 
 # ...sekä modattu CBCompiler.exe, jota tarvitaan koodin kääntöön.
 !/CBCompiler-modded.exe
