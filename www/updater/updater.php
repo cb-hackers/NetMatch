@@ -14,7 +14,7 @@ if( !$html || $versionOnly ) header( "Content-type: text\plain;" );
 define( "SCRIPT_DIR", "http://" . $_SERVER['SERVER_NAME'] . pathinfo( $_SERVER['REQUEST_URI'], PATHINFO_DIRNAME ) . "/" );
 define( "CRC_DELIMITER", "|" );
 define( "CRC_NEXTFILE", ";" );
-define( "NM_VERSION", "2.4" );
+define( "NM_VERSION", "2.5" );
 define( "NM_REVISION", "" );
 define( "NM_PATCH", 0 );
 
@@ -82,14 +82,14 @@ if( !$html )
 </html>
 <?php
 }
-    
+
 
 function gohash( $dir = ".", $lastmod = 0 )
 {
     global $crcArray;
-    
+
     $lastModified = $lastmod;
-    
+
     $fileArray = scandir( $dir );
     foreach( $fileArray as $file )
     {
