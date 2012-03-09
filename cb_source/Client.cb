@@ -18,6 +18,9 @@ gPacketWaitTimer = 0
 Global gReconnectToServer
 gReconnectToServer = False
 
+Global gChangeTeam
+gChangeTeam = -1
+
 //================================================================================
 // Liityt‰‰n peliin
 //================================================================================
@@ -285,11 +288,13 @@ Function ClientLoop()
             If gSessionComplete = False And player\loggedIn = True And player\health > 0 And volAdjust = False Then
             
                 obj = player\obj
-                If MouseMoveX() <> 0 Or MouseMoveY() <> 0 Then
+                If MouseMoveX() <> 0 Or MouseMoveY() <> 0 And player\team <> 0 Then
                     // Jos hiiri liikkuu niin k‰‰nnet‰‰n sit‰ kohti
                     RotateObject obj, -GetAngle(ObjectX(obj), ObjectY(obj), MouseWX(), MouseWY())
                     // T‰ht‰in n‰kyviin
                     ShowMouse gImages(IMG_SIGHT)
+                ElseIf player\team = 0 Then
+                    ShowMouse Off
                 EndIf
                 
 //                hided = False
@@ -303,13 +308,12 @@ Function ClientLoop()
 //                EndIf
                 
                 If LeftKey() Or RightKey() Then ShowMouse OFF
-                If gControlMode = 1 Then
+                If gControlMode = 1 And player\team <> 0 Then
                     If KeyDown(cbKeyW) Or UpKey() Then MoveObject obj, PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
                     If KeyDown(cbKeyS) Or DownKey() Then MoveObject obj, -PxPerSec(BACKWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
                     If KeyDown(cbKeyA) Then MoveObject obj, 0, -PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
                     If KeyDown(cbKeyD) Then MoveObject obj, 0, PxPerSec(SIDESTEP_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
-                EndIf
-                If gControlMode = 2 Then
+                ElseIf gControlMode = 2 Then
                     moveX = 0
                     moveY = 0
                     If KeyDown(cbKeyW) Then moveY = PxPerSec(FORWARD_SPEED) * 100.0 / aWeapon( player\weapon, WPNF_WEIGHT )
@@ -404,10 +408,12 @@ Function ClientLoop()
 //        GameUpdate()
         If gSessionComplete = False Then
             CloneCameraPosition player\obj
-            If gCameraMode =< 1 Then 
-                CloneCameraPosition player\obj
-            ElseIf gCameraMode => 2 Then 
-                PositionCamera ObjectX(player\obj)+(MouseX()-ScreenWidth()/2)/1.2, ObjectY(player\obj)-(MouseY()-ScreenHeight()/2)/1.2
+            If player\team <> 0 Then
+                If gCameraMode =< 1 Then 
+                    CloneCameraPosition player\obj
+                ElseIf gCameraMode => 2 Then 
+                    PositionCamera ObjectX(player\obj)+(MouseX()-ScreenWidth()/2)/1.2, ObjectY(player\obj)-(MouseY()-ScreenHeight()/2)/1.2
+                EndIf
             EndIf
         EndIf
         
@@ -498,7 +504,7 @@ Function ClientLoop()
             Exit
         EndIf
         If gKickedOut Then Exit
-
+        If player\team = 0 Then ResetObjectCollision player\obj
         If player\loggedIn Then DrawScreen
         UpdateGame2()
         PlayMusic()
@@ -1152,7 +1158,7 @@ Function SendDataToServer()
     If aWeapon(player\weapon, WPNF_AMMO) > 0 Then ammoExists = True
     // Tutkitaan voidaanko l‰hett‰‰ tieto ampumisesta
     shootNow = 0
-    If (MouseDown(1) = True Or KeyDown(cbKeySpace) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gDevConsole = False And gSessionComplete = False And player\spawnTime = 0 Then
+    If (MouseDown(1) = True Or KeyDown(cbKeySpace) = True) And (player\weapon<>WPN_PISTOL Or gNotShotYet = True) And gConsoleMode = False And gDevConsole = False And gSessionComplete = False And player\spawnTime = 0 And player\team <> 0 Then
         // Onko ase latingissa
         If player\lastShoot + aWeapon(player\weapon, WPNF_RELOADTIME) < Timer() And player\health > 0 Then
             // Onko ammuksia
@@ -1190,6 +1196,11 @@ Function SendDataToServer()
         _Net_PutString(gServerMap)
     EndIf
     
+    If gChangeTeam <> -1 Then
+        _Net_PutByte(NET_TEAMINFO)
+        _Net_PutByte(gChangeTeam)
+        gChangeTeam = -1
+    EndIf
     
     _Net_PutByte(NET_END)
     gBbsOutCount = gBbsOutCount + MEMBlockSize(gNetMemBlock)-4

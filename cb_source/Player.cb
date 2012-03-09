@@ -116,6 +116,8 @@ Type PLAYERS
     Field lag           As Integer      // Pelaajan lagi millisekunneissa
     Field spHackTimer   As Integer      // Viimeisimmässä nopeuden tarkistuksessa otettu Timer()
     Field handShooted   As Byte         // Kummalla kädellä on viimeksi ammuttu (pistooli) 0=vasen 1=oikea
+    Field toSpectator   As Byte         // Kertoo jos pelaaja on menossa katsojaksi
+    Field spectatorTime As Integer      // Milloin pelaaja liittyi katsojaksi
 EndType
 
 //--------------------------------------------------------------------------------
