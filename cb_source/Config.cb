@@ -123,8 +123,8 @@ Function ReadConfig()
             If key = "MAPSERVER" Then gMapServerUrl = value
             If key = "DISABLESPEEDHACKTEST" Then gDisableSpeedhackTest = value
             If key = "CAMERAMODE" Then gCameraMode = value
-			If key = "MAXSPECTATORTIME" Then gMaxSpectatorTime = value
-			If key = "SPECTATORDELAY" Then gSpectatorDelay = value
+            If key = "MAXSPECTATORTIME" Then gMaxSpectatorTime = value
+            If key = "SPECTATORDELAY" Then gSpectatorDelay = value
         Wend
         CloseFile f
     EndIf
@@ -155,7 +155,7 @@ Function SaveConfig()
     WriteLine f, "MapServer=" + Replace( gMapServerUrl, "=", "&#61;" )
     WriteLine f, "DisableSpeedhackTest=" + gDisableSpeedhackTest
     WriteLine f, "CameraMode=" + gCameraMode
-	WriteLine f, "MaxSpectatorTime=" + gMaxSpectatorTime
-	WriteLine f, "SpectatorDelay=" + gSpectatorDelay
+    WriteLine f, "MaxSpectatorTime=" + gMaxSpectatorTime
+    WriteLine f, "SpectatorDelay=" + gSpectatorDelay
     CloseFile f
 EndFunction

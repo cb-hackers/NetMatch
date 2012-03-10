@@ -504,8 +504,10 @@ ServerLoop:
                 newMsg\msgType = NET_SERVERMSG
                 newMsg\toPlayer = gCurrentPlayerId
                 newMsg\msgText = "Spectator mode is disabled on this server"            
-            Else  
+            ElseIf team <> 0 Then
                 team = 1
+                greenplayers = 0
+                redplayers = 0
                 If gPlayMode = TDM Then 
                     For plr.PLAYERS = Each PLAYERS
                         If plr\active = True Then
@@ -521,9 +523,20 @@ ServerLoop:
                         team = Rand(1,2)
                     EndIf
                 EndIf            
+                
+                // Spawnataan pelaaja
                 SetTeam(player\playerId, team)
+                SpawnObject(player\obj)
+                player\x = ObjectX(player\obj)
+                player\y = ObjectY(player\obj)
+                player\angle = ObjectAngle(player\obj)
                 player\health = 100
                 player\death = False
+                player\lastValidX = player\x
+                player\lastValidY = player\y
+                player\hackTestX = player\x
+                player\hackTestY = player\y
+                player\spawnTime  = Timer()
             EndIf
         Else
             // Viestit loppui tai tuli tuntematon viesti
@@ -589,7 +602,7 @@ ServerLoop:
             EndIf
         
             // Onko n‰kyviss‰ tai voidaanko muuten l‰hett‰‰
-            If sendNames = True Or visible = True Or plr\health <= 0 Then
+            If sendNames = True Or visible = True Or plr\health <= 0 And plr\team <> 0 Then
                 // N‰kyy
                 gs_valueByte = NET_PLAYER : Gosub gs_PutByte             // Pelaajan tietoja
                 gs_valueByte = plr\playerId : Gosub gs_PutByte           // Pelaajan tunnus
@@ -613,7 +626,7 @@ ServerLoop:
                 gs_valueByte = plr\health : Gosub gs_PutByte             // Terveys
                 gs_valueShort = plr\kills : Gosub gs_PutShort            // Tapot
                 gs_valueShort = plr\deaths : Gosub gs_PutShort           // Kuolemat
-            ElseIf gRadarArrows = True Or gPlayMode=TDM Then
+            ElseIf gRadarArrows = True Or gPlayMode=TDM And plr\team <> 0 Then
                 // Ei n‰y. L‰hetet‰‰n tutkatieto
                 If player\team = plr\team And gRadarArrows = False Then
                     gs_valueByte = NET_RADAR : Gosub gs_PutByte

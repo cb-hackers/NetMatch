@@ -153,11 +153,11 @@ Function RunCommand(_command$, _output = 1)
  
         // Syntax: join
         ElseIf cmdId = COMMAND_JOIN Then
-            team = GetArgument("team", _command, cmdId)
+            team = GetArgument("team", _command, cmdId, 1)
             If team < 0 Or team > 2 Then
                 out = "Team must be 0 for spectator or 1 for joining to game" // Myöhemmin myös tiimit 1 ja 2
             Else
-                gChangeTeam = team // Jos 0 liittyy katsojaksi, jos jotain muuta liittyy peliin ja serveri päättää tiimin tällä hetkellä
+                gChangeTeam = team // Jos 0, liittyy katsojaksi, jos jotain muuta liittyy peliin ja serveri päättää tiimin tällä hetkellä
             EndIf
         
         // Syntax: spectate
