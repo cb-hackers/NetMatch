@@ -283,6 +283,7 @@ Function DrawMenu(_menu)
                     Text miX, y, GSSServerInfo(i, GSS_SERVER_NAME)
                     sInfo$ = GSSServerInfo(i, GSS_SERVER_INFO)
                     mapInfo$ = Replace(GetWord2(sInfo, 3, ","), "_", " ")
+                    If Len(mapInfo) > 16 Then mapInfo$ = Left(mapInfo, 15)+". . ."
                     Text 500, y, mapInfo
                     iPlayers = Int(GetWord2(sInfo, 1, ","))
                     iBots = Int(GetWord2(sInfo, 2, ","))
