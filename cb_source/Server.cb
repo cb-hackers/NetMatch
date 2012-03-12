@@ -5,6 +5,7 @@
 //********************************************************************************
 
 Global gBotFreeze As Byte
+Global gLastWarnTime As Integer // Aika milloin viimeksi pelaajaa varoitettiin potkuista
 
 // cbNetworkin Gosub-toteutusta varten tarvittavat muuttujat.
 Dim gs_valueInt As Integer
@@ -346,6 +347,36 @@ ServerLoop:
         Goto returnToLoop
     EndIf
     
+    // Pelaajan heitto katsojaksi
+    If player\toSpectator = True And player\spectatorTime + gSpectatorDelay*1000 < Timer() Then
+        SetTeam(player\playerId,0)
+        player\health = -10
+        player\death = True
+        player\timeToDeath = Timer()  
+        player\toSpectator = False
+        player\spectatorTime = Timer()
+        
+        newMsg.NET_MESSAGES = New( NET_MESSAGES )
+        newMsg\msgType = NET_SERVERMSG
+        newMsg\toPlayer = gCurrentPlayerId
+        newMsg\msgText = "You have been moved to spectators, AFK timeout is set to "+gMaxSpectatorTime+"s"
+    EndIf
+    
+    // Varoitetaan pelaajaa 5s v‰lein jos ollaan potkimassa ulos
+    If player\team = 0 And gMaxSpectatorTime > 0 And Timer() - player\spectatorTime > gMaxSpectatorTime*1000 - 31000 And Timer() - gLastWarnTime > 5000 Then
+        timeLeft = (gMaxSpectatorTime*1000 - (Timer() - player\spectatorTime))/1000
+        newMsg.NET_MESSAGES = New( NET_MESSAGES )
+        newMsg\msgType = NET_SERVERMSG
+        newMsg\toPlayer = gCurrentPlayerId
+        newMsg\msgText = "You have to join to the game in "+timeLeft+" seconds or you will be kicked out"
+        gLastWarnTime = Timer()
+    EndIf
+    
+    // Liian kauan katsojana
+    If player\team = 0 And gMaxSpectatorTime > 0 And player\spectatorTime + gMaxSpectatorTime*1000 < Timer() Then
+        KickPlayer(player\playerId, 0, "Too long as a spectator")
+    EndIf
+    
     // Lasketaan pelaajan ja serverin v‰linen lagi
     player\lag = ( Timer() - player\lastActivity )
     
@@ -379,7 +410,7 @@ ServerLoop:
             picked  = gs_valueByte    // Poimitun itemin id (0, jos ei poimittu)
             
             // Arvot p‰ivitet‰n vain jos pelaaja on hengiss‰
-            If player\death = False Then
+            If player\death = False And player\team <> 0 Then
                 player\x        = x
                 player\y        = y
                 player\angle    = angle
@@ -425,7 +456,7 @@ ServerLoop:
                     EndIf
                 EndIf
             EndIf
-            If player\health > 0 Then player\death = False
+            If player\health > 0 And player\team <> 0 Then player\death = False
             If player\loggedIn = False Then
 //COM1                gPlayerCount + 1
                 player\loggedIn = True
@@ -458,6 +489,55 @@ ServerLoop:
             Gosub gs_GetString
             player\mapName = Trim(gs_valueString)
         
+        ElseIf netmsg = NET_TEAMINFO Then
+            Gosub gs_GetByte
+            team = gs_valueByte
+            If team = 0 And player\team <> 0 And gMaxSpectatorTime >= 0 Then    // Pelaaja haluaa katsojaksi
+                player\toSpectator = True
+                player\spectatorTime = Timer()
+                newMsg.NET_MESSAGES = New( NET_MESSAGES )
+                newMsg\msgType = NET_SERVERMSG
+                newMsg\toPlayer = gCurrentPlayerId
+                newMsg\msgText = "You will be moved to spectators in "+gSpectatorDelay+" seconds"
+            ElseIf gMaxSpectatorTime < 0 Then
+                newMsg.NET_MESSAGES = New( NET_MESSAGES )
+                newMsg\msgType = NET_SERVERMSG
+                newMsg\toPlayer = gCurrentPlayerId
+                newMsg\msgText = "Spectator mode is disabled on this server"            
+            ElseIf team <> 0 Then
+                team = 1
+                greenplayers = 0
+                redplayers = 0
+                If gPlayMode = TDM Then 
+                    For plr.PLAYERS = Each PLAYERS
+                        If plr\active = True Then
+                            If plr\team = 1 Then greenplayers + 1
+                            If plr\team = 2 Then redplayers + 1
+                        EndIf
+                    Next plr
+                    If greenplayers<redplayers Then
+                        team = 1
+                    ElseIf redplayers<greenplayers
+                        team = 2
+                    Else
+                        team = Rand(1,2)
+                    EndIf
+                EndIf            
+                
+                // Spawnataan pelaaja
+                SetTeam(player\playerId, team)
+                SpawnObject(player\obj)
+                player\x = ObjectX(player\obj)
+                player\y = ObjectY(player\obj)
+                player\angle = ObjectAngle(player\obj)
+                player\health = 100
+                player\death = False
+                player\lastValidX = player\x
+                player\lastValidY = player\y
+                player\hackTestX = player\x
+                player\hackTestY = player\y
+                player\spawnTime  = Timer()
+            EndIf
         Else
             // Viestit loppui tai tuli tuntematon viesti
             Exit
@@ -510,17 +590,19 @@ ServerLoop:
         EndIf
         
         // L‰hetet‰‰n niiden pelaajien tiedot jotka ovat hengiss‰ ja n‰kyviss‰
-        If plr\active = True Then
+        If plr\active = True And plr\team <> 0 Then
             visible = True
-            x1 = ObjectX(player\obj)
-            y1 = ObjectY(player\obj)
-            x2 = ObjectX(plr\obj)
-            y2 = ObjectY(plr\obj)
-            If Abs(x1 - x2) > 750 Then visible = False
-            If Abs(y1 - y2) > 650 Then visible = False
-            
+            If player\team <> 0 Then
+                x1 = ObjectX(player\obj)
+                y1 = ObjectY(player\obj)
+                x2 = ObjectX(plr\obj)
+                y2 = ObjectY(plr\obj)
+                If Abs(x1 - x2) > 750 Then visible = False
+                If Abs(y1 - y2) > 650 Then visible = False
+            EndIf
+        
             // Onko n‰kyviss‰ tai voidaanko muuten l‰hett‰‰
-            If sendNames = True Or visible = True Or plr\health <= 0 Then
+            If sendNames = True Or visible = True Or plr\health <= 0 And plr\team <> 0 Then
                 // N‰kyy
                 gs_valueByte = NET_PLAYER : Gosub gs_PutByte             // Pelaajan tietoja
                 gs_valueByte = plr\playerId : Gosub gs_PutByte           // Pelaajan tunnus
@@ -544,7 +626,7 @@ ServerLoop:
                 gs_valueByte = plr\health : Gosub gs_PutByte             // Terveys
                 gs_valueShort = plr\kills : Gosub gs_PutShort            // Tapot
                 gs_valueShort = plr\deaths : Gosub gs_PutShort           // Kuolemat
-            ElseIf gRadarArrows = True Or gPlayMode=TDM Then
+            ElseIf gRadarArrows = True Or gPlayMode=TDM And plr\team <> 0 Then
                 // Ei n‰y. L‰hetet‰‰n tutkatieto
                 If player\team = plr\team And gRadarArrows = False Then
                     gs_valueByte = NET_RADAR : Gosub gs_PutByte
@@ -864,6 +946,7 @@ Function KickPlayer( _playerId, _kickerId, _reason$ = "" )
     player\loggedIn = False
     player\active = False
     player\admin = False
+    player\team = 1
     // L‰hetet‰‰n viesti kaikille muille paitsi boteille
     For plr.PLAYERS = Each PLAYERS
         If plr\active = True And plr\zombie = False Then

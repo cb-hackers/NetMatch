@@ -22,9 +22,11 @@ Const CONSOLE_ROWS   = 25
 // Komennot
 // Komentojen toiminnallisuus tapahtuu RunCommand-funktiossa
 //--------------------------------------------------------------------------------
-Const COMMAND_HELP  = 0
-Const COMMAND_QUIT  = 1
-Const COMMAND_COUNT = 1
+Const COMMAND_HELP      = 0
+Const COMMAND_QUIT      = 1
+Const COMMAND_JOIN      = 2
+Const COMMAND_SPECTATE  = 3
+Const COMMAND_COUNT     = 3
 
 Const CMD_NAME  = 0 // Name
 Const CMD_ARGS  = 1 // Arguments
@@ -45,6 +47,14 @@ aCommands(COMMAND_HELP, CMD_DESC) = "Prints the description of a command"
 aCommands(COMMAND_QUIT, CMD_NAME) = "quit"
 aCommands(COMMAND_QUIT, CMD_ARGS) = ""
 aCommands(COMMAND_QUIT, CMD_DESC) = "Quits the game"
+
+aCommands(COMMAND_JOIN, CMD_NAME) = "join"
+aCommands(COMMAND_JOIN, CMD_ARGS) = "[team]"
+aCommands(COMMAND_JOIN, CMD_DESC) = "Joins to team, team can be 0 for spectator, if left blank it will join to game" // Myöhemmin myös 1 ja 2
+
+aCommands(COMMAND_SPECTATE, CMD_NAME) = "spectate"
+aCommands(COMMAND_SPECTATE, CMD_ARGS) = ""
+aCommands(COMMAND_SPECTATE, CMD_DESC) = "Joins to spectators"
 
 Global gDevConsoleText$, gDevConsoleInput, gDevConsoleACId
 gDevConsoleACId = -1
@@ -139,6 +149,21 @@ Function RunCommand(_command$, _output = 1)
             // Odotellaan vielä puoli sekuntia
             Wait 500 - (Timer() - t)
             End
+ 
+ 
+        // Syntax: join
+        ElseIf cmdId = COMMAND_JOIN Then
+            team = GetArgument("team", _command, cmdId, 1)
+            If team < 0 Or team > 2 Then
+                out = "Team must be 0 for spectator or 1 for joining to game" // Myöhemmin myös tiimit 1 ja 2
+            Else
+                gChangeTeam = team // Jos 0, liittyy katsojaksi, jos jotain muuta liittyy peliin ja serveri päättää tiimin tällä hetkellä
+            EndIf
+        
+        // Syntax: spectate
+        ElseIf cmdId = COMMAND_SPECTATE Then
+            gChangeTeam = 0
+   
         EndIf
     Else
         out = out + "Unknown command '" + cmd + "'."

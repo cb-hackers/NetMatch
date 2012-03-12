@@ -172,7 +172,7 @@ Function GameUpdate()
 
                 // Soitellaan tyhj‰k‰ynti‰‰ni‰
                 playIdle = False
-                If player\weapon = WPN_CHAINSAW And player\health > 0 Then
+                If player\weapon = WPN_CHAINSAW And player\health > 0 And player\team <> 0 Then
                     If player\playerId = gCurrentPlayerId Then 
                         If aWeapon(WPN_CHAINSAW, WPNF_AMMO) > 0 Then
                             playIdle = True
@@ -220,7 +220,7 @@ Function GameUpdate()
                     UpdateRadar(player\obj)
                     
                     // Varmistetaan ett‰ pelaaja pysyy kartalla
-                    If InMap(ObjectX(player\obj), ObjectY(player\obj)) = True Then
+                    If InMap(ObjectX(player\obj), ObjectY(player\obj)) = True Or player\team = 0 Then
                         // Jos pelaaja on kartalla niin talletetaan valid-position
                         player\lastValidX = ObjectX(player\obj)
                         player\lastValidY = ObjectY(player\obj)
@@ -274,7 +274,7 @@ Function GameUpdate()
                 If player\zombie = True Then player\hasAmmos = True
 
                 // Onko pelaaja kuollut
-                If player\health <= 0 Then 
+                If player\health <= 0 And player\team <> 0 Then 
                     // Jos kuolemasta on kulunut tarpeeksi aikaa niin her‰tet‰‰n
                     If player\timeToDeath + DEATH_DELAY < Timer() Then
                         SpawnObject(player\obj)
@@ -855,6 +855,7 @@ Function Login(_in, _playerId = 0)
 //COM1            If player\loggedIn = True Then gPlayerCount - 1
             player\loggedIn = False
             player\admin = False
+            player\team = 1
             WriteLog(player\name + " logged out")
             // L‰hetet‰‰n viesti kaikille muille paitsi boteille
             For plr.PLAYERS = Each PLAYERS
@@ -1130,7 +1131,7 @@ Function AnimatePlayers()
             player\prevPosY = oy
             lp# = player\legPos
             lp = WrapAngle(lp + Distance(ox, oy, px, py) * 3.0)
-            If player\playerId = gCurrentPlayerId Then
+            If player\playerId = gCurrentPlayerId And player\team <> 0 Then
                 If (player\legPos <= 90 And lp > 90) Or (player\legPos <= 270 And lp > 270) Then
                     PlayGameSound(SND_FOOTSTEP, CameraX(), CameraY() + 1500)
                 EndIf
