@@ -143,6 +143,7 @@ AddMenuItem(MNU_CLIENTCFG,  MI_BACK,        "back")
 //================================================================================
 Function DrawMenu(_menu)
     ClearKeys
+    ClearMouse
     
     // Valintatekstien aloituspaikka
     miY = 145
@@ -662,6 +663,7 @@ Function DrawMenu(_menu)
     // Escillä poistutaan
     Until KeyHit(cbKeyEsc)
     PlayGameSound(SND_RELOAD, CameraX(), CameraY())
+    ClearMouse
     ClearKeys
     UpdateGame
 EndFunction
