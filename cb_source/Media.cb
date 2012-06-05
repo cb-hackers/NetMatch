@@ -4,6 +4,7 @@
 // Kuvat, objektit, fontit ja äänet
 //********************************************************************************
 
+DefaultMask OFF
 Const RESOURCE_ARCHIVE$ = "NetMatch.dat"
 
 Global gLoadedItems#
@@ -344,8 +345,22 @@ Function ShowLoading()
     DrawScreen
 EndFunction
 
+Function LoadResourceImage(_fileName$, archive$ = "", _makeError = 1)
+    If gDirectServer And ( _fileName <> "background.png" Or FileExists( RESOURCE_ARCHIVE )=0 ) Then Return 0
+    
+    ex = FileExists("media\" + _fileName)
+    If ex = 0 And gForceUpdate = True Then Return 0 // Pakotettu päivitys käyttää kuvaa, jos se löytyy ja, jos se on 0 niin sitä ei piirretä.
+    If ex = 0 And _makeError = 1 Then 
+        MakeError "Resource image " + _fileName + " not found!"
+    EndIf
+    If ex = 0 Then Return 0
+    
+    Return LoadImage("media\" + _fileName)
+EndFunction
+    
+    
 
-Function LoadResourceImage(_fileName$, _archive$ = "", _makeError = 1)
+Function LoadResourceImage_(_fileName$, _archive$ = "", _makeError = 1)
     If gDirectServer And ( _fileName <> "background.png" Or FileExists( RESOURCE_ARCHIVE )=0 ) Then Return 0
 //SetWindow "IMAGE " + _fileName
 
@@ -428,7 +443,7 @@ Function LoadResourceMap(_mapName$)
         Next x
     Next y
     
-    img = LoadResourceImage(_mapName + ".pxi", archive)
+    img = LoadResourceImage_(_mapName + ".pxi", archive)
     If img <> 0 Then
         PaintObject map, img
         DeleteImage img

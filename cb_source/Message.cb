@@ -47,9 +47,9 @@ Function MsgBox(_text$, _caption$ = "", _type = 0)
         tw = TextWidth(_caption)
         th = TextHeight(_caption)
         Color 0, 0, 0
-        Text (ScreenWidth() - tw) / 2 + 3, -1*(5 + 3), _caption
+        Text (ScreenWidth() - tw) / 2 + 3, 5 + 3, _caption
         Color 255, 255, 0
-        Text (ScreenWidth() - tw) / 2, -1*5, _caption
+        Text (ScreenWidth() - tw) / 2, 5, _caption
         maxW = tw + 50
         maxH = th + 40
     EndIf
@@ -80,7 +80,7 @@ Function MsgBox(_text$, _caption$ = "", _type = 0)
     For row = 1 To CountWords(textLines, "|")
         txtLine$ = GetWord2(textLines, row, "|")
         tw = TextWidth(txtLine)
-        Text (ScreenWidth() - tw) / 2, -1*maxH, txtLine
+        Text (ScreenWidth() - tw) / 2, maxH, txtLine
 //        CenterText ScreenWidth() / 2, maxH, txtLine, 0
         maxH = maxH + TextHeight(txtLine)
     Next row

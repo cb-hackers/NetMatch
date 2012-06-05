@@ -300,7 +300,7 @@ Function LoadGameMap(_mapName$,_loopNum=0,forceDownload=0)
             DeleteObject gFloor
             gFloor = 0
         EndIf
-        imgFloor = LoadResourceImage(_mapName + "_back.pxi", "map/" + _mapName + ".mpc", False)
+        imgFloor = LoadResourceImage_(_mapName + "_back.pxi", "map/" + _mapName + ".mpc", False)
         If imgFloor <> 0 Then 
             gFloor = MakeObjectFloor()
             PaintObject gFloor, imgFloor
@@ -550,6 +550,10 @@ Function AddMap( _filePath$ )
     absolutePath$ = absolutePath$ + "map\"
     absolutePath$ = absolutePath$ + _filePath$
     
+    deboogfile = OpenToWrite("debug.txt")
+        WriteLine deboogfile, absolutePath$
+    CloseFile deboogfile
+    
     If Right( _filePath$, 4 ) <> ".mpc" Then
         If gDirectServer = False Then DrawImage gImages(IMG_BACKGROUND), 0, 0
         Error(GetText("incorrect_map") + " (" + _filePath + ")")
@@ -595,7 +599,7 @@ Function AddMap( _filePath$ )
         newMap\author = author$
         
         // Ladataan esikatselukuva muistiin.
-        newMap\thumbnail = LoadResourceImage( newMap\name + "_thb.pxi", newMap\filePath )
+        newMap\thumbnail = LoadResourceImage_( newMap\name + "_thb.pxi", newMap\filePath )
         
         // Laitetaan kartan ID:ksi edellisen kartan ID:stä yksi suurempi.
         befMap.MAPS = Before( newMap )
