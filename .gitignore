@@ -56,3 +56,6 @@ www/maps
 # Ei laiteta myöskään info.txt tiedostoja mukaan.
 www/reg/info.txt
 www/reg/oldinfos
+
+# Ignoreen myös allegron lokit
+allegro.log
