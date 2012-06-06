@@ -238,12 +238,17 @@ Function ClientLoop()
     gReadDataTimestamp  = 0
     ClearKeys2()
     gShowFloor          = True
+    
+    roundNo = 0
 
     ClsColor 0, 0, 0
     Cls
     Repeat
 //COM1        gLastPlayerCount = gPlayerCount
+        roundNo + 1
+        Print "Round #" + roundNo
         player.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerId))
+        Print "Round #" + roundNo + " - After converting " + gCurrentPlayerId + " to typepointer"
         
 //        hided = (player\visible - Timer() > SPAWN_BLINKER / 2)
 //        If player\health > 0 Then
@@ -263,9 +268,13 @@ Function ClientLoop()
 //        EndIf
 
         If ReadDataFromServer() = False Then Exit
+        Print "Round #" + roundNo + " - After reading"
         SendDataToServer()
+        Print "Round #" + roundNo + " - After sending"
+        
         UpdateBodyExplosion()
         GameUpdate()
+        Print "Round #" + roundNo + " - After GameUpdate()"
         
 //        If hided Then
 //            ShowObject player\obj, OFF
@@ -278,6 +287,7 @@ Function ClientLoop()
         DrawClientMessages()
         UpdateExplodeAnimation()
         DrawDebugDrawings()
+        Print "Round #" + roundNo + " - After drawings"
 
         If gConsoleMode = False And gDevConsole = False Then
             //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -598,9 +608,11 @@ Function ReadDataFromServer()
         gBbsInCount = 0
     EndIf
     
+    Print " -- Before read-loop"
     // Luetaan kaikki saapuneet viestit
     While True
         netmsg = _Net_GetByte() // Viestin tunnus
+        Print " --- Message type: " + netmsg
         
         If netmsg = NET_PLAYER Then
         
@@ -614,6 +626,7 @@ Function ReadDataFromServer()
             player\angle    = _Net_GetShort()   // Kulma
             b               = _Net_GetByte()    // Sisältää useamman muuttujan (alla)
 
+            Print " ---- NET_PLAYER, #1"
 
             // Jos halutaan esim. lukea 4 bittiä kohdasta 0, menee lauseke seuraavasti:
             // value= (b Shl (32-0-4)) Shr (32-4)
@@ -621,6 +634,9 @@ Function ReadDataFromServer()
             player\hasAmmos = (b Shl 27) Shr 31     // Onko ammuksia (bitti 4)
             team            = (b Shl 25) Shr 31 + 1 // Joukkue (bitti 6)
             player\spawnTime= (b Shl 24) Shr 31     // Haavoittumaton (bitti 7)
+            
+            
+            Print " ---- NET_PLAYER, #2"
             
             player\health   = _Net_GetByte()    // Terveys
             If player\health > 128 Then player\health = player\health - 256
@@ -641,7 +657,9 @@ Function ReadDataFromServer()
                 player\death = False
             EndIf
             
+            
             If player\health > 0 Then
+                Print " ---- NET_PLAYER, #3"
                 If player\death = True Then wakeUp = True
                 player\death = False
                 If player\spawnTime = 0 Then
@@ -665,6 +683,7 @@ Function ReadDataFromServer()
                 // joten vaikka pelaaja data saataisiin, tarkistetaan vielä etäisyydet ja lisätään tutkanuoli tarvittaessa.
                 // Tosin vain silloin, kun pelaaja on myös hengissä.
                 If gCameraMode = 1 Then 
+                    Print " ---- NET_PLAYER, #4"
                     plr.PLAYERS = ConvertToType(gPlayers(gCurrentPlayerId))
                     visible = True
                     x1 = ObjectX(player\obj)
@@ -674,17 +693,21 @@ Function ReadDataFromServer()
                     If Abs(x1 - x2) > 400 Then visible = False
                     If Abs(y1 - y2) > 300 Then visible = False
                     If visible = False Then 
+                        Print " ---- NET_PLAYER, #5"
                         ang# = GetAngle2(plr\obj, player\obj)
                         AddRadar(player\obj, ang#, player\team)
                     EndIf
                 EndIf
             Else
                 If player\death = False Then
+                    Print " ---- NET_PLAYER, #6"
                     PlayGameSound(Rand(SND_DIE1, SND_DIE9), player\x, player\y)
                     BodyExplosion(player\x, player\y, eff, player\team)
                 EndIf
                 player\death = True
             EndIf
+            
+            Print " ---- NET_PLAYER, #7"
             
             // Jos pelaaja on edellisellä kierroksella ollut piilossa niin viedään 
             // suoraan oikeaan paikkaan. Tai jos pelaaja on uusi.
@@ -694,6 +717,7 @@ Function ReadDataFromServer()
                 player\death = False
                 If player\playerId = gCurrentPlayerId Then
                     If InMap(player\x, player\y) = False Then
+                        Print " ---- NET_PLAYER, #8"
                         SpawnObject(player\obj)
                     EndIf
                 EndIf
@@ -713,6 +737,7 @@ Function ReadDataFromServer()
             Else
                 // Oma pelaaja on juuri osallistunut peliin
                 If newPlayer = True Then
+                    Print " ---- NET_PLAYER, #9"
                     // Asetetaan törmäykset muihin pelaajiin
                     For plr.PLAYERS = Each PLAYERS
                         If plr\active And plr\playerId <> player\playerId Then

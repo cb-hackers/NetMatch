@@ -202,8 +202,11 @@ EndType
 
 
 Function BodyExplosion(_x, _y, _power#, _team)
+    Print "BodyExplosion(" + _x + ", " + _y + ", " + _power + ", " + _team + ")"
     For i = 1 To 5
+        Print " - Outer loop, #" + i
         For j = 1 To ((i > 1) + 1)
+            Print " -- Inner loop, #" + j
             bexpl.BODY_EXPLOSION = New(BODY_EXPLOSION)
             objId = OBJ_PART1
             If _team = 2 And i > 1 Then objId = OBJ_PART2_2 - 1
@@ -238,7 +241,9 @@ Function BodyExplosion(_x, _y, _power#, _team)
         PositionObject bexpl\obj, bexpl\destX, bexpl\destY
 
     Next i
+    Print " - Before ObjectOrder gMap, -1"
     ObjectOrder gMap, -1
+    Print " - BodyExplosion()     [OK]"
 EndFunction
 
 

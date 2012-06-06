@@ -18,6 +18,7 @@ EndType
 // Asetetaan kentälle joku poimittava tavara.
 //================================================================================
 Function SetItem(_type, _itemId, _x = 0, _y = 0)
+    Print "SetItem(" + _type + ", " + _itemId + ", " + _x + ", " + _y + ")"
     
     // Käydään kaikki tavarat läpi
     iid = 0
@@ -27,16 +28,19 @@ Function SetItem(_type, _itemId, _x = 0, _y = 0)
             Exit
         EndIf
     Next item
+    Print " - iid = " + iid
     //If _type < OBJ_ITEM_HEALTH Or _type > OBJ_ITEM_ROCKET Then Return iid
     item = 0
     // Jos tavaraa ei ollut niin luodaan sellainen
     If iid = 0 Then
+        Print " - Before creating a new item"
         item.ITEMS = New(ITEMS)
         item\itemId = _itemId
         item\itemType = _type
     Else
         item = ConvertToType(iid)
     EndIf
+    
     If gGameMode = SERVER Then
         // Jos ollaan serverissä eikä tavaraa ollut niin luodaan tyhjä objekti
         If iid = 0 Then item\obj = MakeObject()
@@ -57,7 +61,8 @@ Function SetItem(_type, _itemId, _x = 0, _y = 0)
     EndIf
     If gGameMode = CLIENT Then
         // Jos ollaan clientissä eikä tavaraa löytynyt niin tehdään sille objekti
-        If iid = 0 Then 
+        If iid = 0 Then
+            Print " - before CloneObject(), _type = " + _type + " -- gObjects(_type) = " + gObjects(_type)
             item\obj = CloneObject(gObjects(_type))
             ObjectOrder item\obj, -1
             ObjectOrder gMap, -1
@@ -65,8 +70,10 @@ Function SetItem(_type, _itemId, _x = 0, _y = 0)
         // Laitetaan paikoilleen
         PositionObject item\obj, _x, _y
         ShowObject item\obj, ON
-    EndIf 
-        Return ConvertToInteger(item)
+    EndIf
+    retVal = ConvertToInteger(item)
+    Print " - SetItem()     [OK]"
+    Return retVal
 EndFunction
 
 

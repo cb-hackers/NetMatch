@@ -14,6 +14,7 @@ Function PlayGameSound(_sound, _x, _y)
     
     // Äänenvoimakkuus riippuu etäisyydestä
     volume# = (100 - Max(0, Distance(_x, _y, CameraX(), CameraY()) / 20)) / 100.0 * Float(gFXVolume)
+    Print "PlayGameSound(" + _sound + ", " + _x + ", " + _y + "), volume is " + volume
     Return PlaySound(snd, volume)
 EndFunction
 
