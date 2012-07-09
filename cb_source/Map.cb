@@ -221,7 +221,6 @@ EndFunction
 // Lis‰t‰‰n/siirret‰‰n objekti satunnaiseen kohtaan kartalle
 //================================================================================
 Function SpawnObject(_obj)
-    Write "SpawnObject(" + _obj + ")"
     tileWh = gTileW / 2
     tileHh = gTileH / 2
     While True
@@ -237,7 +236,6 @@ Function SpawnObject(_obj)
             Exit
          EndIf
     Wend
-    Print "   [OK]"
 EndFunction
 
 
